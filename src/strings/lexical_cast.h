@@ -73,7 +73,9 @@ namespace Strings
 
         inline constexpr auto conv_str_to_real_flags =
             double_conversion::StringToDoubleConverter::ALLOW_HEX |
+            #ifndef _MSC_VER
             double_conversion::StringToDoubleConverter::ALLOW_CASE_INSENSITIVITY |
+            #endif
             double_conversion::StringToDoubleConverter::ALLOW_HEX_FLOATS;
         inline const double_conversion::StringToDoubleConverter conv_str_to_real(conv_str_to_real_flags, 0, std::numeric_limits<double>::signaling_NaN(), string_inf, string_nan, char_digit_sep);
 
@@ -251,9 +253,9 @@ namespace Strings
     // If `T` is a `long double`, expects either a double, or two doubles separated with `@`, that will be
     //   added together to produce the result. This matches the output format of `ToString()`.
     template <
-        typename T,
-        CHECK((std::is_integral_v<T> && sizeof(T) <= sizeof(long long)) || (std::is_floating_point_v<T> && sizeof(T) <= sizeof(long double)))
+        typename T
     >
+    requires (std::is_integral_v<T> && sizeof(T) <= sizeof(long long)) || (std::is_floating_point_v<T> && sizeof(T) <= sizeof(long double))
     [[nodiscard]] T FromString(std::string_view str)
     {
         static_assert(!std::is_const_v<T> && !std::is_volatile_v<T>);

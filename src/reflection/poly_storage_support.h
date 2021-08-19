@@ -58,7 +58,7 @@ namespace Refl
             // This encapsulates most of the internal logic.
             class Data
             {
-              private:
+              public:
                 // Explicit `private` allows nice code folding here.
 
                 // This is set to `true` once the class lists are finalized.

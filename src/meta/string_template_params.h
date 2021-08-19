@@ -69,12 +69,12 @@ namespace Meta
     template <Meta::ConstString S>
     struct ConstStringParam {};
 
+    /* MSVC can't handle this:
     // Returns a string encoded into a template parameter of a tag structure `ConstStringParam`.
     template <Meta::ConstString S>
     [[nodiscard]] constexpr ConstStringParam<S> operator""_c()
     {
         return {};
     }
+    */
 }
-
-using Meta::operator""_c;

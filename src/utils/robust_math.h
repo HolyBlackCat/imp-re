@@ -1,5 +1,9 @@
 #pragma once
 
+#ifdef _MSC_VER
+#include <intsafe.h>
+#endif
+
 #include <cmath>
 #include <compare>
 #include <concepts>
@@ -278,25 +282,57 @@ namespace Robust
     template <typename T>
     concept integral_non_bool = std::integral<T> && !std::is_same_v<T, bool> && !std::is_const_v<T> && !std::is_volatile_v<T>;
 
+
+    static_assert(std::is_signed_v<char>, "Go fix the `IMP_OVERFLOW_CHECKED_TYPE_LIST` macro.");
+
+    #define IMP_OVERFLOW_CHECKED_TYPE_LIST(op) \
+        if constexpr (false) {} \
+        IMP_OVERFLOW_CHECKED_TYPE( op, signed char        , Int8     ) \
+        IMP_OVERFLOW_CHECKED_TYPE( op, unsigned char      , UInt8    ) \
+        IMP_OVERFLOW_CHECKED_TYPE( op, short              , Short    ) \
+        IMP_OVERFLOW_CHECKED_TYPE( op, unsigned short     , UShort   ) \
+        IMP_OVERFLOW_CHECKED_TYPE( op, int                , Int      ) \
+        IMP_OVERFLOW_CHECKED_TYPE( op, unsigned int       , UInt     ) \
+        IMP_OVERFLOW_CHECKED_TYPE( op, long               , Long     ) \
+        IMP_OVERFLOW_CHECKED_TYPE( op, unsigned long      , ULong    ) \
+        IMP_OVERFLOW_CHECKED_TYPE( op, long long          , LongLong ) \
+        IMP_OVERFLOW_CHECKED_TYPE( op, unsigned long long , ULongLong) \
+        else {static_assert(Meta::value<false, C>, "Unsupported type."); return false;}
+
+    #define IMP_OVERFLOW_CHECKED_TYPE(op, type, name) else if constexpr (std::is_same_v<C, type>) return bool(::name##op(a, b, &c));
+
+
     // Addition.
     template <integral_non_bool C, std::same_as<C> A, std::same_as<C> B>
     constexpr bool addition_fails(A a, B b, C &c)
     {
+        #ifdef _MSC_VER
+        IMP_OVERFLOW_CHECKED_TYPE_LIST(Add);
+        #else
         return __builtin_add_overflow(a, b, &c);
+        #endif
     }
 
     // Subtraction.
     template <integral_non_bool C, std::same_as<C> A, std::same_as<C> B>
     constexpr bool subtraction_fails(A a, B b, C &c)
     {
+        #ifdef _MSC_VER
+        IMP_OVERFLOW_CHECKED_TYPE_LIST(Sub);
+        #else
         return __builtin_sub_overflow(a, b, &c);
+        #endif
     }
 
     // Multiplication.
     template <integral_non_bool C, std::same_as<C> A, std::same_as<C> B>
     constexpr bool multiplication_fails(A a, B b, C &c)
     {
+        #ifdef _MSC_VER
+        IMP_OVERFLOW_CHECKED_TYPE_LIST(Mult);
+        #else
         return __builtin_mul_overflow(a, b, &c);
+        #endif
     }
 
     // Division.

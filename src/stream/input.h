@@ -226,7 +226,7 @@ namespace Stream
         struct Buffer
         {
             std::uint8_t *storage = nullptr;
-            std::size_t position = -1; // `-1` means 'unassigned'. Otherwise lower `log2(capacity)` bits must be set to 0.
+            std::size_t position = std::size_t(-1); // `-1` means 'unassigned'. Otherwise lower `log2(capacity)` bits must be set to 0.
 
             std::uint8_t ReadByte(std::size_t byte_pos) const
             {
