@@ -56,7 +56,7 @@ namespace Filesystem
                 return {};
             Program::Error("Unable to access directory `", dir_name, "`.");
         }
-        FINALLY( closedir(dir); )
+        FINALLY{closedir(dir);};
 
         std::vector<std::string> ret;
 

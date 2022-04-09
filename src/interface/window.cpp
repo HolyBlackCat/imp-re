@@ -141,13 +141,13 @@ namespace Interface
 
         // Allocate state
         global_data = data = std::make_shared<Data>();
-        FINALLY_ON_THROW( data = nullptr; )
-        FINALLY_ON_SUCCESS( data->is_complete = true; )
+        FINALLY_ON_THROW{data = nullptr;};
+        FINALLY_ON_SUCCESS{data->is_complete = true;};
 
         // Initialize SDL
         if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS))
             Program::Error(STR("Unable to initialize SDL.\nMessage: ", (SDL_GetError())));
-        FINALLY_ON_THROW( SDL_Quit(); )
+        FINALLY_ON_THROW{SDL_Quit();};
 
         // Position
         ivec2 pos = settings.pos;
@@ -226,7 +226,7 @@ namespace Interface
         data->handle = SDL_CreateWindow(title.c_str(), pos.x, pos.y, size.x, size.y, window_flags);
         if (!data->handle)
             Program::Error("Unable to create a window with following properties:\n", settings.Summary(), extra_error_details);
-        FINALLY_ON_THROW( SDL_DestroyWindow(data->handle); )
+        FINALLY_ON_THROW{SDL_DestroyWindow(data->handle);};
 
         // Get an appropriate display mode for fullscreen.
         SDL_DisplayMode display_mode{};
@@ -252,7 +252,7 @@ namespace Interface
         data->context = SDL_GL_CreateContext(data->handle);
         if (!data->context)
             Program::Error("Unable to create an OpenGL context with following properties:\n", settings.Summary(), extra_error_details);
-        FINALLY_ON_THROW( SDL_GL_DeleteContext(data->context); )
+        FINALLY_ON_THROW{SDL_GL_DeleteContext(data->context);};
 
         // Set the minimal size
         if (settings.min_size)
@@ -556,7 +556,7 @@ namespace Interface
               case SDL_DROPTEXT:
                 if (event.drop.file != 0)
                 {
-                    FINALLY( SDL_free(event.drop.file); )
+                    FINALLY{SDL_free(event.drop.file);};
 
                     if (event.type == SDL_DROPFILE)
                         data->dropped_files.emplace_back(event.drop.file);

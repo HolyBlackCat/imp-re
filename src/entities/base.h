@@ -1061,12 +1061,12 @@ namespace Ent
                 // Allocate the index.
                 // We do it before allocating the entity, because the index allocation is more likely to fail.
                 auto new_index = entity_indices.InsertAny();
-                FINALLY_ON_THROW( entity_indices.EraseUnordered(new_index); )
+                FINALLY_ON_THROW{entity_indices.EraseUnordered(new_index);};
 
                 // Allocate the entity.
                 EntityData &new_entity = entities[new_index];
                 new_entity.ptr = entity_unique_ptr_t(Tag::template Allocate<FinalEntity<C>>(impl::MemoryManagementTag{}, std::forward<P>(params)...));
-                FINALLY_ON_THROW( new_entity.ptr = nullptr; )
+                FINALLY_ON_THROW{new_entity.ptr = nullptr;};
                 static_cast<impl::EntityHidden<Tag> &>(*new_entity.ptr).entity_index = new_index;
 
                 // Indices of lists to which the entity should be added.
@@ -1074,11 +1074,12 @@ namespace Ent
 
                 // Add the entity to the lists.
                 std::size_t list_pos = 0;
-                FINALLY_ON_THROW(
+                FINALLY_ON_THROW
+                {
                     // Removing from the lists not in the reverse order. It shouldn't matter.
                     for (std::size_t i = 0; i < list_pos; i++)
                         lists[list_indices[i]]->Erase(*new_entity.ptr);
-                )
+                };
                 for (; list_pos < list_indices.size(); list_pos++)
                     lists[list_indices[list_pos]]->Insert(*new_entity.ptr);
 

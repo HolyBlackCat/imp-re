@@ -23,7 +23,7 @@ namespace Graphics
             if (!handle)
                 Program::Error("Unable to create a dummy vertex array object.");
             // Not needed because nothing can throw below this point:
-            // FINALLY_ON_THROW( glDeleteVertexArrays(1, &handle); )
+            // FINALLY_ON_THROW{glDeleteVertexArrays(1, &handle);};
             glBindVertexArray(handle);
             #endif
         }

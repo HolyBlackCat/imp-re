@@ -36,7 +36,7 @@ namespace Program
             if (loop_running)
                 return;
             loop_running = true;
-            FINALLY( loop_running = false; )
+            FINALLY{loop_running = false;};
 
             // Run the loop.
             while (RunSingleFrame()) {}
@@ -82,7 +82,7 @@ namespace Program
             if (executing_frame)
                 return !stop;
             executing_frame = true;
-            FINALLY( executing_frame = false; )
+            FINALLY{executing_frame = false;};
 
             // Load some basic config from state.
             auto *metronome = GetTickMetronome();

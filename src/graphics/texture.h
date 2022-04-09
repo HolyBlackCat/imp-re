@@ -48,7 +48,7 @@ namespace Graphics
             if (!data.handle)
                 Program::Error("Unable to create a texture.");
             // Not needed because there is no code below this point:
-            // FINALLY_ON_THROW( glDeleteTextures(1, &data.handle); )
+            // FINALLY_ON_THROW{glDeleteTextures(1, &data.handle);};
         }
 
         TexObject(TexObject &&other) noexcept : data(std::exchange(other.data, {})) {}

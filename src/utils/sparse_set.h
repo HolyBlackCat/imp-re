@@ -70,11 +70,11 @@ class SparseSet
         std::size_t old_capacity = Capacity();
 
         values.resize(new_capacity);
-        FINALLY_ON_THROW( values.resize(old_capacity); )
+        FINALLY_ON_THROW{values.resize(old_capacity);};
 
         indices.resize(new_capacity);
         // Not needed since nothing throws below this point.
-        // FINALLY_ON_THROW( indices.resize(old_capacity); )
+        // FINALLY_ON_THROW{indices.resize(old_capacity);};
 
         std::iota(values.begin() + old_capacity, values.end(), old_capacity);
         std::iota(indices.begin() + old_capacity, indices.end(), old_capacity);

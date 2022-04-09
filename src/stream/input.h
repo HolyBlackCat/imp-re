@@ -530,7 +530,7 @@ namespace Stream
                 {
                     std::size_t old_pos = Position();
                     Seek(0, absolute);
-                    FINALLY( Seek(old_pos, absolute); ) // Roll back to the original posiiton, in case we end up in the middle of a multibyte character, or something throws.
+                    FINALLY{Seek(old_pos, absolute);}; // Roll back to the original posiiton, in case we end up in the middle of a multibyte character, or something throws.
 
                     Strings::SymbolPosition pos;
                     Strings::SymbolPosition::State pos_state;

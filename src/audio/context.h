@@ -68,7 +68,7 @@ namespace Audio
             data.device = alcOpenDevice(nullptr);
             if (!data.device)
                 Program::Error("Unable to create an OpenAL device.");
-            FINALLY_ON_THROW( alcCloseDevice(data.device); )
+            FINALLY_ON_THROW{alcCloseDevice(data.device);};
 
             // Get dynamic library version, stop if it's too old.
             ALCint lib_major, lib_minor;
@@ -85,7 +85,7 @@ namespace Audio
             data.context = alcCreateContext(data.device, attributes.empty() ? nullptr : &attributes.front().key);
             if (!data.context)
                 Program::Error("Unable to create an OpenAL context.\nMake sure your speakers or headphones are connected.");
-            FINALLY_ON_THROW( alcDestroyContext(data.context); )
+            FINALLY_ON_THROW{alcDestroyContext(data.context);};
 
             // Activate the context.
             if (!alcMakeContextCurrent(data.context))

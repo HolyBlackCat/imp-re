@@ -65,7 +65,7 @@ namespace Graphics
             if (!data.handle)
                 Program::Error("Unable to create an index buffer.");
             // Not needed because there is no code below this point:
-            // FINALLY_ON_THROW( glDeleteBuffers(1, &handle); )
+            // FINALLY_ON_THROW{glDeleteBuffers(1, &handle);};
         }
         IndexBuffer(int count, const T *source = 0, Usage usage = static_draw) : IndexBuffer(nullptr) // Binds the buffer.
         {

@@ -134,7 +134,7 @@ namespace Stream
             FILE *file = better_fopen(file_name.c_str(), "rb");
             if (!file)
                 Program::Error("Unable to open file `", file_name, "`.");
-            FINALLY( std::fclose(file); )
+            FINALLY{std::fclose(file);};
 
             std::setbuf(file, 0); // This can fail, but we don't care about it.
 

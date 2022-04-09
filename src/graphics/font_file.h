@@ -66,7 +66,7 @@ namespace Graphics
 
             if (FT_Open_Face(ft_context, &args, index, &data.ft_font))
                 Program::Error("Unable to load font `", data.file.name(), "`.");
-            FINALLY_ON_THROW( FT_Done_Face(data.ft_font); )
+            FINALLY_ON_THROW{FT_Done_Face(data.ft_font);};
 
             if (FT_Set_Pixel_Sizes(data.ft_font, size.x, size.y))
             {

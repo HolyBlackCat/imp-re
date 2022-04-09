@@ -243,7 +243,7 @@ namespace Audio
                     Program::Error("Unknown vorbis error.");
                     break;
                 }
-                FINALLY( ov_clear(&ogg_file_handle); )
+                FINALLY{ov_clear(&ogg_file_handle);};
 
 
                 // Get some info about the file. No cleanup appears to be necessary.

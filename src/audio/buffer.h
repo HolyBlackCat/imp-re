@@ -27,7 +27,7 @@ namespace Audio
             if (!data.handle)
                 Program::Error("Unable to create an audio buffer.");
             // Not needed because there is no code below this point:
-            // FINALLY_ON_THROW( alDeleteBuffers(1, &value); )
+            // FINALLY_ON_THROW{alDeleteBuffers(1, &value);};
         }
         Buffer(const Sound &sound) : Buffer(nullptr)
         {

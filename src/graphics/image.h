@@ -44,7 +44,7 @@ namespace Graphics
             uint8_t *bytes = stbi_load_from_memory(file.data(), file.size(), &img_size.x, &img_size.y, 0, 4);
             if (!bytes)
                 Program::Error("Unable to parse image: ", file.name());
-            FINALLY( stbi_image_free(bytes); )
+            FINALLY{stbi_image_free(bytes);};
             *this = Image(img_size, bytes);
         }
 

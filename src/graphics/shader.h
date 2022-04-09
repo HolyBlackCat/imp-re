@@ -237,7 +237,7 @@ namespace Graphics
             data.handle = glCreateProgram();
             if (!data.handle)
                 Program::Error("Unable to create shader program: `", name, "`.");
-            FINALLY_ON_THROW( glDeleteProgram(data.handle); )
+            FINALLY_ON_THROW{glDeleteProgram(data.handle);};
 
             for (std::string *source_ptr : {&vert_source, &frag_source})
             {
@@ -253,7 +253,7 @@ namespace Graphics
                 GLuint object = glCreateShader(is_vertex ? GL_VERTEX_SHADER : GL_FRAGMENT_SHADER);
                 if (!object)
                     Program::Error("Unable to create ", is_vertex ? "vertex" : "fragment", " shader object: `", name, "`.");
-                FINALLY( glDeleteShader(object); ) // Note that we unconditionally delete the shader. GL keeps it alive as long as it's attached to a program.
+                FINALLY{glDeleteShader(object);}; // Note that we unconditionally delete the shader. GL keeps it alive as long as it's attached to a program.
 
                 const char *source_bytes = source.c_str();
                 glShaderSource(object, 1, &source_bytes, nullptr);

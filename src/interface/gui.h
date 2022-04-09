@@ -124,15 +124,15 @@ namespace Interface
             data.context = ImGui::CreateContext();
             if (!data.context)
                 Program::Error("Unable to create an ImGui context.");
-            FINALLY_ON_THROW( ImGui::DestroyContext(data.context); )
+            FINALLY_ON_THROW{ImGui::DestroyContext(data.context);};
 
             if (!ImGui_ImplSDL2_InitForOpenGL(Window::Get().Handle(), Window::Get().Context()))
                 Program::Error("Unable to initialize ImGui SDL2 backend.");
-            FINALLY_ON_THROW( ImGui_ImplSDL2_Shutdown(); )
+            FINALLY_ON_THROW{ImGui_ImplSDL2_Shutdown();};
 
             if (!data.graphics_backend->Init(config))
                 Program::Error("Unable to initialize ImGui OpenGL backend.");
-            FINALLY_ON_THROW( data.graphics_backend->Shutdown(); )
+            FINALLY_ON_THROW{data.graphics_backend->Shutdown();};
 
             // Activate context.
             Activate();
@@ -195,7 +195,7 @@ namespace Interface
 
                 // Remember currently acitve context and activate this one instead.
                 ImGuiContext *old_context = ImGui::GetCurrentContext();
-                FINALLY( ImGui::SetCurrentContext(old_context); )
+                FINALLY{ImGui::SetCurrentContext(old_context);};
                 Activate();
 
                 // Handle event.
@@ -220,7 +220,7 @@ namespace Interface
         void PreTick()
         {
             ImGuiContext *old_context = ImGui::GetCurrentContext();
-            FINALLY( ImGui::SetCurrentContext(old_context); )
+            FINALLY{ImGui::SetCurrentContext(old_context);};
             Activate();
 
             if (data.frame_started)
@@ -239,7 +239,7 @@ namespace Interface
         void PreRender()
         {
             ImGuiContext *old_context = ImGui::GetCurrentContext();
-            FINALLY( ImGui::SetCurrentContext(old_context); )
+            FINALLY{ImGui::SetCurrentContext(old_context);};
             Activate();
 
             if (data.frame_started)
@@ -253,7 +253,7 @@ namespace Interface
         void PostRender()
         {
             ImGuiContext *old_context = ImGui::GetCurrentContext();
-            FINALLY( ImGui::SetCurrentContext(old_context); )
+            FINALLY{ImGui::SetCurrentContext(old_context);};
             Activate();
 
             if (data.frame_rendered)
@@ -282,7 +282,7 @@ namespace Interface
         ImFont *LoadDefaultFont(ImFontConfig config = {})
         {
             ImGuiContext *old_context = ImGui::GetCurrentContext();
-            FINALLY( ImGui::SetCurrentContext(old_context); )
+            FINALLY{ImGui::SetCurrentContext(old_context);};
             Activate();
 
             ImFont *ret = ImGui::GetIO().Fonts->AddFontDefault(&config);
@@ -296,7 +296,7 @@ namespace Interface
         ImFont *LoadFont(Stream::ReadOnlyData file, float size, ImFontConfig config = {}, const ImWchar *glyph_ranges = 0)
         {
             ImGuiContext *old_context = ImGui::GetCurrentContext();
-            FINALLY( ImGui::SetCurrentContext(old_context); )
+            FINALLY{ImGui::SetCurrentContext(old_context);};
             Activate();
 
             config.FontDataOwnedByAtlas = 0;
@@ -312,7 +312,7 @@ namespace Interface
         void RemoveAllFonts()
         {
             ImGuiContext *old_context = ImGui::GetCurrentContext();
-            FINALLY( ImGui::SetCurrentContext(old_context); )
+            FINALLY{ImGui::SetCurrentContext(old_context);};
             Activate();
 
             ImGui::GetIO().Fonts->Clear();
@@ -323,7 +323,7 @@ namespace Interface
         void RenderFontsWithFreetype(unsigned int global_flags = 0)
         {
             ImGuiContext *old_context = ImGui::GetCurrentContext();
-            FINALLY( ImGui::SetCurrentContext(old_context); )
+            FINALLY{ImGui::SetCurrentContext(old_context);};
             Activate();
 
             ImGuiFreeType::BuildFontAtlas(ImGui::GetIO().Fonts, global_flags);

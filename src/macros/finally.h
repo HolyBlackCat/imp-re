@@ -5,7 +5,8 @@
 
 namespace Macro
 {
-    template <typename T> class ScopeGuard
+    template <typename T>
+    class ScopeGuard
     {
         T func;
       public:
@@ -15,29 +16,47 @@ namespace Macro
         ~ScopeGuard() {func();}
     };
 
-    // Same as `ScopeGuard`, but can throw.
-    template <typename T> class ScopeGuardExc
+    template <typename T>
+    class ScopeGuardFail
     {
         T func;
+        int exc = std::uncaught_exceptions();
       public:
-        ScopeGuardExc(T &&func) : func(std::move(func)) {}
-        ScopeGuardExc(const ScopeGuardExc &) = delete;
-        ScopeGuardExc &operator=(const ScopeGuardExc &) = delete;
-        ~ScopeGuardExc() noexcept(false) {func();}
+        ScopeGuardFail(T &&func) : func(std::move(func)) {}
+        ScopeGuardFail(const ScopeGuardFail &) = delete;
+        ScopeGuardFail &operator=(const ScopeGuardFail &) = delete;
+        ~ScopeGuardFail()
+        {
+            if (std::uncaught_exceptions() > exc)
+                func();
+        }
+    };
+
+    template <typename T>
+    class ScopeGuardSuccess
+    {
+        T func;
+        int exc = std::uncaught_exceptions();
+      public:
+        ScopeGuardSuccess(T &&func) : func(std::move(func)) {}
+        ScopeGuardSuccess(const ScopeGuardSuccess &) = delete;
+        ScopeGuardSuccess &operator=(const ScopeGuardSuccess &) = delete;
+        ~ScopeGuardSuccess() noexcept(false)
+        {
+            if (std::uncaught_exceptions() <= exc)
+                func();
+        }
     };
 }
 
 #define FINALLY_impl_cat(a, b) FINALLY_impl_cat_(a, b)
 #define FINALLY_impl_cat_(a, b) a##b
 
-#define FINALLY(...) \
-    ::Macro::ScopeGuard FINALLY_impl_cat(_finally_object_,__LINE__) \
-    ([&]() -> void { __VA_ARGS__ });
+#define FINALLY \
+    ::Macro::ScopeGuard FINALLY_impl_cat(_finally_object_,__LINE__) = [&]() -> void
 
-#define FINALLY_ON_THROW(...) \
-    ::Macro::ScopeGuard FINALLY_impl_cat(_finally_object_,__LINE__) \
-    ([&, _finally_exc_depth_ = ::std::uncaught_exceptions()]() -> void { if (::std::uncaught_exceptions() > _finally_exc_depth_) {__VA_ARGS__} });
+#define FINALLY_ON_THROW \
+    ::Macro::ScopeGuardFail FINALLY_impl_cat(_finally_object_,__LINE__) = [&]() -> void
 
-#define FINALLY_ON_SUCCESS(...) \
-    ::Macro::ScopeGuardExc FINALLY_impl_cat(_finally_object_,__LINE__) \
-    ([&, _finally_exc_depth_ = ::std::uncaught_exceptions()]() -> void { if (::std::uncaught_exceptions() <= _finally_exc_depth_) {__VA_ARGS__} });
+#define FINALLY_ON_SUCCESS \
+    ::Macro::ScopeGuardSuccess FINALLY_impl_cat(_finally_object_,__LINE__) = [&]() -> void

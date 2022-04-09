@@ -69,7 +69,7 @@ namespace Graphics
             if (!data.handle)
                 Program::Error("Unable to create a framebuffer.");
             // Not needed because there is no code below this point:
-            // FINALLY_ON_THROW( glDeleteFramebuffers(1, &data.handle); )
+            // FINALLY_ON_THROW{glDeleteFramebuffers(1, &data.handle);};
         }
         FrameBuffer(Attachment att) : FrameBuffer(nullptr)
         {
@@ -139,7 +139,7 @@ namespace Graphics
 
             GLuint old_binding = binding;
             Bind();
-            FINALLY( BindHandle(old_binding); )
+            FINALLY{BindHandle(old_binding);};
 
             glFramebufferTexture2D(binding_point, GL_COLOR_ATTACHMENT0, att.type, att.handle, 0);
             #ifdef glDrawBuffer
@@ -158,7 +158,7 @@ namespace Graphics
 
             GLuint old_binding = binding;
             Bind();
-            FINALLY( BindHandle(old_binding); )
+            FINALLY{BindHandle(old_binding);};
 
             for (size_t i = 0; i < att.size(); i++)
                 glFramebufferTexture2D(binding_point, GL_COLOR_ATTACHMENT0 + i, att[i].type, att[i].handle, 0);
@@ -179,7 +179,7 @@ namespace Graphics
 
             GLuint old_binding = binding;
             Bind();
-            FINALLY( BindHandle(old_binding); )
+            FINALLY{BindHandle(old_binding);};
 
             glFramebufferTexture2D(binding_point, GL_DEPTH_ATTACHMENT, att.type, att.handle, 0);
 
@@ -194,7 +194,7 @@ namespace Graphics
 
             GLuint old_binding = binding;
             Bind();
-            FINALLY( BindHandle(old_binding); )
+            FINALLY{BindHandle(old_binding);};
 
             switch (glCheckFramebufferStatus(binding_point))
             {
