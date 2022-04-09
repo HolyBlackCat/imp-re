@@ -2,11 +2,17 @@
 
 #include <SDL_filesystem.h>
 
+#include "macros/finally.h"
+
 namespace Program
 {
     const std::string &ExeDir()
     {
-        static const std::string ret = SDL_GetBasePath();
+        static const std::string ret = []{
+            char *buf = SDL_GetBasePath();
+            FINALLY{SDL_free(buf);};
+            return std::string(buf);
+        }();
         return ret;
     }
 }
