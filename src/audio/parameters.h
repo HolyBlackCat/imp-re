@@ -46,6 +46,8 @@ namespace Audio
     	    alSpeedOfSound(n);
         }
 
+        // Emscripten's AL doesn't have this.
+        #ifdef AL_METERS_PER_UNIT
         // This is not listed in the original AL spec and was found by looking at the code.
         // Defaults to 1 (see AL_DEFAULT_METERS_PER_UNIT).
         // It seems to affect air absorption calculations, reverb, HRTF ("head-related transfer function", aka improved headphone sound), and possibly something else.
@@ -53,6 +55,7 @@ namespace Audio
         {
             alListenerf(AL_METERS_PER_UNIT, n);
         }
+        #endif
 
 
         enum Model

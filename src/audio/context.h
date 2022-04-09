@@ -20,6 +20,8 @@ namespace Audio
         ALCint key = 0;
         ALCint value = 0;
 
+        // Emscripten's AL doesn't support this.
+        #ifdef ALC_HRTF_SOFT
         // HRTF stands for "head-related transfer function".
         // Improves the 3D sound in your headphones.
         // From looking at AL code, it seems it should be enabled automatically when you're using headphones,
@@ -30,6 +32,7 @@ namespace Audio
         {
             return {ALC_HRTF_SOFT, enable.value_or(ALC_DONT_CARE_SOFT)};
         }
+        #endif
     };
 
     class Context
@@ -141,6 +144,8 @@ namespace Audio
             return data.context;
         }
 
+        // This also seems to be a part of the HRTF extension, that the Emscripten's AL doesn't have.
+        #ifdef ALC_HRTF_SOFT
         // Changes configuration for an existing context.
         // Note that we pass the vector by value, because we need to append a null element at the end before passing it to AL.
         void Reconfigure(attribute_list_t attributes)
@@ -151,5 +156,6 @@ namespace Audio
             if (alcResetDeviceSOFT(data.device, attributes.empty() ? nullptr : &attributes.front().key))
                 Program::Error("Unable to change an audio device configuration.");
         }
+        #endif
     };
 }
