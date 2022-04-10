@@ -94,7 +94,7 @@ namespace Graphics
 
 
         Text() {}
-        Text(const Font &font, const char *begin, const char *end = 0)
+        Text(const Font &font, const char *begin, const char *end = nullptr)
         {
             AddString(font, begin, end);
         }
@@ -152,15 +152,15 @@ namespace Graphics
             symbols[symbols.size() - 2].kerning = font.Kerning(symbols[symbols.size() - 2].ch, symbols[symbols.size() - 1].ch);
         }
 
-        Text &AddString(const Font &font, const char *begin, const char *end = 0)
+        Text &AddString(const Font &font, const char *begin, const char *end = nullptr)
         {
-            bool first = 1;
+            bool first = true;
             for (uint32_t ch : Unicode::Iterator(begin, end))
             {
                 AddSymbol(font, ch);
 
                 if (first)
-                    first = 0;
+                    first = false;
                 else
                     KernLastTwoSymbols(font);
             }
