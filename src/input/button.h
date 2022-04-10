@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <string>
 
 #include "input/enum.h"
@@ -18,7 +19,7 @@ namespace Input
 
             for (auto i = begin; i < end; i = Enum(i+1))
             {
-                if (window.GetInputTimes(i).press == tick)
+                if (window.GetInputData(i).press == tick)
                 {
                     index = i;
                     return true;
@@ -32,10 +33,10 @@ namespace Input
         Button() {}
         Button(Enum index) : index(index) {}
 
-        [[nodiscard]] bool pressed () const {auto window = Interface::Window::Get(); return window.GetInputTimes(index).press   == window.Ticks();}
-        [[nodiscard]] bool released() const {auto window = Interface::Window::Get(); return window.GetInputTimes(index).release == window.Ticks();}
-        [[nodiscard]] bool repeated() const {auto window = Interface::Window::Get(); return window.GetInputTimes(index).repeat  == window.Ticks();}
-        [[nodiscard]] bool down    () const {auto times = Interface::Window::Get().GetInputTimes(index); return times.press > times.release;}
+        [[nodiscard]] bool pressed () const {auto window = Interface::Window::Get(); return window.GetInputData(index).press   == window.Ticks();}
+        [[nodiscard]] bool released() const {auto window = Interface::Window::Get(); return window.GetInputData(index).release == window.Ticks();}
+        [[nodiscard]] bool repeated() const {auto window = Interface::Window::Get(); return window.GetInputData(index).repeat  == window.Ticks();}
+        [[nodiscard]] bool down    () const {return Interface::Window::Get().GetInputData(index).is_down;}
         [[nodiscard]] bool up      () const {return !down();}
 
         // Returns true if the key is not null.
@@ -124,6 +125,100 @@ namespace Input
         bool AssignMouseWheel()
         {
             return Assign(BeginMouseWheel, EndMouseWheel);
+        }
+    };
+
+    class ButtonList
+    {
+        std::vector<Button> buttons;
+        mutable std::uint64_t cached_time = 0;
+        mutable std::optional<bool> cached_pressed, cached_released, cached_repeated, cached_down;
+
+        void UpdateCache() const
+        {
+            auto cur_time = Interface::Window::Get().Ticks();
+            if (cur_time == cached_time)
+                return;
+            cached_time = cur_time;
+
+            cached_pressed.reset();
+            cached_released.reset();
+            cached_repeated.reset();
+            cached_down.reset();
+        }
+
+      public:
+        ButtonList() {}
+        ButtonList(std::vector<Button> buttons) : buttons(buttons) {}
+
+        [[nodiscard]] const std::vector<Button> &GetButtons() const {return buttons;}
+        [[nodiscard]] std::vector<Button> &ModifyButtons() {cached_time = 0; return buttons;}
+
+        [[nodiscard]] bool pressed() const
+        {
+            // Return true if at least one button is pressed, and none of them are down and not pressed at the same time.
+            UpdateCache();
+            if (!cached_pressed)
+            {
+                cached_pressed = false;
+                for (const Button &button : buttons)
+                {
+                    bool button_pressed = button.pressed();
+                    if (!button_pressed && button.down())
+                    {
+                        *cached_pressed = false;
+                        break;
+                    }
+                    if (button_pressed)
+                        *cached_pressed = true;
+                }
+            }
+            return *cached_pressed;
+        }
+
+        [[nodiscard]] bool released() const
+        {
+            // Return true if at least one button is released, and none of them are down.
+            UpdateCache();
+            if (!cached_released)
+            {
+                cached_released = false;
+                for (const Button &button : buttons)
+                {
+                    bool button_released = button.released();
+                    if (!button_released && !button.pressed() && button.down()) // This can't be just `button.down()` to properly handle regrabbing the (same or different) button on the same tick.
+                    {
+                        *cached_released = false;
+                        break;
+                    }
+                    if (button_released)
+                        *cached_released = true;
+                }
+            }
+            return *cached_released;
+        }
+
+        [[nodiscard]] bool repeated() const
+        {
+            // Return true if any of the buttons is repeated.
+            UpdateCache();
+            if (!cached_repeated)
+                cached_repeated = std::any_of(buttons.begin(), buttons.end(), std::mem_fn(&Button::repeated));
+            return *cached_repeated;
+        }
+
+        [[nodiscard]] bool down() const
+        {
+            // Return true if any of the buttons is down.
+            UpdateCache();
+            if (!cached_down)
+                cached_down = std::any_of(buttons.begin(), buttons.end(), std::mem_fn(&Button::down));
+            return *cached_down;
+        }
+
+        [[nodiscard]] bool up() const
+        {
+            return !down();
         }
     };
 }

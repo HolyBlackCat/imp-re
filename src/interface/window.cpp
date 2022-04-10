@@ -82,7 +82,7 @@ namespace Interface
         // Note that the counters start from 1.
         uint64_t tick_counter = 1, frame_counter = 1;
 
-        uint64_t resize_time = 2; // Sic! This causes a resize to always be reported after the first `Tick()` call.
+        uint64_t resize_time = 2; // Sic! If we don't get an initial resize event, this will force it after the first `Tick()` call.
         uint64_t exit_request_time = 0;
 
         std::string text_input;
@@ -92,7 +92,7 @@ namespace Interface
 
         bool keyboard_focus = false, mouse_focus = false;
 
-        std::vector<InputTimes> input_times;
+        std::vector<InputData> input;
 
         std::vector<std::string> dropped_files, dropped_strings;
 
@@ -279,7 +279,7 @@ namespace Interface
         cglfl::load(SDL_GL_GetProcAddress);
 
         // Allocate input array
-        data->input_times = std::vector<InputTimes>(Input::IndexCount);
+        data->input = std::vector<InputData>(Input::IndexCount);
     }
 
     SDL_Window *Window::GetHandleOrNull()
@@ -448,16 +448,14 @@ namespace Interface
         while (SDL_PollEvent(&event))
         {
             bool drop_event = false;
-
             for (auto &hook : hooks)
             {
-                if (!hook(event))
+                if (hook(event))
                 {
                     drop_event = true;
                     break;
                 }
             }
-
             if (drop_event)
                 continue;
 
@@ -472,10 +470,12 @@ namespace Interface
                     int index = event.key.keysym.scancode;
                     if (index < Input::BeginKeys || index >= Input::EndKeys || index == 0)
                         break;
-                    data->input_times[Input::BeginKeys + index].repeat = data->tick_counter;
+                    auto &elem = data->input[Input::BeginKeys + index];
+                    elem.repeat = data->tick_counter;
                     if (event.key.repeat)
                         break;
-                    data->input_times[Input::BeginKeys + index].press = data->tick_counter;
+                    elem.press = data->tick_counter;
+                    elem.is_down = true;
                 }
                 break;
               case SDL_KEYUP:
@@ -485,31 +485,31 @@ namespace Interface
                         break;
                     if (event.key.repeat) // We don't care about repeated releases.
                         break;
-                    data->input_times[Input::BeginKeys + index].release = data->tick_counter;
+                    auto &elem = data->input[Input::BeginKeys + index];
+                    elem.release = data->tick_counter;
+                    elem.is_down = false;
                 }
                 break;
 
               case SDL_MOUSEBUTTONDOWN:
                 {
-                    int index = event.button.button;
-                    if (index == 0)
-                        break;
-                    index--;
+                    int index = event.button.button - 1;
                     if (index >= Input::EndMouseButtons - Input::BeginMouseButtons)
                         break;
-                    data->input_times[Input::BeginMouseButtons + index].press = data->tick_counter;
-                    data->input_times[Input::BeginMouseButtons + index].repeat = data->tick_counter;
+                    auto &elem = data->input[Input::BeginMouseButtons + index];
+                    elem.press = data->tick_counter;
+                    elem.repeat = data->tick_counter;
+                    elem.is_down = true;
                 }
                 break;
               case SDL_MOUSEBUTTONUP:
                 {
-                    int index = event.button.button;
-                    if (index == 0)
-                        break;
-                    index--;
+                    int index = event.button.button - 1;
                     if (index >= Input::EndMouseButtons - Input::BeginMouseButtons)
                         break;
-                    data->input_times[Input::BeginMouseButtons + index].release = data->tick_counter;
+                    auto &elem = data->input[Input::BeginMouseButtons + index];
+                    elem.release = data->tick_counter;
+                    elem.is_down = false;
                 }
                 break;
 
@@ -522,9 +522,9 @@ namespace Interface
                     else
                         wheel_enum = event.wheel.x > 0 ? Input::mouse_wheel_right : Input::mouse_wheel_left;
 
-                    data->input_times[wheel_enum].press = data->tick_counter;
-                    data->input_times[wheel_enum].release = data->tick_counter;
-                    data->input_times[wheel_enum].repeat = data->tick_counter;
+                    data->input[wheel_enum].press = data->tick_counter;
+                    data->input[wheel_enum].release = data->tick_counter;
+                    data->input[wheel_enum].repeat = data->tick_counter;
                 }
                 break;
 
@@ -540,8 +540,7 @@ namespace Interface
                     data->exit_request_time = data->tick_counter;
                     break;
                   case SDL_WINDOWEVENT_SIZE_CHANGED:
-                    if (data->tick_counter == 1)
-                        break;
+                  case SDL_WINDOWEVENT_RESIZED: // This shouldn't be necessary, but just in case.
                     data->resize_time = data->tick_counter;
                     SDL_GetWindowSize(data->handle, &data->size.x, &data->size.y);
                     break;
@@ -611,12 +610,12 @@ namespace Interface
         return data->text_input;
     }
 
-    Window::InputTimes Window::GetInputTimes(Input::Enum index) const
+    Window::InputData Window::GetInputData(Input::Enum index) const
     {
         if (index <= 0/*sic*/ || index >= Input::IndexCount)
             return {};
 
-        return data->input_times[index];
+        return data->input[index];
     }
 
     ivec2 Window::MousePos() const

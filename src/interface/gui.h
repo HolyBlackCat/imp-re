@@ -187,12 +187,11 @@ namespace Interface
 
         enum HookMode {block_events, pass_events};
 
-        auto EventHook(HookMode mode = block_events) // Use this with `Window::ProcessEvents()`.
+        // Use this with `Window::ProcessEvents()`.
+        auto EventHook(HookMode mode = block_events)
         {
             return [this, mode](SDL_Event &event) -> bool
             {
-                bool false_if_blocking = mode != block_events;
-
                 // Remember currently acitve context and activate this one instead.
                 ImGuiContext *old_context = ImGui::GetCurrentContext();
                 FINALLY{ImGui::SetCurrentContext(old_context);};
@@ -201,19 +200,19 @@ namespace Interface
                 // Handle event.
                 bool event_used = ImGui_ImplSDL2_ProcessEvent(&event);
                 if (!event_used)
-                    return true;
+                    return false;
 
                 // Discard keyboard events if the keyboard is captured.
                 // Note that we don't discard `SDL_KEYUP` to prevent keys from getting stuck.
                 if (ImGui::GetIO().WantCaptureKeyboard && (event.type == SDL_KEYDOWN || event.type == SDL_TEXTINPUT || event.type == SDL_TEXTEDITING))
-                    return false_if_blocking;
+                    return mode == block_events;
 
                 // Discard mouse events if the mouse is captured.
                 // Note that we don't discard `SDL_MOUSEBUTTONUP` to prevent mouse buttons from getting stuck.
                 if (ImGui::GetIO().WantCaptureMouse && (event.type == SDL_MOUSEBUTTONDOWN || event.type == SDL_MOUSEWHEEL))
-                    return false_if_blocking;
+                    return mode == block_events;
 
-                return true;
+                return false;
             };
         }
 

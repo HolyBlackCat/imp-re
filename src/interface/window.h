@@ -109,7 +109,7 @@ namespace Interface
         [[nodiscard]] FullscreenMode Mode() const;
 
         // Processes events, increments the tick counter.
-        // If hooks are specified, applies them in order to each event. If a hook returns false, the current event is discarded.
+        // If hooks are specified, applies them in order to each event. If a hook returns true, the current event is discarded.
         void ProcessEvents(const std::vector<std::function<bool(SDL_Event &)>> &hooks = {});
 
         // Updates the picture on the screen, increments the frame counter.
@@ -133,14 +133,16 @@ namespace Interface
         // Returns text that was entered during the last tick, in UTF-8.
         [[nodiscard]] const std::string &TextInput() const;
 
-        struct InputTimes
+        struct InputData
         {
             uint64_t press = 0, release = 0, repeat = 0;
+            // This can't be deduced from the timing alone, since multiple press and release events can arrive at the same tick.
+            bool is_down = false;
         };
         // Returns the information about a specific button.
         // The values represent the last time points when a specific action happened to the button.
         // They are taken from the `Ticks()` counter.
-        [[nodiscard]] InputTimes GetInputTimes(Input::Enum index) const;
+        [[nodiscard]] InputData GetInputData(Input::Enum index) const;
 
         // Returns mouse position.
         [[nodiscard]] ivec2 MousePos() const;
