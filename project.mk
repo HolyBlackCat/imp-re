@@ -16,7 +16,7 @@ $(Mode)CXXFLAGS := -D_GLIBCXX_ASSERTIONS
 $(call NewMode,release)
 $(Mode)COMMON_FLAGS := -O3
 $(Mode)_proj_commonflags := -flto
-$(Mode)CXXFLAGS := -DNDEBUG
+$(Mode)CXXFLAGS := -DNDEBUG -DIMP_PLATFORM_FLAG_prod=1
 $(Mode)LDFLAGS := -s
 $(Mode)_proj_win_subsystem := -mwindows
 

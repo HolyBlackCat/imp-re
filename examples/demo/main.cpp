@@ -16,7 +16,11 @@ Graphics::FontFile Fonts::Files::main(Program::ExeDir() + "assets/Monocat_6x12.t
 Graphics::Font Fonts::main;
 
 Graphics::TextureAtlas texture_atlas = []{
-    Graphics::TextureAtlas ret(ivec2(2048), "assets/_images", Program::ExeDir() + "assets/atlas.png", Program::ExeDir() + "assets/atlas.refl", {{"/font_storage", ivec2(256)}});
+    // Don't generate a new atlas in prod.
+    std::string source_dir = IMP_PLATFORM_IF_NOT(prod)("assets/_images") "";
+    // Look for the atlas relative to the exe in prod, and relative to the project root otherwise.
+    std::string target_prefix = IMP_PLATFORM_IF(prod)(Program::ExeDir() + "assets/") IMP_PLATFORM_IF_NOT(prod)("assets/assets/");
+    Graphics::TextureAtlas ret(ivec2(2048), source_dir, target_prefix + "atlas.png", target_prefix + "atlas.refl", {{"/font_storage", ivec2(256)}});
     auto font_region = ret.Get("/font_storage");
 
     Unicode::CharSet glyph_ranges;

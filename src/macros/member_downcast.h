@@ -10,7 +10,7 @@ Example usage:
     {
         int x = 42;
         float y = 12.3;
-        STORE_TYPE_HASH // Can be anywhere in the class.
+        IMP_STORE_TYPE_HASH // Can be anywhere in the class.
     };
 
     int main()
@@ -18,16 +18,16 @@ Example usage:
         A a;
         auto &ax = a.x;
         auto &ay = a.y;
-        std::cout << MEMBER_DOWNCAST(A, x, ax).y << '\n'; // 12.3
-        std::cout << MEMBER_DOWNCAST_PTR(A, y, &ay)->x << '\n'; // 42
+        std::cout << IMP_MEMBER_DOWNCAST(A, x, ax).y << '\n'; // 12.3
+        std::cout << IMP_MEMBER_DOWNCAST_PTR(A, y, &ay)->x << '\n'; // 42
 
         return 0;
     }
 
-In release builds, `MEMBER_DOWNCAST[_PTR]` merely shifts the pointer
-by an `offsetof` (and does a few `static_assert`s). STORE_TYPE_HASH expands to nothing.
+In release builds, `IMP_MEMBER_DOWNCAST[_PTR]` merely shifts the pointer
+by an `offsetof` (and does a few `static_assert`s). IMP_STORE_TYPE_HASH expands to nothing.
 
-In debug builds however, `STORE_TYPE_HASH` expands to a member variable containing the enclosing class type hash.
+In debug builds however, `IMP_STORE_TYPE_HASH` expands to a member variable containing the enclosing class type hash.
 This variable is checked by the casts, so invalid casts are detected at runtime.
 
 Note that the second parameter (the member name) can accept a `.`-separated chain of members.
@@ -59,5 +59,5 @@ namespace Macro::MemberDowncast
     }
 }
 
-#define MEMBER_DOWNCAST_PTR(_class, _member_name, ...) ::Macro::MemberDowncast::Ptr<_class, decltype(_class::_member_name), offsetof(_class, _member_name)>(__VA_ARGS__)
-#define MEMBER_DOWNCAST(_class, _member_name, ...) ::Macro::MemberDowncast::Ref<_class, decltype(_class::_member_name), offsetof(_class, _member_name)>(__VA_ARGS__)
+#define IMP_MEMBER_DOWNCAST_PTR(_class, _member_name, ...) ::Macro::MemberDowncast::Ptr<_class, decltype(_class::_member_name), offsetof(_class, _member_name)>(__VA_ARGS__)
+#define IMP_MEMBER_DOWNCAST(_class, _member_name, ...) ::Macro::MemberDowncast::Ref<_class, decltype(_class::_member_name), offsetof(_class, _member_name)>(__VA_ARGS__)

@@ -156,3 +156,10 @@
 #if IMP_PLATFORM_IS(pc) + IMP_PLATFORM_IS(mobile) > 1
 #  error Invalid platform flags: More than one OS category is specified.
 #endif
+
+// - Build modes
+
+// Needs to be set to true manually.
+#ifndef IMP_PLATFORM_FLAG_prod
+#  define IMP_PLATFORM_FLAG_prod 0
+#endif

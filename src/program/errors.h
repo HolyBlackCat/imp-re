@@ -6,6 +6,7 @@
 
 #include "interface/messagebox.h"
 #include "program/exit.h"
+#include "program/platform.h"
 #include "strings/format.h"
 
 namespace Program
@@ -80,7 +81,7 @@ namespace Program
 #define ASSERT_ALWAYS_impl_low(line, ...) ::Program::impl::Assert(__FILE__ ":" #line, __PRETTY_FUNCTION__, __VA_ARGS__, #__VA_ARGS__)
 
 // An assertion macro that only works in debug builds. (But you can redefine it if necessary.)
-#ifdef NDEBUG
+#if IMP_PLATFORM_IS(prod)
 #  define ASSERT(...) void(0)
 #else
 #  define ASSERT(...) ASSERT_ALWAYS(__VA_ARGS__)
