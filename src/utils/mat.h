@@ -1,6 +1,6 @@
 // mat.h
 // Vector and matrix math
-// Version 3.3.5
+// Version 3.3.6
 // Generated, don't touch.
 
 #pragma once
@@ -226,21 +226,21 @@ namespace Math
         using u64mat2x4 = mat<2,4,std::uint64_t>; using u64mat3x4 = mat<3,4,std::uint64_t>; using u64mat4x4 = mat<4,4,std::uint64_t>;
         using u64mat2 = u64mat2x2; using u64mat3 = u64mat3x3; using u64mat4 = u64mat4x4;
 
-        template <int D> using index_vec = vec<D,std::ptrdiff_t>;
-        template <int W, int H> using index_mat = mat<W,H,std::ptrdiff_t>;
-        using index_vec2 = vec<2,std::ptrdiff_t>; using index_vec3 = vec<3,std::ptrdiff_t>; using index_vec4 = vec<4,std::ptrdiff_t>;
-        using index_mat2x2 = mat<2,2,std::ptrdiff_t>; using index_mat3x2 = mat<3,2,std::ptrdiff_t>; using index_mat4x2 = mat<4,2,std::ptrdiff_t>;
-        using index_mat2x3 = mat<2,3,std::ptrdiff_t>; using index_mat3x3 = mat<3,3,std::ptrdiff_t>; using index_mat4x3 = mat<4,3,std::ptrdiff_t>;
-        using index_mat2x4 = mat<2,4,std::ptrdiff_t>; using index_mat3x4 = mat<3,4,std::ptrdiff_t>; using index_mat4x4 = mat<4,4,std::ptrdiff_t>;
-        using index_mat2 = index_mat2x2; using index_mat3 = index_mat3x3; using index_mat4 = index_mat4x4;
+        template <int D> using xvec = vec<D,std::ptrdiff_t>;
+        template <int W, int H> using xmat = mat<W,H,std::ptrdiff_t>;
+        using xvec2 = vec<2,std::ptrdiff_t>; using xvec3 = vec<3,std::ptrdiff_t>; using xvec4 = vec<4,std::ptrdiff_t>;
+        using xmat2x2 = mat<2,2,std::ptrdiff_t>; using xmat3x2 = mat<3,2,std::ptrdiff_t>; using xmat4x2 = mat<4,2,std::ptrdiff_t>;
+        using xmat2x3 = mat<2,3,std::ptrdiff_t>; using xmat3x3 = mat<3,3,std::ptrdiff_t>; using xmat4x3 = mat<4,3,std::ptrdiff_t>;
+        using xmat2x4 = mat<2,4,std::ptrdiff_t>; using xmat3x4 = mat<3,4,std::ptrdiff_t>; using xmat4x4 = mat<4,4,std::ptrdiff_t>;
+        using xmat2 = xmat2x2; using xmat3 = xmat3x3; using xmat4 = xmat4x4;
 
-        template <int D> using size_vec = vec<D,std::size_t>;
-        template <int W, int H> using size_mat = mat<W,H,std::size_t>;
-        using size_vec2 = vec<2,std::size_t>; using size_vec3 = vec<3,std::size_t>; using size_vec4 = vec<4,std::size_t>;
-        using size_mat2x2 = mat<2,2,std::size_t>; using size_mat3x2 = mat<3,2,std::size_t>; using size_mat4x2 = mat<4,2,std::size_t>;
-        using size_mat2x3 = mat<2,3,std::size_t>; using size_mat3x3 = mat<3,3,std::size_t>; using size_mat4x3 = mat<4,3,std::size_t>;
-        using size_mat2x4 = mat<2,4,std::size_t>; using size_mat3x4 = mat<3,4,std::size_t>; using size_mat4x4 = mat<4,4,std::size_t>;
-        using size_mat2 = size_mat2x2; using size_mat3 = size_mat3x3; using size_mat4 = size_mat4x4;
+        template <int D> using zvec = vec<D,std::size_t>;
+        template <int W, int H> using zmat = mat<W,H,std::size_t>;
+        using zvec2 = vec<2,std::size_t>; using zvec3 = vec<3,std::size_t>; using zvec4 = vec<4,std::size_t>;
+        using zmat2x2 = mat<2,2,std::size_t>; using zmat3x2 = mat<3,2,std::size_t>; using zmat4x2 = mat<4,2,std::size_t>;
+        using zmat2x3 = mat<2,3,std::size_t>; using zmat3x3 = mat<3,3,std::size_t>; using zmat4x3 = mat<4,3,std::size_t>;
+        using zmat2x4 = mat<2,4,std::size_t>; using zmat3x4 = mat<3,4,std::size_t>; using zmat4x4 = mat<4,4,std::size_t>;
+        using zmat2 = zmat2x2; using zmat3 = zmat3x3; using zmat4 = zmat4x4;
     }
 
     namespace Custom // Customization points.

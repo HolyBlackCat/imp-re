@@ -7,7 +7,7 @@
 #include <sstream>
 #include <type_traits>
 
-#define VERSION "3.3.5"
+#define VERSION "3.3.6"
 
 #pragma GCC diagnostic ignored "-Wpragmas" // Silence GCC warning about the next line disabling a warning that GCC doesn't have.
 #pragma GCC diagnostic ignored "-Wstring-plus-int" // Silence clang warning about `1+R"()"` pattern.
@@ -39,8 +39,8 @@ namespace data
         {"u32"   , "std::uint32_t"     },
         {"i64"   , "std::int64_t"      },
         {"u64"   , "std::uint64_t"     },
-        {"index_", "std::ptrdiff_t"    },
-        {"size_" , "std::size_t"       },
+        {"x"     , "std::ptrdiff_t"    },
+        {"z"     , "std::size_t"       },
     };
     constexpr int type_list_len = std::extent_v<decltype(type_list)>;
 

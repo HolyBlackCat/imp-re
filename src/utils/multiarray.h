@@ -23,7 +23,7 @@ class MultiArray
 
     using type = T;
     using index_t = std::ptrdiff_t;
-    using index_vec_t = index_vec<D>;
+    using index_vec_t = xvec<D>;
 
     struct ReflHelper; // Our reflection metadata uses this to access private fields.
 

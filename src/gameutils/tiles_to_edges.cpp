@@ -49,7 +49,7 @@ namespace GameUtils::TilesToEdges
         }
 
         // Fill [tile,vertex] to edge mapping.
-        edge_starting_at = Array2D<std::size_t>(index_vec2(tile_vertices.size(), vertices.size()), -1zu);
+        edge_starting_at = Array2D<std::size_t>(xvec2(tile_vertices.size(), vertices.size()), -1zu);
 
         for (std::size_t tile = 0; tile < tile_vertices.size(); tile++)
         {
@@ -59,7 +59,7 @@ namespace GameUtils::TilesToEdges
                 std::size_t prev_vertex = tile_loop.back();
                 for (std::size_t vertex : tile_loop)
                 {
-                    std::size_t &cell = edge_starting_at.safe_nonthrowing_at(index_vec2(tile, prev_vertex));
+                    std::size_t &cell = edge_starting_at.safe_nonthrowing_at(xvec2(tile, prev_vertex));
                     if (cell != -1zu)
                         throw std::runtime_error(FMT("In tile type {}: Multiple edges begin at vertex {}.", tile, prev_vertex));
                     cell = edge_ids.at(std::pair(prev_vertex, vertex));
@@ -137,7 +137,7 @@ namespace GameUtils::TilesToEdges
                 throw std::runtime_error("Invalid vertex in `matching_vertices`.");
         }
 
-        for (index_vec2 pos : vector_range(edge_starting_at.size()))
+        for (xvec2 pos : vector_range(edge_starting_at.size()))
         {
             std::size_t edge = edge_starting_at.safe_throwing_at(pos);
             if (edge != -1zu && edge >= edge_points.size())
@@ -174,7 +174,7 @@ namespace GameUtils::TilesToEdges
             arr = Array2D<bits_t>(params.tiles.size());
 
         // Fill the edge bit array, and remove the conflicting edges.
-        for (index_vec2 tile_pos : vector_range(params.tiles.size()))
+        for (xvec2 tile_pos : vector_range(params.tiles.size()))
         {
             std::size_t tile = params.tiles.unsafe_at(tile_pos);
             if (tile >= tileset.tile_vertices.size())
@@ -183,7 +183,7 @@ namespace GameUtils::TilesToEdges
             for (const auto &vertex_loop : tileset.tile_vertices[tile])
             for (std::size_t vertex : vertex_loop)
             {
-                std::size_t edge = tileset.edge_starting_at.safe_nonthrowing_at(index_vec2(tile, vertex));
+                std::size_t edge = tileset.edge_starting_at.safe_nonthrowing_at(xvec2(tile, vertex));
 
                 bool ok = true;
                 for (int dir = 0; dir < 4; dir++)
@@ -219,14 +219,14 @@ namespace GameUtils::TilesToEdges
         }
 
         // Generate loops from the edges.
-        for (const index_vec2 starting_tile_pos : vector_range(params.tiles.size()))
+        for (const xvec2 starting_tile_pos : vector_range(params.tiles.size()))
         {
             const std::size_t starting_tile = params.tiles.unsafe_at(starting_tile_pos);
 
             for (const auto &vertex_loop : tileset.tile_vertices[starting_tile])
             for (const std::size_t pre_starting_vertex : vertex_loop)
             {
-                const std::size_t starting_edge = tileset.edge_starting_at.safe_nonthrowing_at(index_vec2(starting_tile, pre_starting_vertex));
+                const std::size_t starting_edge = tileset.edge_starting_at.safe_nonthrowing_at(xvec2(starting_tile, pre_starting_vertex));
                 if (auto loc = BitVec::BitLocation<bits_t>(starting_edge); !(valid_edges[loc.index].safe_nonthrowing_at(starting_tile_pos) & loc.mask))
                     continue; // This edge doesn't exist.
 
@@ -273,7 +273,7 @@ namespace GameUtils::TilesToEdges
                             continue; // Out of bounds.
 
                         std::size_t next_tile = params.tiles.safe_nonthrowing_at(next_tile_pos);
-                        std::size_t next_edge = tileset.edge_starting_at.safe_nonthrowing_at(index_vec2(next_tile, next_vertex_a));
+                        std::size_t next_edge = tileset.edge_starting_at.safe_nonthrowing_at(xvec2(next_tile, next_vertex_a));
                         if (next_edge == -1zu)
                             continue; // No edge.
 
