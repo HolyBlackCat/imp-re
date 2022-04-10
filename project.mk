@@ -62,6 +62,16 @@ $(call ProjectSetting,libs,*)
 $(call ProjectSetting,bad_lib_flags,-Dmain=%>>>-DIMP_ENTRY_POINT_OVERRIDE=%)
 
 
+# --- Codegen ---
+
+_codegen_command = $(CXX) -std=c++20 -Wall -Wextra -pedantic-errors
+override _codegen_dir := gen
+override _codegen_list := math:src/utils/mat.h macros:src/macros/generated.h
+override _codegen_target = $2: $(_codegen_dir)/make_$1.cpp ; \
+	@$(run_without_buffering)$(MAKE) -f gen/Makefile _gen_dir=$(_codegen_dir) _gen_source_file=make_$1 _gen_target_file=$2 _gen_command=$(call quote,$$(_codegen_command)) --no-print-directory
+$(foreach f,$(_codegen_list),$(eval $(call _codegen_target,$(word 1,$(subst :, ,$f)),$(word 2,$(subst :, ,$f)))))
+
+
 
 # --- Dependencies ---
 
