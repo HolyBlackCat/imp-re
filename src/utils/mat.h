@@ -1,6 +1,6 @@
 // mat.h
 // Vector and matrix math
-// Version 3.3.6
+// Version 3.3.7
 // Generated, don't touch.
 
 #pragma once
@@ -1855,14 +1855,19 @@ namespace Math
             }
         }
 
-        // Simple implementation of `pow` for non-negative integral powers.
+        // A simple implementation of `pow` for non-negative integral powers.
         template <typename A, typename B> [[nodiscard]] constexpr A ipow(A a, B b)
         {
             // `A` can be a scalar or a vector. `B` has to be scalar.
             static_assert(std::is_integral_v<B>, "Power must be integral.");
             A ret = 1;
-            while (b-- > 0)
+            while (b > 0)
+            {
+                if (b & 1)
                 ret *= a;
+                a *= a;
+                b >>= 1;
+            }
             return ret;
         }
 
