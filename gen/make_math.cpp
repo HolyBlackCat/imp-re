@@ -7,7 +7,7 @@
 #include <sstream>
 #include <type_traits>
 
-#define VERSION "3.3.3"
+#define VERSION "3.3.4"
 
 #pragma GCC diagnostic ignored "-Wpragmas" // Silence GCC warning about the next line disabling a warning that GCC doesn't have.
 #pragma GCC diagnostic ignored "-Wstring-plus-int" // Silence clang warning about `1+R"()"` pattern.
@@ -1694,10 +1694,8 @@ int main(int argc, char **argv)
 
                     if constexpr(no_vectors_v<F>)
                     {
-                        if constexpr (sizeof (I) <= sizeof (long))
-                        $   return std::lround(x);
-                        else
-                        $   return std::llround(x);
+                        // This seems to be faster than `std::lround()`.
+                        return I(std::round(x));
                     }
                     else
                     {

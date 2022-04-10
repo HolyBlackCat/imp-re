@@ -1,6 +1,6 @@
 // mat.h
 // Vector and matrix math
-// Version 3.3.3
+// Version 3.3.4
 // Generated, don't touch.
 
 #pragma once
@@ -1745,10 +1745,8 @@ namespace Math
 
             if constexpr(no_vectors_v<F>)
             {
-                if constexpr (sizeof (I) <= sizeof (long))
-                    return std::lround(x);
-                else
-                    return std::llround(x);
+                // This seems to be faster than `std::lround()`.
+                return I(std::round(x));
             }
             else
             {
