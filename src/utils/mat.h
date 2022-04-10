@@ -1,6 +1,6 @@
 // mat.h
 // Vector and matrix math
-// Version 3.3.4
+// Version 3.3.5
 // Generated, don't touch.
 
 #pragma once
@@ -2015,6 +2015,19 @@ namespace Math
         {
             imat2 mat = imat2(dir, dir.rot90());
             return less_positively_rotated(a * mat, b * mat);
+        }
+
+        // Rounds `value` to type `I`, with compensation: `comp` is added to it before rounding, then updated to the difference between rounded and unrounded value.
+        // This makes the average return value converge to `value`.
+        template <typename I = int, typename F> [[nodiscard]] constexpr change_vec_base_t<F,I> round_with_compensation(F value, F &comp)
+        {
+            static_assert(std::is_floating_point_v<vec_base_t<F>>, "Argument must be floating-point.");
+            static_assert(std::is_integral_v<I>, "Template argument must be integral, and not a vector.");
+
+            // Works on scalars and vectors.
+            change_vec_base_t<F,I> ret = iround<I>(value += comp);
+            comp = value - ret;
+            return ret;
         }
     }
 
