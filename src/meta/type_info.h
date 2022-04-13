@@ -1,7 +1,9 @@
 #pragma once
 
+#include <algorithm>
 #include <array>
 #include <cstddef>
+#include <string_view>
 
 #include "meta/constexpr_hash.h"
 
@@ -12,76 +14,65 @@ namespace Meta
     namespace impl
     {
         template <typename T>
-        constexpr const auto &RawTypeName()
+        [[nodiscard]] constexpr std::string_view RawTypeName()
         {
-            #ifdef _MSC_VER
-            return __FUNCSIG__;
-            #else
+            #ifndef _MSC_VER
             return __PRETTY_FUNCTION__;
+            #else
+            return __FUNCSIG__;
             #endif
         }
 
-        struct RawTypeNameFormat
+        struct TypeNameFormat
         {
-            std::size_t leading_junk = 0, trailing_junk = 0;
+            std::size_t junk_leading = 0;
+            std::size_t junk_total = 0;
         };
 
-        // Returns `false` on failure.
-        inline constexpr bool GetRawTypeNameFormat(RawTypeNameFormat *format)
-        {
-            const auto &str = RawTypeName<int>();
-            for (std::size_t i = 0; i < sizeof str; i++)
-            {
-                if (str[i] == 'i' && str[i+1] == 'n' && str[i+2] == 't')
-                {
-                    if (format)
-                    {
-                        format->leading_junk = i;
-                        format->trailing_junk = sizeof str - i - 3 - 1; // `3` is the length of "int", `1` is the space for the null terminator.
-                    }
-                    return true;
-                }
-            }
-            return false;
-        }
+        constexpr TypeNameFormat type_name_format = []{
+            TypeNameFormat ret;
+            std::string_view sample = RawTypeName<int>();
+            ret.junk_leading = sample.find("int");
+            ret.junk_total = sample.size() - 3;
+            return ret;
+        }();
+        static_assert(type_name_format.junk_leading != std::size_t(-1), "Unable to determine the type name format on this compiler.");
 
-        inline static constexpr RawTypeNameFormat format =
-        []{
-            static_assert(GetRawTypeNameFormat(nullptr), "Not sure how to generate type names on this compiler.");
-            RawTypeNameFormat format;
-            GetRawTypeNameFormat(&format);
-            return format;
+        template <typename T>
+        static constexpr auto type_name_storage = []{
+            std::array<char, RawTypeName<T>().size() - type_name_format.junk_total + 1> ret{};
+            std::copy_n(RawTypeName<T>().data() + type_name_format.junk_leading, ret.size() - 1, ret.data());
+            return ret;
         }();
     }
 
-    // Returns the type name in a `std::array<char, N>` (null-terminated).
-    // Don't use this unless you need the value to be constexpr, since if used in
-    // a non-constexpr context in a non-optimized build, it might add runtime overhead.
+    // Returns the type name, as a `std::string_view`. The string is null-terminated, but the terminator is not included in the view.
     template <typename T>
-    [[nodiscard]] constexpr auto CexprTypeName()
+    [[nodiscard]] constexpr std::string_view TypeName()
     {
-        constexpr std::size_t len = sizeof impl::RawTypeName<T>() - impl::format.leading_junk - impl::format.trailing_junk;
-        std::array<char, len> name{};
-        for (std::size_t i = 0; i < len-1; i++)
-            name[i] = impl::RawTypeName<T>()[i + impl::format.leading_junk];
-        return name;
+        return {impl::type_name_storage<T>.data(), impl::type_name_storage<T>.size() - 1};
     }
 
-    // Returns the type name.
+    // Returns the type name as a C-string.
     template <typename T>
-    [[nodiscard]] const char *TypeName()
+    [[nodiscard]] constexpr const char *TypeNameCstr()
     {
-        static constexpr auto name = CexprTypeName<T>();
-        return name.data();
-    }
-    // Returns the type name. The parameter is used only to deduce `T`.
-    template <typename T>
-    [[nodiscard]] const char *TypeName(const T &)
-    {
-        return TypeName<T>();
+        return impl::type_name_storage<T>.data();
     }
 
-    /* Alternative `__cxa_demangle`-based implementation.
+    // Returns a hash of the type name.
+    // `hash_t` is `uint32_t`.
+    template <typename T>
+    [[nodiscard]] constexpr hash_t TypeHash(hash_t seed = 0)
+    {
+        constexpr auto name = TypeName<T>();
+        return cexpr_hash(name.data(), name.size(), seed);
+    }
+
+    // Hash test:
+    // static_assert(TypeHash<int>() == 3464699359);
+
+    /* Alternative `__cxa_demangle`-based type name implementation.
 
         #include <cxxabi.h>
 
@@ -153,16 +144,4 @@ namespace Meta
             return TypeName<T>();
         }
     */
-
-    // Returns a hash of the type name.
-    // `hash_t` is `uint32_t`.
-    template <typename T>
-    [[nodiscard]] constexpr hash_t TypeHash(hash_t seed = 0)
-    {
-        constexpr auto name = CexprTypeName<T>();
-        return cexpr_hash(name.data(), name.size() - 1/*null-terminator*/, seed);
-    }
-
-    // Hash test:
-    // static_assert(TypeHash<int>() == 3464699359);
 }
