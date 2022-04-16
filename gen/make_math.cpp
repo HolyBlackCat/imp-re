@@ -7,7 +7,7 @@
 #include <sstream>
 #include <type_traits>
 
-#define VERSION "3.3.7"
+#define VERSION "3.3.8"
 
 #pragma GCC diagnostic ignored "-Wpragmas" // Silence GCC warning about the next line disabling a warning that GCC doesn't have.
 #pragma GCC diagnostic ignored "-Wstring-plus-int" // Silence clang warning about `1+R"()"` pattern.
@@ -1801,6 +1801,32 @@ int main(int argc, char **argv)
                     else
                     {
                         return apply_elementwise(mod_ex<vec_base_t<A>, vec_base_t<B>>, a, b);
+                    }
+                }
+
+                // Divide `a / b`, rounding away from zero.
+                // Supports both integers and floating-point numbers, including vectors.
+                template <typename A, typename B>
+                [[nodiscard]] constexpr larger_t<A, B> div_maxabs(A a, B b)
+                {
+                    static_assert(!std::is_unsigned_v<vec_base_t<A>> && !std::is_unsigned_v<vec_base_t<B>>, "Arguments must be signed.");
+
+                    if constexpr (no_vectors_v<A, B>)
+                    {
+                        if constexpr (std::is_integral_v<A> && std::is_integral_v<B>)
+                        {
+                            return (a + (abs(b) - 1) * sign(a)) / b;
+                        }
+                        else
+                        {
+                            using T = larger_t<A, B>;
+                            T ret = T(a) / T(b);
+                            return ret < 0 ? std::floor(ret) : std::ceil(ret);
+                        }
+                    }
+                    else
+                    {
+                        return apply_elementwise(div_maxabs<vec_base_t<A>, vec_base_t<B>>, a, b);
                     }
                 }
 
