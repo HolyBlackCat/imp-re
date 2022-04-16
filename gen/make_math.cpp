@@ -7,7 +7,7 @@
 #include <sstream>
 #include <type_traits>
 
-#define VERSION "3.3.9"
+#define VERSION "3.3.10"
 
 #pragma GCC diagnostic ignored "-Wpragmas" // Silence GCC warning about the next line disabling a warning that GCC doesn't have.
 #pragma GCC diagnostic ignored "-Wstring-plus-int" // Silence clang warning about `1+R"()"` pattern.
@@ -195,6 +195,7 @@ int main(int argc, char **argv)
             #include <cstddef>
             #include <cstdint>
             #include <istream>
+            #include <iterator>
             #include <ostream>
             #include <tuple>
             #include <type_traits>
@@ -2113,6 +2114,15 @@ int main(int argc, char **argv)
                             *iter++ = std::move(point);
                         });
                     }
+                }
+
+                // Same, but writes the output to a container.
+                template <typename C, int D = -1, typename T>
+                [[nodiscard]] C make_cuboid(T a, T b, T step)
+                {
+                    C ret;
+                    make_cuboid(a, b, step, std::back_inserter(ret));
+                    return ret;
                 }
             )");
         });

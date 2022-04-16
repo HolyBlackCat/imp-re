@@ -1,6 +1,6 @@
 // mat.h
 // Vector and matrix math
-// Version 3.3.9
+// Version 3.3.10
 // Generated, don't touch.
 
 #pragma once
@@ -12,6 +12,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <istream>
+#include <iterator>
 #include <ostream>
 #include <tuple>
 #include <type_traits>
@@ -2164,6 +2165,15 @@ namespace Math
                     *iter++ = std::move(point);
                 });
             }
+        }
+
+        // Same, but writes the output to a container.
+        template <typename C, int D = -1, typename T>
+        [[nodiscard]] C make_cuboid(T a, T b, T step)
+        {
+            C ret;
+            make_cuboid(a, b, step, std::back_inserter(ret));
+            return ret;
         }
     }
 
