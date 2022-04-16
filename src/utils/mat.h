@@ -1,11 +1,12 @@
 // mat.h
 // Vector and matrix math
-// Version 3.3.8
+// Version 3.3.9
 // Generated, don't touch.
 
 #pragma once
 
 #include <algorithm>
+#include <bit>
 #include <cmath>
 #include <concepts>
 #include <cstddef>
@@ -268,7 +269,7 @@ namespace Math
         template <int D, typename T> struct impl_is_vector<const vec<D,T>> : std::true_type {};
         template <typename T> concept vector = impl_is_vector<T>::value;
 
-        template <typename T> inline constexpr bool vector_or_scalar = scalar<T> || vector<T>;
+        template <typename T> concept vector_or_scalar = scalar<T> || vector<T>;
 
         // Checks if none of `P...` are vector types.
         template <typename ...P> inline constexpr bool no_vectors_v = !(vector<P> || ...);
@@ -1388,26 +1389,38 @@ namespace Math
     inline namespace Utility // Low-level helper functions
     {
         //{ Member access
-        // Returns I-th vector element. This function considers scalars to be 1-element vectors.
-        // Returns a non-const reference only if the parameter is a non-const lvalue; otherwise returns a const reference.
-        template <int I, typename T> constexpr auto &get_vec_element(T &&vec)
+        // Returns i-th vector element. Also works on scalar, ignoring the index.
+        template <typename T> [[nodiscard]] constexpr decltype(auto) vec_elem(int i, T &&vec)
         {
-            static_assert(I >= 0 && I < 4);
-            constexpr bool not_const = std::is_reference_v<T> && !std::is_const_v<std::remove_reference_t<T>>;
-            if constexpr (!vector<std::remove_reference_t<T>>)
-                return std::conditional_t<not_const, T &, const T &>(vec);
+            if constexpr (std::is_lvalue_reference_v<T>)
+            {
+                if constexpr (!vector<std::remove_reference_t<T>>)
+                    return vec;
+                else
+                    return vec[i];
+            }
             else
-                return std::conditional_t<not_const, vec_base_t<std::remove_reference_t<T>> &, const vec_base_t<std::remove_reference_t<T>> &>(vec.template get<I>());
+            {
+                if constexpr (!vector<std::remove_reference_t<T>>)
+                    return std::move(vec);
+                else
+                    return std::move(vec[i]);
+            }
         }
 
-        // A simple constexpr `for` loop.
-        template <int D, typename F> constexpr void cexpr_for(F &&func)
+        template <typename T> [[nodiscard]] constexpr bool any(T vec)
         {
-            static_assert(D >= 1 && D <= 4);
-            func(std::integral_constant<int,0>{});
-            if constexpr (D > 1) func(std::integral_constant<int,1>{});
-            if constexpr (D > 2) func(std::integral_constant<int,2>{});
-            if constexpr (D > 3) func(std::integral_constant<int,3>{});
+            if constexpr (vector<T>)
+                return vec.any();
+            else
+                return bool(vec);
+        }
+        template <typename T> [[nodiscard]] constexpr bool all(T vec)
+        {
+            if constexpr (vector<T>)
+                return vec.all();
+            else
+                return bool(vec);
         }
         //} Member access
 
@@ -1433,9 +1446,9 @@ namespace Math
         //} Custom operators
 
         //{ Ranges
-        template <typename T> class vector_range
+        template <typename T> class vector_range_t
         {
-            static_assert(vector<T> && !std::is_const_v<T> && std::is_integral_v<vec_base_t<T>>, "The template parameter must be an integral vector.");
+            static_assert(!std::is_const_v<T> && std::is_integral_v<vec_base_t<T>>, "The template parameter must be an integral vector.");
 
             T vec_begin = T(0);
             T vec_end = T(0);
@@ -1443,14 +1456,14 @@ namespace Math
           public:
             class iterator
             {
-                friend class vector_range<T>;
+                friend class vector_range_t<T>;
 
                 T vec_begin = T(0);
                 T vec_end = T(0);
                 T vec_cur = T(0);
-                bool finished = 1;
+                bool finished = true;
 
-                iterator(T vec_begin, T vec_end) : vec_begin(vec_begin), vec_end(vec_end), vec_cur(vec_begin), finished((vec_begin >= vec_end).any()) {}
+                iterator(T vec_begin, T vec_end) : vec_begin(vec_begin), vec_end(vec_end), vec_cur(vec_begin), finished(any(vec_begin >= vec_end)) {}
 
               public:
                 using difference_type   = std::ptrdiff_t;
@@ -1463,28 +1476,16 @@ namespace Math
 
                 iterator &operator++()
                 {
-                    bool stop = 0;
-                    cexpr_for<vec_size_v<T>>([&](auto index)
+                    for (int i = 0; i < vec_size_v<T>; i++)
                     {
-                        if (stop)
-                            return;
-
-                        constexpr int i = index.value;
-
-                        auto &elem = get_vec_element<i>(vec_cur);
+                        auto &elem = vec_elem(i, vec_cur);
                         elem++;
-                        if (elem >= get_vec_element<i>(vec_end))
-                        {
-                            elem = get_vec_element<i>(vec_begin);
-
-                            if constexpr (i == vec_size_v<T> - 1)
-                                finished = 1;
-                        }
-                        else
-                        {
-                            stop = 1;
-                        }
-                    });
+                        if (elem < vec_elem(i, vec_end))
+                            break;
+                        elem = vec_elem(i, vec_begin);
+                        if (i == vec_size_v<T> - 1)
+                            finished = true;
+                    }
 
                     return *this;
                 }
@@ -1507,19 +1508,15 @@ namespace Math
                 bool operator==(const iterator &other) const
                 {
                     if (finished != other.finished)
-                        return 0;
+                        return false;
                     if (finished && other.finished)
-                        return 1;
+                        return true;
                     return vec_cur == other.vec_cur;
-                }
-                bool operator!=(const iterator &other) const
-                {
-                    return !(*this == other);
                 }
             };
 
-            vector_range() {}
-            vector_range(T vec_begin, T vec_end) : vec_begin(vec_begin), vec_end(vec_end) {}
+            vector_range_t() {}
+            vector_range_t(T vec_begin, T vec_end) : vec_begin(vec_begin), vec_end(vec_end) {}
 
             iterator begin() const
             {
@@ -1531,12 +1528,12 @@ namespace Math
                 return {};
             }
 
-            template <int A, typename B> friend vector_range operator+(const vector_range &range, vec<A,B> offset)
+            template <int A, typename B> friend vector_range_t operator+(const vector_range_t &range, vec<A,B> offset)
             {
                 static_assert(std::is_same_v<T, vec<A,B>>, "The offset must have exactly the same type as the range.");
-                return vector_range(range.vec_begin + offset, range.vec_end + offset);
+                return vector_range_t(range.vec_begin + offset, range.vec_end + offset);
             }
-            template <int A, typename B> friend vector_range operator+(vec<A,B> offset, const vector_range &range)
+            template <int A, typename B> friend vector_range_t operator+(vec<A,B> offset, const vector_range_t &range)
             {
                 return range + offset;
             }
@@ -1551,12 +1548,12 @@ namespace Math
           public:
             vector_range_halfbound(T vec_begin) : vec_begin(vec_begin) {}
 
-            template <int A, typename B> friend vector_range<T> operator<(const vector_range_halfbound &range, vec<A,B> point)
+            template <int A, typename B> friend vector_range_t<T> operator<(const vector_range_halfbound &range, vec<A,B> point)
             {
                 static_assert(std::is_same_v<T, vec<A,B>>, "The upper limit must have exactly the same type as the lower limit.");
-                return vector_range<T>(range.vec_begin, point);
+                return vector_range_t<T>(range.vec_begin, point);
             }
-            template <int A, typename B> friend vector_range<T> operator<=(const vector_range_halfbound &range, vec<A,B> point)
+            template <int A, typename B> friend vector_range_t<T> operator<=(const vector_range_halfbound &range, vec<A,B> point)
             {
                 return range < point+1;
             }
@@ -1564,16 +1561,16 @@ namespace Math
 
         struct vector_range_factory
         {
-            template <int A, typename B> vector_range<vec<A,B>> operator()(vec<A,B> size) const
+            template <vector_or_scalar T> vector_range_t<T> operator()(T size) const
             {
-                return vector_range<vec<A,B>>(vec<A,B>(0), size);
+                return vector_range_t<T>(T(0), size);
             }
 
-            template <int A, typename B> friend vector_range_halfbound<vec<A,B>> operator<=(vec<A,B> point, vector_range_factory)
+            template <vector_or_scalar T> friend vector_range_halfbound<T> operator<=(T point, vector_range_factory)
             {
                 return {point};
             }
-            template <int A, typename B> friend vector_range_halfbound<vec<A,B>> operator<(vec<A,B> point, vector_range_factory)
+            template <vector_or_scalar T> friend vector_range_halfbound<T> operator<(T point, vector_range_factory)
             {
                 return point+1 <= vector_range_factory{};
             }
@@ -1603,23 +1600,19 @@ namespace Math
         {
             constexpr int size = common_vec_size_v<D, vec_size_v<std::remove_reference_t<P>>...>;
 
-            using ret_type = decltype(std::declval<F>()(get_vec_element<0>(std::declval<P>())...));
+            using ret_type = decltype(std::declval<F>()(vec_elem(0, std::declval<P>())...));
 
             if constexpr (std::is_void_v<ret_type>)
             {
-                cexpr_for<size>([&](auto index)
-                {
-                    func(get_vec_element<index.value>(params)...); // No forwarding to prevent moving.
-                });
+                for (int i = 0; i < size; i++)
+                    func(vec_elem(i, params)...); // No forwarding to prevent moving.
                 return void();
             }
             else
             {
                 vec_or_scalar_t<size, ret_type> ret{};
-                cexpr_for<size>([&](auto index)
-                {
-                    get_vec_element<index.value>(ret) = func(get_vec_element<index.value>(params)...); // No forwarding to prevent moving.
-                });
+                for (int i = 0; i < size; i++)
+                    vec_elem(i, ret) = func(vec_elem(i, params)...); // No forwarding to prevent moving.
                 return ret;
             }
         }
@@ -2059,6 +2052,118 @@ namespace Math
             change_vec_base_t<F,I> ret = iround<I>(value += comp);
             comp = value - ret;
             return ret;
+        }
+
+        // Produces points to fill a cuboid (line, rect, cube, and so on), either entirely or only the borders.
+        // `a` and `b` are the corners, inclusive. `step` is the step, the sign is ignored.
+        // `pred` lets you select what parts of the cuboid to output. It's is either `nullptr` (output everything)
+        // or `bool pred(unsigned int mask)`, where the mask receives all combinations of N bits, where N is `vec_size_v<T>`.
+        // If `pred` returns true, the corresponding region is emitted using repeated calls to `func`, which is `void func(T &&point)`.
+        // The number of `1`s in the mask (`std::popcount(mask)`) describes the dimensions of the region: 0 = points, 1 = lines, 2 = rects, and so on.
+        // If the i-th bit is set, the region extends in i-th dimension. Each mask corresponds to a set of parallel lines/planes/etc,
+        // and the zero mask corresponds to the corners of the cuboid.
+        template <typename T, typename F1 = std::nullptr_t, typename F2>
+        void for_each_cuboid_point(T a, T b, T step, F1 &&pred, F2 &&func)
+        {
+            static_assert(!std::is_unsigned_v<vec_base_t<T>>, "Arguments must be signed.");
+
+            // Fix the sign of the `step`.
+            for (int i = 0; i < vec_size_v<T>; i++)
+            {
+                vec_elem(i, step) *= sign(vec_elem(i, b) - vec_elem(i, a)) * sign(vec_elem(i, step));
+                // We don't want zero step.
+                if (vec_elem(i, step) == 0) vec_elem(i, step) = 1;
+            }
+
+            using int_vec = change_vec_base_t<T, int>;
+            int_vec count = abs(div_maxabs(b - a, step)) - 1;
+
+            if constexpr (std::is_null_pointer_v<std::remove_cvref_t<F1>>)
+            {
+                // A simple algorithm to fill the whole cuboid.
+                for (int_vec pos : vector_range(count + 2))
+                {
+                    T value;
+                    for (int i = 0; i < vec_size_v<T>; i++)
+                        vec_elem(i, value) = vec_elem(i, pos) == vec_elem(i, count) + 1 ? vec_elem(i, b) : vec_elem(i, a) + vec_elem(i, step) * vec_elem(i, pos);
+                    func(std::move(value));
+                }
+            }
+            else
+            {
+                // A more advanced algorithm to control separate regions.
+                for (unsigned int i = 0; i < 1u << vec_size_v<T>; i++)
+                {
+                    // Stop early if we don't want this region.
+                    // The casts stop `pred` from doing weird things.
+                    if (!bool(pred((unsigned int)i)))
+                        continue;
+
+                    // Get the number of points in the region, in each dimension.
+                    bool bad_region = false;
+                    int_vec region_size;
+                    for (int j = 0; j < vec_size_v<T>; j++)
+                    {
+                        if (i & 1u << j)
+                        {
+                            if ((vec_elem(j, region_size) = vec_elem(j, count)) <= 0)
+                            {
+                                bad_region = true;
+                                break;
+                            }
+                        }
+                        else
+                        {
+                            vec_elem(j, region_size) = vec_elem(j, a) == vec_elem(j, b) ? 1 : 2;
+                        }
+                    }
+                    if (bad_region)
+                        continue; // A degenerate region.
+
+                    // Output points.
+                    for (int_vec pos : vector_range(region_size))
+                    {
+                        T value;
+                        for (int j = 0; j < vec_size_v<T>; j++)
+                        {
+                            if (!(i & 1u << j))
+                                vec_elem(j, value) = vec_elem(j, vec_elem(j, pos) ? b : a);
+                            else
+                                vec_elem(j, value) = vec_elem(j, a) + (vec_elem(j, pos) + 1) * vec_elem(j, step);
+                        }
+                        func(std::move(value));
+                    }
+                }
+            }
+        }
+
+        // Produces points to fill a cuboid (line, rect, cube, and so on), either entirely or only the borders. Writes the points of type `T` to `*iter++`.
+        // `a` and `b` are the corners, inclusive. `step` is the step, the sign is ignored.
+        // `D` is the dimensions of the output. `D == -1` and `D == vec_size_v<T>` mean "fill the whole cuboid".
+        // `D == 0` only outputs the corner points, `D == 1` outputs lines, `D == 2` outputs planes, and so on.
+        template <int D = -1, typename T, typename I>
+        void make_cuboid(T a, T b, T step, I iter)
+        {
+            static_assert(D >= -1 && D <= vec_size_v<T>, "Invalid number of dimensions.");
+
+            if constexpr (D == -1 || D == vec_size_v<T>)
+            {
+                for_each_cuboid_point(a, b, step, nullptr, [&](T &&point)
+                {
+                    *iter++ = std::move(point);
+                });
+            }
+            else
+            {
+                for_each_cuboid_point(a, b, step, [](unsigned int mask)
+                {
+                    return std::popcount(mask) <= D;
+                },
+                [&](T &&point)
+                {
+                    *iter++ = std::move(point);
+                });
+            }
         }
     }
 

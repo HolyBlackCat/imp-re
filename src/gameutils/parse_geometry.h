@@ -133,14 +133,13 @@ namespace GameUtils
             requires is_valid_member_ptr_v<MemPtr> && (sizeof...(names) == Math::vec_size_v<mem_ptr_target_t<MemPtr>>)
             {
                 std::string names_array[] = {std::string(names)...};
-                Meta::cexpr_for<Math::vec_size_v<mem_ptr_target_t<MemPtr>>>([&](auto index)
+                for (int i = 0; i < Math::vec_size_v<mem_ptr_target_t<MemPtr>>; i++)
                 {
-                    constexpr auto i = index.value;
-                    funcs.insert_or_assign(std::move(names_array[i]), [](VertexType &obj, Math::vec_base_t<mem_ptr_target_t<MemPtr>> value)
+                    funcs.insert_or_assign(std::move(names_array[i]), [i](VertexType &obj, Math::vec_base_t<mem_ptr_target_t<MemPtr>> value)
                     {
-                        Math::get_vec_element<i>(obj.*MemPtr) = value;
+                        Math::vec_elem(i, obj.*MemPtr) = value;
                     });
-                });
+                }
                 return *this;
             }
 
