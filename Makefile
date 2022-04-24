@@ -482,8 +482,8 @@ endif
 # This is prepended to the program name in the `run-*` targets. E.g. you can put `gdb` here.
 RUN_WITH :=
 
-# Extra files cleaned by the `prepare-for-storage` target. Relative to `$(proj_dir)`.
-CLEAN_FILES_FOR_STORAGE := .cache
+# Extra files cleaned by the `clean-everything` and `prepare-for-storage` targets. Relative to `$(proj_dir)`.
+CLEAN_EXTRA_FILES := .cache
 
 
 # --- Load config files ---
@@ -1187,22 +1187,26 @@ dist: build-default
 	@true
 
 
-# --- 'Clean for storage' target ---
+# --- Full clean targets ---
 
-# Cleans the project for long-term storage.
-# Also archives library sources (if any) and deletes the originals.
+# Cleans everything.
+.PHONY: clean-everything
+clean-everything:
+	$(call safe_shell_exec,rm -rf $(call quote,$(BIN_DIR)))
+	$(call safe_shell_exec,rm -rf $(call quote,$(OBJ_DIR)))
+	$(call safe_shell_exec,rm -rf $(call quote,$(LIB_DIR)))
+	$(call safe_shell_exec,rm -rf $(call quote,$(DIST_TMP_DIR)))
+	$(call safe_shell_exec,rm -rf $(call quote,$(COMMANDS_FILE)))
+	$(foreach x,$(CLEAN_EXTRA_FILES),$(call safe_shell_exec,rm -rf $(call quote,$(proj_dir)/$x)))
+	@true
+
+# Cleans everything, and additionally archives the library sources into a single file, and deletes the separate archives.
 .PHONY: prepare-for-storage
 ifneq ($(wildcard $(LIB_SRC_DIR)),)
 prepare-for-storage: dist-deps
 endif
-prepare-for-storage:
-	$(call safe_shell_exec,rm -rf $(call quote,$(BIN_DIR)))
-	$(call safe_shell_exec,rm -rf $(call quote,$(OBJ_DIR)))
-	$(call safe_shell_exec,rm -rf $(call quote,$(LIB_DIR)))
+prepare-for-storage: clean-everything
 	$(call safe_shell_exec,rm -rf $(call quote,$(LIB_SRC_DIR)))
-	$(call safe_shell_exec,rm -rf $(call quote,$(DIST_TMP_DIR)))
-	$(call safe_shell_exec,rm -rf $(call quote,$(COMMANDS_FILE)))
-	$(foreach x,$(CLEAN_FILES_FOR_STORAGE),$(call safe_shell_exec,rm -rf $(call quote,$(proj_dir)/$x)))
 	@true
 
 
