@@ -4,6 +4,9 @@
 #include <exception>
 #include <type_traits>
 
+#include "interface/messagebox.h"
+#include "program/exit.h"
+
 namespace Program
 {
     static void SignalHandler(int sig)
@@ -40,7 +43,14 @@ namespace Program
             }
             catch (std::exception &e)
             {
-                HardError("Exception:\n", e.what());
+                std::string error;
+                ExceptionToString(e, [&](const char *message)
+                {
+                    if (!error.empty())
+                        error += "\n";
+                    error += message;
+                });
+                HardError(error);
             }
             catch (...)
             {
@@ -52,6 +62,17 @@ namespace Program
     }
 
     static bool handers_set = false;
+
+    void HardError(const std::string &message)
+    {
+        static bool first = true;
+        if (!first)
+            Exit(1);
+        first = 0;
+
+        Interface::MessageBox(Interface::MessageBoxType::error, "Error", "Error: " + message);
+        Exit(1);
+    }
 
     void SetErrorHandlers(bool only_if_not_set_before)
     {

@@ -4,23 +4,32 @@
 #include <string_view>
 #include <string>
 
-#include "interface/messagebox.h"
-#include "program/exit.h"
 #include "program/platform.h"
 #include "strings/format.h"
 
 namespace Program
 {
-    [[noreturn]] inline void HardError(const std::string &message)
+    // `func` is `void func(const char *message)`.
+    // Calls `func` for `e.what()` and for every exception nested in it.
+    template <typename F>
+    inline void ExceptionToString(const std::exception &e, F &&func)
     {
-        static bool first = true;
-        if (!first)
-            Exit(1);
-        first = 0;
-
-        Interface::MessageBox(Interface::MessageBoxType::error, "Error", "Error: " + message);
-        Exit(1);
+        func(e.what());
+        try
+        {
+            std::rethrow_if_nested(e);
+        }
+        catch (const std::exception &next)
+        {
+            ExceptionToString(next, std::forward<F>(func));
+        }
+        catch (...)
+        {
+            func("Unknown exception.");
+        }
     }
+
+    [[noreturn]] void HardError(const std::string &message);
 
     [[noreturn]] inline void Error(const std::string &message) // Throws std::runtime_error.
     {
