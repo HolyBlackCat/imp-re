@@ -7,7 +7,7 @@
 #include <sstream>
 #include <type_traits>
 
-#define VERSION "3.3.10"
+#define VERSION "3.3.11"
 
 #pragma GCC diagnostic ignored "-Wpragmas" // Silence GCC warning about the next line disabling a warning that GCC doesn't have.
 #pragma GCC diagnostic ignored "-Wstring-plus-int" // Silence clang warning about `1+R"()"` pattern.
@@ -1874,6 +1874,36 @@ int main(int argc, char **argv)
                     $   return std::max({larger_t<P...>(params)...});
                     else
                     $   return apply_elementwise(max<vec_base_t<P>...>, params...);
+                }
+
+                // Returns `[min(a,b), max(a,b)]`. Like `std::minmax`, but returns by value and can handle vectors.
+                template <typename A, typename B> [[nodiscard]] constexpr std::pair<larger_t<A, B>, larger_t<A, B>> sort_two(A a, B b)
+                {
+                    using T = larger_t<A, B>;
+                    std::pair<T, T> ret;
+                    for (int i = 0; i < vec_size_v<T>; i++)
+                    {
+                        auto a_elem = vec_elem(i, a);
+                        auto b_elem = vec_elem(i, b);
+                        if (b_elem < a_elem)
+                        $   vec_elem(i, ret.first) = b_elem, vec_elem(i, ret.second) = a_elem;
+                        else
+                        $   vec_elem(i, ret.first) = a_elem, vec_elem(i, ret.second) = b_elem;
+                    }
+                    return ret;
+                }
+                // Sorts `{a,b}` in place. Sorts vectors element-wise.
+                template <typename T> constexpr void sort_two_var(T &a, T &b)
+                {
+                    if constexpr (no_vectors_v<T>)
+                    {
+                        if (b < a)
+                        $   std::swap(a, b);
+                    }
+                    else
+                    {
+                        apply_elementwise(sort_two_var<vec_base_t<T>>, a, b);
+                    }
                 }
             )");
         });
