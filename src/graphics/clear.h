@@ -13,7 +13,7 @@ namespace Graphics
 
     inline void SetClearColor(fvec4 color)
     {
-        glClearColor(color.r, color.g, color.b, color.a);
+        glClearColor(color.r(), color.g(), color.b(), color.a());
     }
     inline void SetClearColor(fvec3 color)
     {

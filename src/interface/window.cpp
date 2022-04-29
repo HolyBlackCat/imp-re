@@ -56,12 +56,12 @@ namespace Interface
         if (color_bits != 0 || depth_bits != 0 || stencil_bits != 0)
         {
             ret += ", bits per pixel:";
-            if (color_bits.r != 0) ret += FMT(" r={}", color_bits.r);
-            if (color_bits.g != 0) ret += FMT(" g={}", color_bits.g);
-            if (color_bits.b != 0) ret += FMT(" b={}", color_bits.b);
-            if (color_bits.a != 0) ret += FMT(" a={}", color_bits.a);
-            if (depth_bits   != 0) ret += FMT(" depth={}", depth_bits);
-            if (stencil_bits != 0) ret += FMT(" stencil={}", stencil_bits);
+            if (color_bits.r() != 0) ret += FMT(" r={}", color_bits.r());
+            if (color_bits.g() != 0) ret += FMT(" g={}", color_bits.g());
+            if (color_bits.b() != 0) ret += FMT(" b={}", color_bits.b());
+            if (color_bits.a() != 0) ret += FMT(" a={}", color_bits.a());
+            if (depth_bits     != 0) ret += FMT(" depth={}", depth_bits);
+            if (stencil_bits   != 0) ret += FMT(" stencil={}", stencil_bits);
         }
 
         return ret;
@@ -202,12 +202,12 @@ namespace Interface
         }
 
         // Bit depth
-        if (settings.color_bits.r) SDL_GL_SetAttribute(SDL_GL_RED_SIZE    , settings.color_bits.r);
-        if (settings.color_bits.g) SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE  , settings.color_bits.g);
-        if (settings.color_bits.b) SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE   , settings.color_bits.b);
-        if (settings.color_bits.a) SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE  , settings.color_bits.a);
-        if (settings.depth_bits  ) SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE  , settings.depth_bits  );
-        if (settings.stencil_bits) SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, settings.stencil_bits);
+        if (settings.color_bits.r()) SDL_GL_SetAttribute(SDL_GL_RED_SIZE    , settings.color_bits.r());
+        if (settings.color_bits.g()) SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE  , settings.color_bits.g());
+        if (settings.color_bits.b()) SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE   , settings.color_bits.b());
+        if (settings.color_bits.a()) SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE  , settings.color_bits.a());
+        if (settings.depth_bits    ) SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE  , settings.depth_bits    );
+        if (settings.stencil_bits  ) SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, settings.stencil_bits  );
 
         // Context flags (debug-ness and forward compatibility)
         uint32_t context_flags = 0;
