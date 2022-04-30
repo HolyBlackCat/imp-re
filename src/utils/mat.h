@@ -1,6 +1,6 @@
 // mat.h
 // Vector and matrix math
-// Version 3.4.2
+// Version 3.4.3
 // Generated, don't touch.
 
 #pragma once
@@ -389,14 +389,16 @@ namespace Math
         struct uninit {}; // A constructor tag to leave a vector/matrix uninitialized.
 
         // Wrappers for different kinds of comparisons.
-        template <vector_or_scalar T> struct compare_none {const T &value; [[nodiscard]] explicit constexpr compare_none(const T &value) : value(value) {}};
         template <vector_or_scalar T> struct compare_any {const T &value; [[nodiscard]] explicit constexpr compare_any(const T &value) : value(value) {}};
         template <vector_or_scalar T> struct compare_all {const T &value; [[nodiscard]] explicit constexpr compare_all(const T &value) : value(value) {}};
+        template <vector_or_scalar T> struct compare_none {const T &value; [[nodiscard]] explicit constexpr compare_none(const T &value) : value(value) {}};
+        template <vector_or_scalar T> struct compare_not_all {const T &value; [[nodiscard]] explicit constexpr compare_not_all(const T &value) : value(value) {}};
         template <vector_or_scalar T> struct compare_elemwise {const T &value; [[nodiscard]] explicit constexpr compare_elemwise(const T &value) : value(value) {}};
         // Tags for different kinds of comparisons.
-        struct compare_none_tag {template <vector_or_scalar T> [[nodiscard]] constexpr compare_none<T> operator()(const T &value) const {return compare_none(value);}};
         struct compare_any_tag {template <vector_or_scalar T> [[nodiscard]] constexpr compare_any<T> operator()(const T &value) const {return compare_any(value);}};
         struct compare_all_tag {template <vector_or_scalar T> [[nodiscard]] constexpr compare_all<T> operator()(const T &value) const {return compare_all(value);}};
+        struct compare_none_tag {template <vector_or_scalar T> [[nodiscard]] constexpr compare_none<T> operator()(const T &value) const {return compare_none(value);}};
+        struct compare_not_all_tag {template <vector_or_scalar T> [[nodiscard]] constexpr compare_not_all<T> operator()(const T &value) const {return compare_not_all(value);}};
         struct compare_elemwise_tag {template <vector_or_scalar T> [[nodiscard]] constexpr compare_elemwise<T> operator()(const T &value) const {return compare_elemwise(value);}};
     }
 
@@ -423,10 +425,11 @@ namespace Math
             [[nodiscard]] constexpr const type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const type *)((const char *)this + sizeof(type)*i); else if (i == 0) return x; else if (i == 1) return y; IMP_MATH_UNREACHABLE();}
             [[nodiscard]] type *as_array() {return &x;}
             [[nodiscard]] const type *as_array() const {return &x;}
-            [[nodiscard]] explicit constexpr operator bool() const {return any(); static_assert(!std::is_same_v<type, bool>, "Use .none(), .any(), or .all() for vectors of bool.");}
-            [[nodiscard]] constexpr bool none() const {return !any();}
+            [[nodiscard]] explicit constexpr operator bool() const requires(!std::is_same_v<type, bool>) {return any();} // Use the explicit methods below for vectors of bool.
             [[nodiscard]] constexpr bool any() const {return x || y;}
             [[nodiscard]] constexpr bool all() const {return x && y;}
+            [[nodiscard]] constexpr bool none() const {return !any();}
+            [[nodiscard]] constexpr bool not_all() const {return !all();}
             [[nodiscard]] constexpr auto sum() const {return x + y;}
             [[nodiscard]] constexpr auto prod() const {return x * y;}
             [[nodiscard]] constexpr auto ratio() const {return floating_point_t<type>(x) / floating_point_t<type>(y);}
@@ -450,14 +453,14 @@ namespace Math
             [[nodiscard]] static constexpr vec dir8(int index) {vec array[8]{vec(1,0),vec(1,1),vec(0,1),vec(-1,1),vec(-1,0),vec(-1,-1),vec(0,-1),vec(1,-1)}; return array[index & 7];}
             template <typename U> [[nodiscard]] constexpr auto dot(const vec2<U> &o) const {return x * o.x + y * o.y;}
             template <typename U> [[nodiscard]] constexpr auto cross(const vec2<U> &o) const {return x * o.y - y * o.x;}
-            template <typename U> [[nodiscard]] constexpr auto delta_to(vec2<U> v) const {return v - *this;}
             [[nodiscard]] constexpr auto tie() & {return std::tie(x,y);}
             [[nodiscard]] constexpr auto tie() const & {return std::tie(x,y);}
             template <int I> [[nodiscard]] constexpr type &get() & {return std::get<I>(tie());}
             template <int I> [[nodiscard]] constexpr const type &get() const & {return std::get<I>(tie());}
-            [[nodiscard]] constexpr compare_none<vec> operator()(compare_none_tag) const {return compare_none(*this);}
             [[nodiscard]] constexpr compare_any<vec> operator()(compare_any_tag) const {return compare_any(*this);}
             [[nodiscard]] constexpr compare_all<vec> operator()(compare_all_tag) const {return compare_all(*this);}
+            [[nodiscard]] constexpr compare_none<vec> operator()(compare_none_tag) const {return compare_none(*this);}
+            [[nodiscard]] constexpr compare_not_all<vec> operator()(compare_not_all_tag) const {return compare_not_all(*this);}
             [[nodiscard]] constexpr compare_elemwise<vec> operator()(compare_elemwise_tag) const {return compare_elemwise(*this);}
         };
 
@@ -482,10 +485,11 @@ namespace Math
             [[nodiscard]] constexpr const type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const type *)((const char *)this + sizeof(type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; IMP_MATH_UNREACHABLE();}
             [[nodiscard]] type *as_array() {return &x;}
             [[nodiscard]] const type *as_array() const {return &x;}
-            [[nodiscard]] explicit constexpr operator bool() const {return any(); static_assert(!std::is_same_v<type, bool>, "Use .none(), .any(), or .all() for vectors of bool.");}
-            [[nodiscard]] constexpr bool none() const {return !any();}
+            [[nodiscard]] explicit constexpr operator bool() const requires(!std::is_same_v<type, bool>) {return any();} // Use the explicit methods below for vectors of bool.
             [[nodiscard]] constexpr bool any() const {return x || y || z;}
             [[nodiscard]] constexpr bool all() const {return x && y && z;}
+            [[nodiscard]] constexpr bool none() const {return !any();}
+            [[nodiscard]] constexpr bool not_all() const {return !all();}
             [[nodiscard]] constexpr auto sum() const {return x + y + z;}
             [[nodiscard]] constexpr auto prod() const {return x * y * z;}
             [[nodiscard]] constexpr type min() const {return std::min({x,y,z});}
@@ -502,14 +506,14 @@ namespace Math
             [[nodiscard]] constexpr auto approx_norm() const {return *this * approx_inv_len();} // Guaranteed to converge to `len()==1` eventually, when starting from any finite `len_sqr()`.
             template <typename U> [[nodiscard]] constexpr auto dot(const vec3<U> &o) const {return x * o.x + y * o.y + z * o.z;}
             template <typename U> [[nodiscard]] constexpr auto cross(const vec3<U> &o) const -> vec3<decltype(x * o.x - x * o.x)> {return {y * o.z - z * o.y, z * o.x - x * o.z, x * o.y - y * o.x};}
-            template <typename U> [[nodiscard]] constexpr auto delta_to(vec3<U> v) const {return v - *this;}
             [[nodiscard]] constexpr auto tie() & {return std::tie(x,y,z);}
             [[nodiscard]] constexpr auto tie() const & {return std::tie(x,y,z);}
             template <int I> [[nodiscard]] constexpr type &get() & {return std::get<I>(tie());}
             template <int I> [[nodiscard]] constexpr const type &get() const & {return std::get<I>(tie());}
-            [[nodiscard]] constexpr compare_none<vec> operator()(compare_none_tag) const {return compare_none(*this);}
             [[nodiscard]] constexpr compare_any<vec> operator()(compare_any_tag) const {return compare_any(*this);}
             [[nodiscard]] constexpr compare_all<vec> operator()(compare_all_tag) const {return compare_all(*this);}
+            [[nodiscard]] constexpr compare_none<vec> operator()(compare_none_tag) const {return compare_none(*this);}
+            [[nodiscard]] constexpr compare_not_all<vec> operator()(compare_not_all_tag) const {return compare_not_all(*this);}
             [[nodiscard]] constexpr compare_elemwise<vec> operator()(compare_elemwise_tag) const {return compare_elemwise(*this);}
         };
 
@@ -535,10 +539,11 @@ namespace Math
             [[nodiscard]] constexpr const type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const type *)((const char *)this + sizeof(type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; else if (i == 3) return w; IMP_MATH_UNREACHABLE();}
             [[nodiscard]] type *as_array() {return &x;}
             [[nodiscard]] const type *as_array() const {return &x;}
-            [[nodiscard]] explicit constexpr operator bool() const {return any(); static_assert(!std::is_same_v<type, bool>, "Use .none(), .any(), or .all() for vectors of bool.");}
-            [[nodiscard]] constexpr bool none() const {return !any();}
+            [[nodiscard]] explicit constexpr operator bool() const requires(!std::is_same_v<type, bool>) {return any();} // Use the explicit methods below for vectors of bool.
             [[nodiscard]] constexpr bool any() const {return x || y || z || w;}
             [[nodiscard]] constexpr bool all() const {return x && y && z && w;}
+            [[nodiscard]] constexpr bool none() const {return !any();}
+            [[nodiscard]] constexpr bool not_all() const {return !all();}
             [[nodiscard]] constexpr auto sum() const {return x + y + z + w;}
             [[nodiscard]] constexpr auto prod() const {return x * y * z * w;}
             [[nodiscard]] constexpr type min() const {return std::min({x,y,z,w});}
@@ -553,14 +558,14 @@ namespace Math
             [[nodiscard]] constexpr auto approx_inv_len() const {return 2 / floating_point_t<type>(len_sqr() + 1);}
             [[nodiscard]] constexpr auto approx_norm() const {return *this * approx_inv_len();} // Guaranteed to converge to `len()==1` eventually, when starting from any finite `len_sqr()`.
             template <typename U> [[nodiscard]] constexpr auto dot(const vec4<U> &o) const {return x * o.x + y * o.y + z * o.z + w * o.w;}
-            template <typename U> [[nodiscard]] constexpr auto delta_to(vec4<U> v) const {return v - *this;}
             [[nodiscard]] constexpr auto tie() & {return std::tie(x,y,z,w);}
             [[nodiscard]] constexpr auto tie() const & {return std::tie(x,y,z,w);}
             template <int I> [[nodiscard]] constexpr type &get() & {return std::get<I>(tie());}
             template <int I> [[nodiscard]] constexpr const type &get() const & {return std::get<I>(tie());}
-            [[nodiscard]] constexpr compare_none<vec> operator()(compare_none_tag) const {return compare_none(*this);}
             [[nodiscard]] constexpr compare_any<vec> operator()(compare_any_tag) const {return compare_any(*this);}
             [[nodiscard]] constexpr compare_all<vec> operator()(compare_all_tag) const {return compare_all(*this);}
+            [[nodiscard]] constexpr compare_none<vec> operator()(compare_none_tag) const {return compare_none(*this);}
+            [[nodiscard]] constexpr compare_not_all<vec> operator()(compare_not_all_tag) const {return compare_not_all(*this);}
             [[nodiscard]] constexpr compare_elemwise<vec> operator()(compare_elemwise_tag) const {return compare_elemwise(*this);}
         };
 
@@ -1140,13 +1145,6 @@ namespace Math
             }
         }
 
-        template <vector_or_scalar T> [[nodiscard]] constexpr bool none_nonzero_elements(const T &value)
-        {
-            if constexpr (vector<T>)
-                return value.none();
-            else
-                return !bool(value);
-        }
         template <vector_or_scalar T> [[nodiscard]] constexpr bool any_nonzero_elements(const T &value)
         {
             if constexpr (vector<T>)
@@ -1160,6 +1158,20 @@ namespace Math
                 return value.all();
             else
                 return bool(value);
+        }
+        template <vector_or_scalar T> [[nodiscard]] constexpr bool none_nonzero_elements(const T &value)
+        {
+            if constexpr (vector<T>)
+                return value.none();
+            else
+                return !bool(value);
+        }
+        template <vector_or_scalar T> [[nodiscard]] constexpr bool not_all_nonzero_elements(const T &value)
+        {
+            if constexpr (vector<T>)
+                return value.not_all();
+            else
+                return !bool(value);
         }
     }
 
@@ -1193,75 +1205,91 @@ namespace Math
         template <vector A, vector_or_scalar B> IMP_MATH_ALWAYS_INLINE constexpr auto operator<<=(A &a, const B &b) -> std::enable_if_t<have_common_vec_size<vec_size_strong_v<A>, vec_size_strong_v<B>> && (std::is_floating_point_v<vec_base_t<B>> <= std::is_floating_point_v<vec_base_t<A>>), decltype(void(std::declval<vec_base_t<A> &>() <<= std::declval<vec_base_t<B>>()), std::declval<A &>())> {apply_elementwise([](vec_base_t<A> &a, vec_base_t<B> b){a <<= b;}, a, b); return a;}
         template <vector A, vector_or_scalar B> IMP_MATH_ALWAYS_INLINE constexpr auto operator>>=(A &a, const B &b) -> std::enable_if_t<have_common_vec_size<vec_size_strong_v<A>, vec_size_strong_v<B>> && (std::is_floating_point_v<vec_base_t<B>> <= std::is_floating_point_v<vec_base_t<A>>), decltype(void(std::declval<vec_base_t<A> &>() >>= std::declval<vec_base_t<B>>()), std::declval<A &>())> {apply_elementwise([](vec_base_t<A> &a, vec_base_t<B> b){a >>= b;}, a, b); return a;}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator<(const A &a, const B &b) {if constexpr (vector<A>) return compare_elemwise(a) < b; else return a < compare_elemwise(b);}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator<(compare_none<A> &&a, const B &b) {return none_nonzero_elements(apply_elementwise(std::less{}, a.value, b));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator<(const A &a, compare_none<B> &&b) {return none_nonzero_elements(apply_elementwise(std::less{}, a, b.value));}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator<(compare_any<A> &&a, const B &b) {return any_nonzero_elements(apply_elementwise(std::less{}, a.value, b));}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator<(const A &a, compare_any<B> &&b) {return any_nonzero_elements(apply_elementwise(std::less{}, a, b.value));}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator<(compare_all<A> &&a, const B &b) {return all_nonzero_elements(apply_elementwise(std::less{}, a.value, b));}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator<(const A &a, compare_all<B> &&b) {return all_nonzero_elements(apply_elementwise(std::less{}, a, b.value));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator<(compare_none<A> &&a, const B &b) {return none_nonzero_elements(apply_elementwise(std::less{}, a.value, b));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator<(const A &a, compare_none<B> &&b) {return none_nonzero_elements(apply_elementwise(std::less{}, a, b.value));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator<(compare_not_all<A> &&a, const B &b) {return not_all_nonzero_elements(apply_elementwise(std::less{}, a.value, b));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator<(const A &a, compare_not_all<B> &&b) {return not_all_nonzero_elements(apply_elementwise(std::less{}, a, b.value));}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator<(compare_elemwise<A> &&a, const B &b) {return apply_elementwise(std::less{}, a.value, b);}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator<(const A &a, compare_elemwise<B> &&b) {return apply_elementwise(std::less{}, a, b.value);}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator>(const A &a, const B &b) {if constexpr (vector<A>) return compare_elemwise(a) > b; else return a > compare_elemwise(b);}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator>(compare_none<A> &&a, const B &b) {return none_nonzero_elements(apply_elementwise(std::greater{}, a.value, b));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator>(const A &a, compare_none<B> &&b) {return none_nonzero_elements(apply_elementwise(std::greater{}, a, b.value));}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator>(compare_any<A> &&a, const B &b) {return any_nonzero_elements(apply_elementwise(std::greater{}, a.value, b));}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator>(const A &a, compare_any<B> &&b) {return any_nonzero_elements(apply_elementwise(std::greater{}, a, b.value));}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator>(compare_all<A> &&a, const B &b) {return all_nonzero_elements(apply_elementwise(std::greater{}, a.value, b));}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator>(const A &a, compare_all<B> &&b) {return all_nonzero_elements(apply_elementwise(std::greater{}, a, b.value));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator>(compare_none<A> &&a, const B &b) {return none_nonzero_elements(apply_elementwise(std::greater{}, a.value, b));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator>(const A &a, compare_none<B> &&b) {return none_nonzero_elements(apply_elementwise(std::greater{}, a, b.value));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator>(compare_not_all<A> &&a, const B &b) {return not_all_nonzero_elements(apply_elementwise(std::greater{}, a.value, b));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator>(const A &a, compare_not_all<B> &&b) {return not_all_nonzero_elements(apply_elementwise(std::greater{}, a, b.value));}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator>(compare_elemwise<A> &&a, const B &b) {return apply_elementwise(std::greater{}, a.value, b);}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator>(const A &a, compare_elemwise<B> &&b) {return apply_elementwise(std::greater{}, a, b.value);}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator<=(const A &a, const B &b) {if constexpr (vector<A>) return compare_elemwise(a) <= b; else return a <= compare_elemwise(b);}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator<=(compare_none<A> &&a, const B &b) {return none_nonzero_elements(apply_elementwise(std::less_equal{}, a.value, b));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator<=(const A &a, compare_none<B> &&b) {return none_nonzero_elements(apply_elementwise(std::less_equal{}, a, b.value));}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator<=(compare_any<A> &&a, const B &b) {return any_nonzero_elements(apply_elementwise(std::less_equal{}, a.value, b));}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator<=(const A &a, compare_any<B> &&b) {return any_nonzero_elements(apply_elementwise(std::less_equal{}, a, b.value));}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator<=(compare_all<A> &&a, const B &b) {return all_nonzero_elements(apply_elementwise(std::less_equal{}, a.value, b));}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator<=(const A &a, compare_all<B> &&b) {return all_nonzero_elements(apply_elementwise(std::less_equal{}, a, b.value));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator<=(compare_none<A> &&a, const B &b) {return none_nonzero_elements(apply_elementwise(std::less_equal{}, a.value, b));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator<=(const A &a, compare_none<B> &&b) {return none_nonzero_elements(apply_elementwise(std::less_equal{}, a, b.value));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator<=(compare_not_all<A> &&a, const B &b) {return not_all_nonzero_elements(apply_elementwise(std::less_equal{}, a.value, b));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator<=(const A &a, compare_not_all<B> &&b) {return not_all_nonzero_elements(apply_elementwise(std::less_equal{}, a, b.value));}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator<=(compare_elemwise<A> &&a, const B &b) {return apply_elementwise(std::less_equal{}, a.value, b);}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator<=(const A &a, compare_elemwise<B> &&b) {return apply_elementwise(std::less_equal{}, a, b.value);}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator>=(const A &a, const B &b) {if constexpr (vector<A>) return compare_elemwise(a) >= b; else return a >= compare_elemwise(b);}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator>=(compare_none<A> &&a, const B &b) {return none_nonzero_elements(apply_elementwise(std::greater_equal{}, a.value, b));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator>=(const A &a, compare_none<B> &&b) {return none_nonzero_elements(apply_elementwise(std::greater_equal{}, a, b.value));}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator>=(compare_any<A> &&a, const B &b) {return any_nonzero_elements(apply_elementwise(std::greater_equal{}, a.value, b));}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator>=(const A &a, compare_any<B> &&b) {return any_nonzero_elements(apply_elementwise(std::greater_equal{}, a, b.value));}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator>=(compare_all<A> &&a, const B &b) {return all_nonzero_elements(apply_elementwise(std::greater_equal{}, a.value, b));}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator>=(const A &a, compare_all<B> &&b) {return all_nonzero_elements(apply_elementwise(std::greater_equal{}, a, b.value));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator>=(compare_none<A> &&a, const B &b) {return none_nonzero_elements(apply_elementwise(std::greater_equal{}, a.value, b));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator>=(const A &a, compare_none<B> &&b) {return none_nonzero_elements(apply_elementwise(std::greater_equal{}, a, b.value));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator>=(compare_not_all<A> &&a, const B &b) {return not_all_nonzero_elements(apply_elementwise(std::greater_equal{}, a.value, b));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator>=(const A &a, compare_not_all<B> &&b) {return not_all_nonzero_elements(apply_elementwise(std::greater_equal{}, a, b.value));}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator>=(compare_elemwise<A> &&a, const B &b) {return apply_elementwise(std::greater_equal{}, a.value, b);}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator>=(const A &a, compare_elemwise<B> &&b) {return apply_elementwise(std::greater_equal{}, a, b.value);}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator==(const A &a, const B &b) {if constexpr (vector<A>) return compare_all(a) == b; else return a == compare_all(b);}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator==(compare_none<A> &&a, const B &b) {return none_nonzero_elements(apply_elementwise(std::equal_to{}, a.value, b));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator==(const A &a, compare_none<B> &&b) {return none_nonzero_elements(apply_elementwise(std::equal_to{}, a, b.value));}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator==(compare_any<A> &&a, const B &b) {return any_nonzero_elements(apply_elementwise(std::equal_to{}, a.value, b));}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator==(const A &a, compare_any<B> &&b) {return any_nonzero_elements(apply_elementwise(std::equal_to{}, a, b.value));}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator==(compare_all<A> &&a, const B &b) {return all_nonzero_elements(apply_elementwise(std::equal_to{}, a.value, b));}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator==(const A &a, compare_all<B> &&b) {return all_nonzero_elements(apply_elementwise(std::equal_to{}, a, b.value));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator==(compare_none<A> &&a, const B &b) {return none_nonzero_elements(apply_elementwise(std::equal_to{}, a.value, b));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator==(const A &a, compare_none<B> &&b) {return none_nonzero_elements(apply_elementwise(std::equal_to{}, a, b.value));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator==(compare_not_all<A> &&a, const B &b) {return not_all_nonzero_elements(apply_elementwise(std::equal_to{}, a.value, b));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator==(const A &a, compare_not_all<B> &&b) {return not_all_nonzero_elements(apply_elementwise(std::equal_to{}, a, b.value));}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator==(compare_elemwise<A> &&a, const B &b) {return apply_elementwise(std::equal_to{}, a.value, b);}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator==(const A &a, compare_elemwise<B> &&b) {return apply_elementwise(std::equal_to{}, a, b.value);}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator!=(const A &a, const B &b) {if constexpr (vector<A>) return compare_any(a) != b; else return a != compare_any(b);}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator!=(compare_none<A> &&a, const B &b) {return none_nonzero_elements(apply_elementwise(std::not_equal_to{}, a.value, b));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator!=(const A &a, compare_none<B> &&b) {return none_nonzero_elements(apply_elementwise(std::not_equal_to{}, a, b.value));}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator!=(compare_any<A> &&a, const B &b) {return any_nonzero_elements(apply_elementwise(std::not_equal_to{}, a.value, b));}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator!=(const A &a, compare_any<B> &&b) {return any_nonzero_elements(apply_elementwise(std::not_equal_to{}, a, b.value));}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator!=(compare_all<A> &&a, const B &b) {return all_nonzero_elements(apply_elementwise(std::not_equal_to{}, a.value, b));}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator!=(const A &a, compare_all<B> &&b) {return all_nonzero_elements(apply_elementwise(std::not_equal_to{}, a, b.value));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator!=(compare_none<A> &&a, const B &b) {return none_nonzero_elements(apply_elementwise(std::not_equal_to{}, a.value, b));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator!=(const A &a, compare_none<B> &&b) {return none_nonzero_elements(apply_elementwise(std::not_equal_to{}, a, b.value));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator!=(compare_not_all<A> &&a, const B &b) {return not_all_nonzero_elements(apply_elementwise(std::not_equal_to{}, a.value, b));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator!=(const A &a, compare_not_all<B> &&b) {return not_all_nonzero_elements(apply_elementwise(std::not_equal_to{}, a, b.value));}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator!=(compare_elemwise<A> &&a, const B &b) {return apply_elementwise(std::not_equal_to{}, a.value, b);}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator!=(const A &a, compare_elemwise<B> &&b) {return apply_elementwise(std::not_equal_to{}, a, b.value);}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator&&(const A &a, const B &b) {if constexpr (vector<A>) return compare_elemwise(a) && b; else return a && compare_elemwise(b);}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator&&(compare_none<A> &&a, const B &b) {return none_nonzero_elements(apply_elementwise(std::logical_and{}, a.value, b));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator&&(const A &a, compare_none<B> &&b) {return none_nonzero_elements(apply_elementwise(std::logical_and{}, a, b.value));}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator&&(compare_any<A> &&a, const B &b) {return any_nonzero_elements(apply_elementwise(std::logical_and{}, a.value, b));}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator&&(const A &a, compare_any<B> &&b) {return any_nonzero_elements(apply_elementwise(std::logical_and{}, a, b.value));}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator&&(compare_all<A> &&a, const B &b) {return all_nonzero_elements(apply_elementwise(std::logical_and{}, a.value, b));}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator&&(const A &a, compare_all<B> &&b) {return all_nonzero_elements(apply_elementwise(std::logical_and{}, a, b.value));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator&&(compare_none<A> &&a, const B &b) {return none_nonzero_elements(apply_elementwise(std::logical_and{}, a.value, b));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator&&(const A &a, compare_none<B> &&b) {return none_nonzero_elements(apply_elementwise(std::logical_and{}, a, b.value));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator&&(compare_not_all<A> &&a, const B &b) {return not_all_nonzero_elements(apply_elementwise(std::logical_and{}, a.value, b));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator&&(const A &a, compare_not_all<B> &&b) {return not_all_nonzero_elements(apply_elementwise(std::logical_and{}, a, b.value));}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator&&(compare_elemwise<A> &&a, const B &b) {return apply_elementwise(std::logical_and{}, a.value, b);}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator&&(const A &a, compare_elemwise<B> &&b) {return apply_elementwise(std::logical_and{}, a, b.value);}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator||(const A &a, const B &b) {if constexpr (vector<A>) return compare_elemwise(a) || b; else return a || compare_elemwise(b);}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator||(compare_none<A> &&a, const B &b) {return none_nonzero_elements(apply_elementwise(std::logical_or{}, a.value, b));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator||(const A &a, compare_none<B> &&b) {return none_nonzero_elements(apply_elementwise(std::logical_or{}, a, b.value));}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator||(compare_any<A> &&a, const B &b) {return any_nonzero_elements(apply_elementwise(std::logical_or{}, a.value, b));}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator||(const A &a, compare_any<B> &&b) {return any_nonzero_elements(apply_elementwise(std::logical_or{}, a, b.value));}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator||(compare_all<A> &&a, const B &b) {return all_nonzero_elements(apply_elementwise(std::logical_or{}, a.value, b));}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator||(const A &a, compare_all<B> &&b) {return all_nonzero_elements(apply_elementwise(std::logical_or{}, a, b.value));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator||(compare_none<A> &&a, const B &b) {return none_nonzero_elements(apply_elementwise(std::logical_or{}, a.value, b));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator||(const A &a, compare_none<B> &&b) {return none_nonzero_elements(apply_elementwise(std::logical_or{}, a, b.value));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator||(compare_not_all<A> &&a, const B &b) {return not_all_nonzero_elements(apply_elementwise(std::logical_or{}, a.value, b));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator||(const A &a, compare_not_all<B> &&b) {return not_all_nonzero_elements(apply_elementwise(std::logical_or{}, a, b.value));}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator||(compare_elemwise<A> &&a, const B &b) {return apply_elementwise(std::logical_or{}, a.value, b);}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator||(const A &a, compare_elemwise<B> &&b) {return apply_elementwise(std::logical_or{}, a, b.value);}
 
@@ -1529,9 +1557,10 @@ namespace Math
         inline constexpr op_type_cross cross;
 
         // Comparison tags.
-        inline constexpr compare_none_tag none;
         inline constexpr compare_any_tag any;
         inline constexpr compare_all_tag all;
+        inline constexpr compare_none_tag none;
+        inline constexpr compare_not_all_tag not_all;
         inline constexpr compare_elemwise_tag elemwise;
 
         // Helper class for writing nested loops.

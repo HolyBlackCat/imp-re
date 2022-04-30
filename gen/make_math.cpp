@@ -7,7 +7,7 @@
 #include <sstream>
 #include <type_traits>
 
-#define VERSION "3.4.2"
+#define VERSION "3.4.3"
 
 #pragma GCC diagnostic ignored "-Wpragmas" // Silence GCC warning about the next line disabling a warning that GCC doesn't have.
 #pragma GCC diagnostic ignored "-Wstring-plus-int" // Silence clang warning about `1+R"()"` paUern.
@@ -54,7 +54,7 @@ namespace data
 
     const std::string custom_operator_symbol = "/", custom_operator_list[]{"dot","cross"};
 
-    const std::string compare_modes[] = {"none", "any", "all", "elemwise"};
+    const std::string compare_modes[] = {"any", "all", "none", "not_all", "elemwise"};
 }
 
 namespace impl
@@ -563,16 +563,19 @@ int main(int argc, char **argv)
 
                         { // Boolean
                             // Convert to bool
-                            output("[[nodiscard]] explicit constexpr operator bool() const {return any(); static_assert(!std::is_same_v<type, bool>, \"Use .none(), .any(), or .all() for vectors of bool.\");}\n");
-
-                            // None of
-                            output("[[nodiscard]] constexpr bool none() const {return !any();}\n");
+                            output("[[nodiscard]] explicit constexpr operator bool() const requires(!std::is_same_v<type, bool>) {return any();} // Use the explicit methods below for vectors of bool.\n");
 
                             // Any of
                             output("[[nodiscard]] constexpr bool any() const {return ",Fields(" || "),";}\n");
 
                             // All of
                             output("[[nodiscard]] constexpr bool all() const {return ",Fields(" && "),";}\n");
+
+                            // None of
+                            output("[[nodiscard]] constexpr bool none() const {return !any();}\n");
+
+                            // Not all of
+                            output("[[nodiscard]] constexpr bool not_all() const {return !all();}\n");
                         }
 
                         { // Apply operators
@@ -692,9 +695,6 @@ int main(int argc, char **argv)
                             // Cross product z component
                             if (w == 2)
                                 output("template <typename U> [[nodiscard]] constexpr auto cross(const vec2<U> &o) const {return x * o.y - y * o.x;}\n");
-
-                            // Delta_to (aka inverse minus)
-                            output("template <typename U> [[nodiscard]] constexpr auto delta_to(vec",w,"<U> v) const {return v - *this;}\n");
                         }
 
                         { // Tie
@@ -1204,13 +1204,6 @@ int main(int argc, char **argv)
                     }
                 }
 
-                template <vector_or_scalar T> [[nodiscard]] constexpr bool none_nonzero_elements(const T &value)
-                {
-                    if constexpr (vector<T>)
-                    $   return value.none();
-                    else
-                    $   return !bool(value);
-                }
                 template <vector_or_scalar T> [[nodiscard]] constexpr bool any_nonzero_elements(const T &value)
                 {
                     if constexpr (vector<T>)
@@ -1224,6 +1217,20 @@ int main(int argc, char **argv)
                     $   return value.all();
                     else
                     $   return bool(value);
+                }
+                template <vector_or_scalar T> [[nodiscard]] constexpr bool none_nonzero_elements(const T &value)
+                {
+                    if constexpr (vector<T>)
+                    $   return value.none();
+                    else
+                    $   return !bool(value);
+                }
+                template <vector_or_scalar T> [[nodiscard]] constexpr bool not_all_nonzero_elements(const T &value)
+                {
+                    if constexpr (vector<T>)
+                    $   return value.not_all();
+                    else
+                    $   return !bool(value);
                 }
             )");
         });
