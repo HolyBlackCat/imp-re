@@ -5,7 +5,16 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Debug",
+            "name": "Debug (LLDB)",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceRoot}/<MAIN_EXECUTABLE>",
+            "cwd": "${workspaceRoot}",
+            "internalConsoleOptions": "openOnSessionStart",
+            "preLaunchTask": "Build",
+        },
+        {
+            "name": "Debug (GDB)",
             "type": "gdb",
             "request": "launch",
             "target": "${workspaceRoot}/<MAIN_EXECUTABLE>",
@@ -26,14 +35,5 @@
                 "python import sys; sys.path.insert(0, '/usr/share/gcc/python'); from libstdcxx.v6.printers import register_libstdcxx_printers; register_libstdcxx_printers(None)",
             ],
         },
-        {
-            "name": "Debug (LLDB)",
-            "type": "lldb",
-            "request": "launch",
-            "program": "${workspaceRoot}/bin/imp-re",
-            "cwd": "${workspaceRoot}/bin",
-            "internalConsoleOptions": "openOnSessionStart",
-            "preLaunchTask": "Build",
-        }
     ]
 }
