@@ -162,6 +162,8 @@ class MultiArray
     // Any out-of-range elements are destroyed.
     void resize(index_vec_t new_size, index_vec_t offset = {})
     {
+        if (new_size == size_vec && offset == 0)
+            return;
         *this = resize_copy(new_size, offset);
     }
 
@@ -171,6 +173,9 @@ class MultiArray
     {
         if (new_size(any) == 0)
             return {}; // Target is empty, stop early.
+
+        if (new_size == size_vec && offset == 0)
+            return *this; // No changes are needed.
 
         MultiArray ret(new_size);
         new_size = ret.size(); // This sanitizes the size.
