@@ -7,7 +7,7 @@
 #include <sstream>
 #include <type_traits>
 
-#define VERSION "3.4"
+#define VERSION "3.4.1"
 
 #pragma GCC diagnostic ignored "-Wpragmas" // Silence GCC warning about the next line disabling a warning that GCC doesn't have.
 #pragma GCC diagnostic ignored "-Wstring-plus-int" // Silence clang warning about `1+R"()"` paUern.
@@ -443,24 +443,19 @@ int main(int argc, char **argv)
 
             next_line();
 
-            output("// Tags for different kinds of comparisons.\n");
-            for (const std::string &mode : data::compare_modes)
-                output("struct compare_",mode,"_tag {};\n");
-        });
-
-        next_line();
-
-        section("inline namespace Compare // Comparison helpers", []
-        {
-            output("struct uninit {}; // A constructor tag.\n");
+            output("struct uninit {}; // A constructor tag to leave a vector/matrix uninitialized.\n");
 
             next_line();
 
             output("// Wrappers for different kinds of comparisons.\n");
             for (const std::string &mode : data::compare_modes)
             {
-                output("template <typename T> struct compare_",mode," {const T &value; [[nodiscard]] explicit constexpr compare_",mode,"(const T &value) : value(value) {}};\n");
+                output("template <vector_or_scalar T> struct compare_",mode," {const T &value; [[nodiscard]] explicit constexpr compare_",mode,"(const T &value) : value(value) {}};\n");
             }
+
+            output("// Tags for different kinds of comparisons.\n");
+            for (const std::string &mode : data::compare_modes)
+                output("struct compare_",mode,"_tag {template <vector_or_scalar T> [[nodiscard]] constexpr compare_",mode,"<T> operator()(const T &value) const {return compare_",mode,"(value);}};\n");
         });
 
         next_line();
@@ -1208,6 +1203,28 @@ int main(int argc, char **argv)
                         return ret;
                     }
                 }
+
+                template <vector_or_scalar T> [[nodiscard]] constexpr bool none_nonzero_elements(const T &value)
+                {
+                    if constexpr (vector<T>)
+                    $   return value.none();
+                    else
+                    $   return !bool(value);
+                }
+                template <vector_or_scalar T> [[nodiscard]] constexpr bool any_nonzero_elements(const T &value)
+                {
+                    if constexpr (vector<T>)
+                    $   return value.any();
+                    else
+                    $   return bool(value);
+                }
+                template <vector_or_scalar T> [[nodiscard]] constexpr bool all_nonzero_elements(const T &value)
+                {
+                    if constexpr (vector<T>)
+                    $   return value.all();
+                    else
+                    $   return bool(value);
+                }
             )");
         });
 
@@ -1284,12 +1301,12 @@ int main(int argc, char **argv)
                     // comp({vec,scalar}) @ {vec,scalar}
                     output("template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr ",!elemwise?"bool":"vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool>",
                            " operator",op,"(compare_",mode,"<A> a, const B &b)"
-                           " {return apply_elementwise(",std_op,"{}, a.value, b)",mode == "elemwise" ? "" : make_str(".",mode,"()"),";}\n");
+                           " {return ",mode == "elemwise" ? "" : make_str(mode,"_nonzero_elements("),"apply_elementwise(",std_op,"{}, a.value, b)",mode == "elemwise" ? "" : ")",";}\n");
 
                     // {vec,scalar} @ comp({vec,scalar})
                     output("template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr ",!elemwise?"bool":"vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool>",
                            " operator",op,"(const A &a, compare_",mode,"<B> b)"
-                           " {return apply_elementwise(",std_op,"{}, a, b.value)",mode == "elemwise" ? "" : make_str(".",mode,"()"),";}\n");
+                           " {return ",mode == "elemwise" ? "" : make_str(mode,"_nonzero_elements("),"apply_elementwise(",std_op,"{}, a, b.value)",mode == "elemwise" ? "" : ")",";}\n");
                 }
             }
 
@@ -1406,28 +1423,6 @@ int main(int argc, char **argv)
 
         section("inline namespace Utility // Low-level helper functions", []
         {
-            decorative_section("Member access", []
-            {
-                output(1+R"(
-                    template <typename T> [[nodiscard]] constexpr bool any(T vec)
-                    {
-                        if constexpr (vector<T>)
-                        $   return vec.any();
-                        else
-                        $   return bool(vec);
-                    }
-                    template <typename T> [[nodiscard]] constexpr bool all(T vec)
-                    {
-                        if constexpr (vector<T>)
-                        $   return vec.all();
-                        else
-                        $   return bool(vec);
-                    }
-                )");
-            });
-
-            next_line();
-
             decorative_section("Custom operators", []
             {
                 for (auto op : data::custom_operator_list)
@@ -1475,7 +1470,7 @@ int main(int argc, char **argv)
                             T vec_cur = T(0);
                             bool finished = true;
 
-                            iterator(T vec_begin, T vec_end) : vec_begin(vec_begin), vec_end(vec_end), vec_cur(vec_begin), finished(any(vec_begin >= vec_end)) {}
+                            iterator(T vec_begin, T vec_end) : vec_begin(vec_begin), vec_end(vec_end), vec_cur(vec_begin), finished(compare_any(vec_begin) >= vec_end) {}
 
                           @public:
                             using difference_type   = std::ptrdiff_t;
@@ -2225,7 +2220,6 @@ int main(int argc, char **argv)
                 using Vector::mat; // ...the overloaded operators into the global namespace, mostly for better error messages and build speed.
                 using namespace Alias; // Convenient type aliases.
                 using namespace Common; // Common functions.
-                using namespace Compare; // Comparison helpers.
 
                 // Common types.
                 using std::int8_t;
