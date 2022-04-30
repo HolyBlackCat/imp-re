@@ -37,16 +37,22 @@ class MultiArray
     MultiArray(index_vec_t size_vec) : size_vec(size_vec), storage(size_vec.prod())
     {
         ASSERT(size_vec.min() >= 0, "Invalid multiarray size.");
+        if (size_vec(any) <= 0)
+            size_vec = {};
     }
     MultiArray(index_vec_t size_vec, const T &init) : size_vec(size_vec), storage(size_vec.prod(), init)
     {
         ASSERT(size_vec.min() >= 0, "Invalid multiarray size.");
+        if (size_vec(any) <= 0)
+            size_vec = {};
     }
     template <typename A, A ...I>
     MultiArray(Meta::value_list<I...>, std::array<type, index_vec_t(I...).prod()> data) : size_vec(I...), storage(data.begin(), data.end())
     {
         static_assert(std::is_integral_v<A>, "Indices must be integral.");
         static_assert(((I >= 0) && ...), "Invalid multiarray size.");
+        if (size_vec(any) <= 0)
+            size_vec = {};
     }
 
     [[nodiscard]] index_vec_t size() const
@@ -150,6 +156,35 @@ class MultiArray
     [[nodiscard]] const type *elements() const
     {
         return storage.data();
+    }
+
+    // Resizes the array and/or offsets it by the specified amount.
+    // Any out-of-range elements are destroyed.
+    void resize(index_vec_t new_size, index_vec_t offset = {})
+    {
+        *this = resize_copy(new_size, offset);
+    }
+
+    // Resizes a copy of the array and/or offsets it by the specified amount.
+    // Any out-of-range elements are destroyed.
+    [[nodiscard]] MultiArray resize_copy(index_vec_t new_size, index_vec_t offset = {}) const
+    {
+        if (new_size(any) == 0)
+            return {}; // Target is empty, stop early.
+
+        MultiArray ret(new_size);
+        new_size = ret.size(); // This sanitizes the size.
+
+        if (size_vec(any) == 0)
+            return ret; // Source is empty, return zeroed array.
+
+        index_vec_t source_start = clamp_min(-offset, 0);
+        index_vec_t source_end = clamp_max(new_size - offset, size_vec);
+
+        for (index_vec_t pos : source_start <= vector_range < source_end)
+            ret.safe_nonthrowing_at(pos + offset) = std::move(safe_nonthrowing_at(pos));
+
+        return ret;
     }
 };
 
