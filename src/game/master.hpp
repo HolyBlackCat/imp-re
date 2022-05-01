@@ -20,6 +20,7 @@
 #include "interface/gui.h"
 #include "interface/window.h"
 #include "macros/adjust.h"
+#include "macros/enum_flag_operators.h"
 #include "macros/finally.h"
 #include "macros/maybe_const.h"
 #include "macros/named_loops.h"
