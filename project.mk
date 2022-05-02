@@ -84,13 +84,13 @@ $(foreach f,$(_codegen_list),$(eval $(call _codegen_target,$(word 1,$(subst :, ,
     libudev-dev libgles2-mesa-dev libegl1-mesa-dev libibus-1.0-dev \
     fcitx-libs-dev libsamplerate0-dev libsndio-dev libwayland-dev \
     libxkbcommon-dev libdrm-dev libgbm-dev
-# This list was last updated for SDL 2.0.20.
+# This list was last updated for SDL 2.0.22.
 # `libjack-dev` was removed from the list, because it caused weird package conflicts on Ubuntu 21.10.
 
 
 # --- Libraries ---
 
-DIST_DEPS_ARCHIVE := https://github.com/HolyBlackCat/imp-re/releases/download/deps-sources/deps_v1.zip
+DIST_DEPS_ARCHIVE := https://github.com/HolyBlackCat/imp-re/releases/download/deps-sources/deps_v2.zip
 
 _win_is_x32 :=
 _win_sdl2_arch := $(if $(_win_is_x32),i686-w64-mingw32,x86_64-w64-mingw32)
@@ -122,51 +122,55 @@ endif
 $(call Library,box2d-2.4.1.tar.gz)
   $(call LibrarySetting,cmake_flags,-DBOX2D_BUILD_UNIT_TESTS:BOOL=OFF -DBOX2D_BUILD_TESTBED:BOOL=OFF)
 
-
-$(call Library,bullet3-3.22b_no-examples.tar.gz)
+$(call Library,bullet3-3.24_no-examples.tar.gz)
   # The `_no-examples` suffix on the archive indicates that following directories were removed from it: `./data`, and everything in `./examples` except `CommonInterfaces`.
   # This decreases the archive size from 170+ mb to 10+ mb.
   $(call LibrarySetting,cmake_flags,$(_bullet_flags))
+
 $(call Library,double-conversion-3.2.0.tar.gz)
+
 $(call Library,fmt-8.1.1.zip)
   $(call LibrarySetting,cmake_flags,-DFMT_TEST=OFF)
-$(call Library,freetype-2.12.0.tar.gz)
+
+$(call Library,freetype-2.12.1.tar.gz)
   $(call LibrarySetting,deps,zlib-1.2.12)
-  # When using CMake, freetype generates a broken `.pc` file. First seen on Freetype 2.12.0. Last tested on 2.12.0.
-  $(call LibrarySetting,build_system,configure_make)
-  # Freetype manages to find system zlib and bzip2, despite the automatic prefix configuration.
-  # Specifying a custom zlib as dependency overrides it, but we don't ship bzip2, so we need to explicitly disable it.
-  # It seems their tasks for other libraries respect our prefix, so we don't disable them explicitly.
-  $(call LibrarySetting,configure_flags,--without-bzip2)
+
 $(call Library,libogg-1.3.5.tar.gz)
   # When built with CMake on MinGW, ogg/vorbis can't decide whether to prefix the libraries with `lib` or not.
   # The resulting executable doesn't find libraries because of this inconsistency.
   $(call LibrarySetting,build_system,configure_make)
+
 $(call Library,libvorbis-1.3.7.tar.gz)
   $(call LibrarySetting,deps,ogg-1.3.5)
   # See vorbis for why we use configure+make.
   $(call LibrarySetting,build_system,configure_make)
-$(call Library,openal-soft-1.21.1.tar.bz2)
+
+# Commit `4b557f1` contains MinGW-related fixes, we can't use 1.22.0 directly.
+$(call Library,openal-soft-1.22.0+4b557f1.tar.gz)
 ifeq ($(TARGET_OS),windows)
-  $(call LibrarySetting,deps,SDL2-devel-2.0.20-mingw)
+  $(call LibrarySetting,deps,SDL2-devel-2.0.22-mingw)
 else
-  $(call LibrarySetting,deps,SDL2-2.0.20)
+  $(call LibrarySetting,deps,SDL2-2.0.22)
 endif
   $(call LibrarySetting,cmake_flags,$(_openal_flags))
+
+$(call Library,parallel-hashmap-1.34.tar.gz)
+
 ifeq ($(TARGET_OS),windows)
-$(call Library,SDL2-devel-2.0.20-mingw.tar.gz)
+$(call Library,SDL2-devel-2.0.22-mingw.tar.gz)
   $(call LibrarySetting,build_system,copy_files)
   $(call LibrarySetting,copy_files,$(_win_sdl2_arch)->.)
 $(call Library,SDL2_net-devel-2.0.1-mingw.tar.gz)
   $(call LibrarySetting,build_system,copy_files)
   $(call LibrarySetting,copy_files,$(_win_sdl2_arch)->.)
 else
-$(call Library,SDL2-2.0.20.tar.gz)
+$(call Library,SDL2-2.0.22.tar.gz)
   # Allow SDL to see system packages. If we were using `configure+make`, we'd need `configure_vars = env -uPKG_CONFIG_PATH -uPKG_CONFIG_LIBDIR` instead.
   $(call LibrarySetting,cmake_flags,-DCMAKE_FIND_USE_CMAKE_SYSTEM_PATH=ON)
 $(call Library,SDL2_net-2.0.1.tar.gz)
-  $(call LibrarySetting,deps,SDL2-2.0.20)
+  $(call LibrarySetting,deps,SDL2-2.0.22)
 endif
+
 $(call Library,zlib-1.2.12.tar.gz)
   # CMake support in ZLib is jank. On MinGW it builds `libzlib.dll`, but pkg-config says `-lz`. Last checked on 1.2.12.
   $(call LibrarySetting,build_system,configure_make)
