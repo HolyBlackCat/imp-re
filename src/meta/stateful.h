@@ -15,7 +15,14 @@ namespace Meta::Stateful
             template <typename Name, std::size_t Index>
             struct ElemReader
             {
+                #if defined(__GNUC__) && !defined(__clang__)
+                #pragma GCC diagnostic push
+                #pragma GCC diagnostic ignored "-Wnon-template-friend"
+                #endif
                 friend constexpr auto adl_ImpListElem(ElemReader<Name, Index>);
+                #if defined(__GNUC__) && !defined(__clang__)
+                #pragma GCC diagnostic pop
+                #endif
             };
 
             template <typename Name, std::size_t Index, typename Value>
@@ -29,12 +36,11 @@ namespace Meta::Stateful
 
             constexpr void adl_ImpListElem() {} // A dummy ADL target.
 
-            template <typename Name, std::size_t Index, typename Unique>
+            template <typename Name, std::size_t Index, typename Unique, typename = void>
             struct CalcSize : std::integral_constant<std::size_t, Index> {};
 
             template <typename Name, std::size_t Index, typename Unique>
-            requires requires {typename decltype(adl_ImpListElem(ElemReader<Name, Index>{}))::type;}
-            struct CalcSize<Name, Index, Unique> : CalcSize<Name, Index + 1, Unique> {};
+            struct CalcSize<Name, Index, Unique, decltype(void(adl_ImpListElem(ElemReader<Name, Index>{})))> : CalcSize<Name, Index + 1, Unique> {};
 
             template <typename Name, std::size_t Index, typename Unique>
             using ReadElem = typename decltype(adl_ImpListElem(ElemReader<Name, Index>{}))::type;
