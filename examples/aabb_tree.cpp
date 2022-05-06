@@ -1,5 +1,13 @@
 #include "utils/aabb_tree.h"
 
+// A demo of our dynamic AABB tree, copied from box2d.
+
+// Uncomment this to use the box2d implementation instead of ours, as a reference.
+// #define DEMO_USE_BOX2D_TREE
+
+// If you see jittering when creating 4 objects and moving one, that seems to be normal, box2d does this too.
+// In our tree it can be fixed by setting the parameter `balance_threshold` to `2`, but it's unclear if it's actually good for performance.
+
 IMP_DIAGNOSTICS_PUSH
 IMP_DIAGNOSTICS_IGNORE("-Wkeyword-macro")
 #define private public
@@ -10,9 +18,6 @@ IMP_DIAGNOSTICS_IGNORE("-Wkeyword-macro")
 IMP_DIAGNOSTICS_POP
 
 #include "physics_2d/math_adapters.h"
-
-// Uncomment this to use the box2d implementation instead of ours, as a reference.
-// #define DEMO_USE_BOX2D_TREE
 
 const ivec2 screen_size = ivec2(480, 270);
 const std::string_view window_name = "Iota";
