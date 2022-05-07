@@ -357,8 +357,9 @@ class AabbTree
     // `func` is `bool func(int node)`. It's called for all colliding nodes. If it returns true, the function stops immediately and also returns true.
     // Since we expand AABBs, you might get false positive nodes. Manually check if the collision is exact.
     template <typename F>
-    bool CollideAabb(const Aabb &aabb, F &&func) const
+    bool CollideAabb(Aabb aabb, F &&func) const
     {
+        sort_two_var(aabb.a, aabb.b);
         return CollideCustom([&aabb](const Aabb &node_aabb){return aabb.Intersects(node_aabb);}, std::forward<F>(func));
     }
 
