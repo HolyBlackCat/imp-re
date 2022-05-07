@@ -1,6 +1,6 @@
 // mat.h
 // Vector and matrix math
-// Version 3.4.3
+// Version 3.4.4
 // Generated, don't touch.
 
 #pragma once
@@ -1741,6 +1741,13 @@ namespace Math
             return apply_elementwise([](auto val){return std::trunc(val);}, x);
         }
 
+        template <typename T>
+        [[nodiscard]] T round_maxabs(T x) // Round away from zero.
+        {
+            static_assert(std::is_floating_point_v<vec_base_t<T>>, "Argument must be floating-point.");
+            return apply_elementwise([](auto val){return val < 0 ? std::floor(val) : std::ceil(val);}, x);
+        }
+
         template <typename T> [[nodiscard]] T frac(T x)
         {
             static_assert(std::is_floating_point_v<vec_base_t<T>>, "Argument must be floating-point.");
@@ -1817,7 +1824,7 @@ namespace Math
                 {
                     using T = larger_t<A, B>;
                     T ret = T(a) / T(b);
-                    return ret < 0 ? std::floor(ret) : std::ceil(ret);
+                    return round_maxabs(ret);
                 }
             }
             else

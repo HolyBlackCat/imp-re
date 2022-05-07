@@ -7,7 +7,7 @@
 #include <sstream>
 #include <type_traits>
 
-#define VERSION "3.4.3"
+#define VERSION "3.4.4"
 
 #pragma GCC diagnostic ignored "-Wpragmas" // Silence GCC warning about the next line disabling a warning that GCC doesn't have.
 #pragma GCC diagnostic ignored "-Wstring-plus-int" // Silence clang warning about `1+R"()"` paUern.
@@ -1796,6 +1796,13 @@ int main(int argc, char **argv)
                     return apply_elementwise([](auto val){return std::trunc(val);}, x);
                 }
 
+                template <typename T>
+                [[nodiscard]] T round_maxabs(T x) // Round away from zero.
+                {
+                    static_assert(std::is_floating_point_v<vec_base_t<T>>, "Argument must be floating-point.");
+                    return apply_elementwise([](auto val){return val < 0 ? std::floor(val) : std::ceil(val);}, x);
+                }
+
                 template <typename T> [[nodiscard]] T frac(T x)
                 {
                     static_assert(std::is_floating_point_v<vec_base_t<T>>, "Argument must be floating-point.");
@@ -1872,7 +1879,7 @@ int main(int argc, char **argv)
                         {
                             using T = larger_t<A, B>;
                             T ret = T(a) / T(b);
-                            return ret < 0 ? std::floor(ret) : std::ceil(ret);
+                            return round_maxabs(ret);
                         }
                     }
                     else
