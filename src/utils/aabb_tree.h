@@ -25,13 +25,14 @@
 // Only 2D vectors have been tested properly, the cost heuristics may not work in higher dimensions.
 // `UserData` is an arbitrary type, an instance of which will be stored in each node.
 // Keep it small, since it'll also be stored in internal non-leaf nodes, and copied around on a whim.
-template <Math::vector T, typename UserData = char>
+template <Math::vector T, typename UserData = void>
 class AabbTree
 {
+    struct Empty {};
   public:
     using vector = T;
     using scalar = typename T::type;
-    using user_data = UserData;
+    using user_data = std::conditional_t<std::is_void_v<UserData>, Empty, UserData>;
 
     struct Params
     {
@@ -126,7 +127,7 @@ class AabbTree
 
     // Creates a new node. Returns the node index.
     // `suggested_index` allows you to force a specific index. Mostly for internal use.
-    [[nodiscard]] int AddNode(Aabb new_aabb, UserData new_data = {}, int new_index = null_index) noexcept
+    [[nodiscard]] int AddNode(Aabb new_aabb, user_data new_data = {}, int new_index = null_index) noexcept
     {
         #if IMP_AUTO_VALIDATE_AABB_TREES
         FINALLY{Validate();};
@@ -319,18 +320,18 @@ class AabbTree
 
         // The existing rect is either too big or too small.
 
-        UserData userdata = std::move(node.userdata);
+        user_data userdata = std::move(node.userdata);
 
         RemoveNode(target_index);
         (void)AddNode(large_aabb, std::move(userdata), target_index);
     }
 
     // Returns arbitrary user data for the node.
-    [[nodiscard]] UserData &GetNodeUserData(int node_index)
+    [[nodiscard]] user_data &GetNodeUserData(int node_index)
     {
-        return const_cast<UserData &>(std::as_const(*this).GetNodeUserData(node_index));
+        return const_cast<user_data &>(std::as_const(*this).GetNodeUserData(node_index));
     }
-    [[nodiscard]] const UserData &GetNodeUserData(int node_index) const
+    [[nodiscard]] const user_data &GetNodeUserData(int node_index) const
     {
         ASSERT(node_set.Contains(node_index));
         return nodes[node_index].userdata;
@@ -461,7 +462,7 @@ class AabbTree
         int children[2] = {null_index, null_index};
 
         // Arbitrary data.
-        [[no_unique_address]] UserData userdata;
+        [[no_unique_address]] user_data userdata;
 
         [[nodiscard]] bool IsLeaf() const
         {
