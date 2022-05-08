@@ -25,7 +25,9 @@
 // Only 2D vectors have been tested properly, the cost heuristics may not work in higher dimensions.
 // `UserData` is an arbitrary type, an instance of which will be stored in each node.
 // Keep it small, since it'll also be stored in internal non-leaf nodes, and copied around on a whim.
-template <Math::vector T, typename UserData = void>
+// If `Inclusive == false`, the second corner of AABBs is exclusive. This is more convenient when dealing integral coordinates.
+// `Inclusive == true` is intended for floating-point coordinates. It makes both AABB corners inclusive.
+template <Math::vector T, typename UserData = void, bool Inclusive = false>
 class AabbTree
 {
     struct Empty {};
@@ -65,7 +67,7 @@ class AabbTree
     struct Aabb
     {
         T a; // Inclusive.
-        T b; // Exclusive. Greater or equal to `a`.
+        T b; // Normally exclusive, greater or equal to `a`. But if `Inclusive == true`, becomes inclusive.
 
         [[nodiscard]] friend constexpr bool operator==(const Aabb &, const Aabb &) = default;
 
@@ -115,13 +117,19 @@ class AabbTree
         // Returns true if `point` is contained in this AAB, inclusive.
         [[nodiscard]] bool ContainsPoint(T point) const
         {
-            return a(all) <= point && b(all) > point; // Sic, note `>`. `b` is exclusive, but `a` isn't.
+            if constexpr (Inclusive)
+                return a(all) <= point && b(all) >= point;
+            else
+                return a(all) <= point && b(all) > point; // Sic, note `>`. `b` is exclusive, but `a` isn't.
         }
 
         // Returns true if this AABB intersects with `other` in any way.
         [[nodiscard]] bool Intersects(const Aabb &other) const
         {
-            return a(all) < other.b && b(all) > other.a;
+            if constexpr (Inclusive)
+                return a(all) <= other.b && b(all) >= other.a;
+            else
+                return a(all) < other.b && b(all) > other.a;
         }
     };
 
