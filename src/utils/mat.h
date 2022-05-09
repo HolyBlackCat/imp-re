@@ -1,6 +1,6 @@
 // mat.h
 // Vector and matrix math
-// Version 3.4.4
+// Version 3.4.5
 // Generated, don't touch.
 
 #pragma once
@@ -431,6 +431,7 @@ namespace Math
             [[nodiscard]] constexpr bool none() const {return !any();}
             [[nodiscard]] constexpr bool not_all() const {return !all();}
             [[nodiscard]] constexpr auto sum() const {return x + y;}
+            [[nodiscard]] constexpr auto diff() const {return x - y;}
             [[nodiscard]] constexpr auto prod() const {return x * y;}
             [[nodiscard]] constexpr auto ratio() const {return floating_point_t<type>(x) / floating_point_t<type>(y);}
             [[nodiscard]] constexpr type min() const {return std::min({x,y});}
@@ -451,6 +452,8 @@ namespace Math
             [[nodiscard]] constexpr vec rot90(int steps = 1) const {switch (steps & 3) {default: return *this; case 1: return {-y,x}; case 2: return -*this; case 3: return {y,-x};}}
             [[nodiscard]] static constexpr vec dir4(int index) {return vec(1,0).rot90(index);}
             [[nodiscard]] static constexpr vec dir8(int index) {vec array[8]{vec(1,0),vec(1,1),vec(0,1),vec(-1,1),vec(-1,0),vec(-1,-1),vec(0,-1),vec(1,-1)}; return array[index & 7];}
+            [[nodiscard]] constexpr type angle4() const {type s = sum(); type d = diff(); return d<0&&s>=0?1:x<0&&d<=0?2:y<0&&s<=0?3:0;} // Non-cardinal directions round to the closest one, diagnoals round backwards, (0,0) returns zero.
+            [[nodiscard]] constexpr type angle8() const {return y>0?(x>0?1:x==0?2:3):y<0?(x<0?5:x==0?6:7):(x<0?4:0);} // Non-cardinal directions count as diagonals, (0,0) returns zero.
             template <typename U> [[nodiscard]] constexpr auto dot(const vec2<U> &o) const {return x * o.x + y * o.y;}
             template <typename U> [[nodiscard]] constexpr auto cross(const vec2<U> &o) const {return x * o.y - y * o.x;}
             [[nodiscard]] constexpr auto tie() & {return std::tie(x,y);}
