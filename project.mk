@@ -22,7 +22,7 @@ $(Mode)_proj_win_subsystem := -mwindows
 
 $(call NewMode,profile)
 $(Mode)COMMON_FLAGS := -O3 -pg
-$(Mode)CXXFLAGS := -DNDEBUG
+$(Mode)CXXFLAGS := -DNDEBUG -DIMP_PLATFORM_FLAG_prod=1
 $(Mode)_proj_win_subsystem := -mwindows
 
 $(call NewMode,sanitize_address)
@@ -153,6 +153,9 @@ else
   $(call LibrarySetting,deps,SDL2-2.0.22)
 endif
   $(call LibrarySetting,cmake_flags,$(_openal_flags))
+ifneq ($(filter -D_GLIBCXX_DEBUG,$(CXXFLAGS)),)
+  $(call LibrarySetting,cxxflags,-U_GLIBCXX_DEBUG -D_GLIBCXX_ASSERTIONS)# The debug mode causes weird compilation errors.
+endif
 
 $(call Library,parallel-hashmap-1.34.tar.gz)
 
@@ -167,6 +170,7 @@ else
 $(call Library,SDL2-2.0.22.tar.gz)
   # Allow SDL to see system packages. If we were using `configure+make`, we'd need `configure_vars = env -uPKG_CONFIG_PATH -uPKG_CONFIG_LIBDIR` instead.
   $(call LibrarySetting,cmake_flags,-DCMAKE_FIND_USE_CMAKE_SYSTEM_PATH=ON)
+  $(call LibrarySetting,common_flags,-fno-sanitize=address -fno-sanitize=undefined)# ASAN/UBSAN cause linker errors in Linux, when making `libSDL2.so`. `-DSDL_ASAN=ON` doesn't help.
 $(call Library,SDL2_net-2.0.1.tar.gz)
   $(call LibrarySetting,deps,SDL2-2.0.22)
 endif

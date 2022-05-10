@@ -214,9 +214,10 @@ override lib_ar_list :=
 # A list is not recommended, because LibrarySetting always applies only to the last library.
 override Library = $(call var,lib_ar_list += $1)
 
-override lib_setting_names := deps build_system cmake_flags configure_vars configure_flags copy_files bad_pkgconfig
+override lib_setting_names := cflags cxxflags ldflags common_flags deps build_system cmake_flags configure_vars configure_flags copy_files bad_pkgconfig
 # On success, assigns $2 to variable `__libsetting_$1_<lib>`. Otherwise causes an error.
 # Settings are:
+# * {c,cxx,ld,common_}flags - per-library flag customization.
 # * deps - library dependencies, that this library will be allowed to see when building. A space-separated list of library names (their archive names without extensions).
 # * build_system - override build system detection. Can be: `cmake`, `configure_make`, etc. See `id_build_system` below for the full list.
 # * cmake_flags - if CMake is used, those are passed to it. Probably should be a list of `-D<var>=<value>`.
@@ -376,10 +377,6 @@ override PKG_CONFIG_PATH :=
 export PKG_CONFIG_PATH
 override PKG_CONFIG_LIBDIR :=
 export PKG_CONFIG_LIBDIR
-
-# A list of those variables, and a string suitable to set them in a shell.
-override exported_env_vars_list := CC CXX CPP LD CFLAGS CXXFLAGS CPPFLAGS LDFLAGS
-override env_vars_for_shell = $(foreach x,$(exported_env_vars_list),$x=$(call quote,$($x)))
 
 MODE :=# Build mode.
 CMAKE_GENERATOR :=# CMake generator, not quoted. Optional.
@@ -1259,18 +1256,21 @@ override buildsystem-copy_files = \
 override buildsystem-cmake = \
 	$(call log_now,[Library] >>> Configuring CMake...)\
 	$(call, ### Add dependency include directories to compiler flags. Otherwise OpenAL can't find SDL2.)\
-	$(call var,__include_paths := $(foreach x,$(call lib_name_to_prefix,$(__libsetting_deps_$(__lib_name))),-I$(call quote,$(abspath $x)/include)))\
+	$(call var,__bs_include_paths := $(foreach x,$(call lib_name_to_prefix,$(__libsetting_deps_$(__lib_name))),-I$(call quote,$(abspath $x)/include)))\
+	$(call var,__bs_cflags := $(CFLAGS) $(__libsetting_common_flags_$(__lib_name)) $(__libsetting_cflags_$(__lib_name)) $(__bs_include_paths))\
+	$(call var,__bs_cxxflags := $(CXXFLAGS) $(__libsetting_common_flags_$(__lib_name)) $(__libsetting_cxxflags_$(__lib_name)) $(__bs_include_paths))\
+	$(call var,__bs_ldflags := $(LDFLAGS) $(__libsetting_common_flags_$(__lib_name)) $(__libsetting_ldflags_$(__lib_name)))\
 	$(call safe_shell_exec,cmake\
 		-S $(call quote,$(__source_dir))\
 		-B $(call quote,$(__build_dir))\
 		-Wno-dev\
 		-DCMAKE_C_COMPILER=$(call quote,$(subst $(space),;,$(CC)))\
 		-DCMAKE_CXX_COMPILER=$(call quote,$(subst $(space),;,$(CXX)))\
-		-DCMAKE_C_FLAGS=$(call quote,$(CFLAGS) $(__include_paths))\
-		-DCMAKE_CXX_FLAGS=$(call quote,$(CXXFLAGS) $(__include_paths))\
-		-DCMAKE_EXE_LINKER_FLAGS=$(call quote,$(LDFLAGS))\
-		-DCMAKE_MODULE_LINKER_FLAGS=$(call quote,$(LDFLAGS))\
-		-DCMAKE_SHARED_LINKER_FLAGS=$(call quote,$(LDFLAGS))\
+		-DCMAKE_C_FLAGS=$(call quote,$(__bs_cflags))\
+		-DCMAKE_CXX_FLAGS=$(call quote,$(__bs_cxxflags))\
+		-DCMAKE_EXE_LINKER_FLAGS=$(call quote,$(__bs_ldflags))\
+		-DCMAKE_MODULE_LINKER_FLAGS=$(call quote,$(__bs_ldflags))\
+		-DCMAKE_SHARED_LINKER_FLAGS=$(call quote,$(__bs_ldflags))\
 		$(call, ### Weird semi-documented flags. Helps at least for freetype, ogg, vorbis.)\
 		-DBUILD_SHARED_LIBS=ON\
 		$(call, ### Specifying an invalid build type disables built-in flags.)\
@@ -1297,7 +1297,12 @@ override buildsystem-cmake = \
 override buildsystem-configure_make = \
 	$(call, ### A list of env variables we use. Note explicit pkg-config stuff. At least freetype needs it, and fails to find pkgconfig files in the prefix otherwise.)\
 	$(call, ### Note that we only need to set prefix for this single library, since we copy all dependencies here anyway.)\
-	$(call var,__bs_shell_vars := $(env_vars_for_shell) PKG_CONFIG_PATH= PKG_CONFIG_LIBDIR=$(call quote,$(abspath $(__install_dir)/lib/pkgconfig)) $(__libsetting_configure_vars_$(__lib_name)))\
+	$(call var,__bs_shell_vars := $(foreach f,CC CXX CPP LD CPPFLAGS,$f=$(call quote,$($f))) \
+		CFLAGS=$(call quote,$(CFLAGS) $(__libsetting_common_flags_$(__lib_name)) $(__libsetting_cflags_$(__lib_name))) \
+		CXXFLAGS=$(call quote,$(CXXFLAGS) $(__libsetting_common_flags_$(__lib_name)) $(__libsetting_cxxflags_$(__lib_name))) \
+		LDFLAGS=$(call quote,$(LDFLAGS) $(__libsetting_common_flags_$(__lib_name)) $(__libsetting_ldflags_$(__lib_name))) \
+		PKG_CONFIG_PATH= PKG_CONFIG_LIBDIR=$(call quote,$(abspath $(__install_dir)/lib/pkgconfig)) $(__libsetting_configure_vars_$(__lib_name)) \
+	)\
 	$(call, ### Since we can't configure multiple search prefixes, like we do with CMAKE_SYSTEM_PREFIX_PATH,)\
 	$(call, ### we copy the prefixes of our dependencies to our own prefix.)\
 	$(foreach x,$(call lib_name_to_prefix,$(__libsetting_deps_$(__lib_name))),$(call safe_shell_exec,cp -rT $(call quote,$x) $(call quote,$(__install_dir))))\
