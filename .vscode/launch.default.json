@@ -1,7 +1,7 @@
 {
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    // Useful breakpoints:
+    // * UBSAN errors: __ubsan::ScopedReport::~ScopedReport
+    // * ASAN errors: __asan_report_error
     "version": "0.2.0",
     "configurations": [
         {
@@ -12,6 +12,10 @@
             "cwd": "${workspaceRoot}",
             "internalConsoleOptions": "openOnSessionStart",
             "preLaunchTask": "Build",
+            "initCommands": [
+                // Enable printing of the `phmap` hashmaps. The path needs to be updated when the library is updated.
+                "command script import deps/parallel-hashmap-1.34/source/phmap_lldb.py",
+            ],
         },
         {
             "name": "Debug (GDB)",
