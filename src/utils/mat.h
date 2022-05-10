@@ -1,6 +1,6 @@
 // mat.h
 // Vector and matrix math
-// Version 3.4.5
+// Version 3.4.6
 // Generated, don't touch.
 
 #pragma once
@@ -1273,7 +1273,6 @@ namespace Math
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator!=(const A &a, compare_not_all<B> &&b) {return not_all_nonzero_elements(apply_elementwise(std::not_equal_to{}, a, b.value));}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator!=(compare_elemwise<A> &&a, const B &b) {return apply_elementwise(std::not_equal_to{}, a.value, b);}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator!=(const A &a, compare_elemwise<B> &&b) {return apply_elementwise(std::not_equal_to{}, a, b.value);}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator&&(const A &a, const B &b) {if constexpr (vector<A>) return compare_elemwise(a) && b; else return a && compare_elemwise(b);}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator&&(compare_any<A> &&a, const B &b) {return any_nonzero_elements(apply_elementwise(std::logical_and{}, a.value, b));}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator&&(const A &a, compare_any<B> &&b) {return any_nonzero_elements(apply_elementwise(std::logical_and{}, a, b.value));}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator&&(compare_all<A> &&a, const B &b) {return all_nonzero_elements(apply_elementwise(std::logical_and{}, a.value, b));}
@@ -1284,7 +1283,6 @@ namespace Math
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator&&(const A &a, compare_not_all<B> &&b) {return not_all_nonzero_elements(apply_elementwise(std::logical_and{}, a, b.value));}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator&&(compare_elemwise<A> &&a, const B &b) {return apply_elementwise(std::logical_and{}, a.value, b);}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator&&(const A &a, compare_elemwise<B> &&b) {return apply_elementwise(std::logical_and{}, a, b.value);}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator||(const A &a, const B &b) {if constexpr (vector<A>) return compare_elemwise(a) || b; else return a || compare_elemwise(b);}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator||(compare_any<A> &&a, const B &b) {return any_nonzero_elements(apply_elementwise(std::logical_or{}, a.value, b));}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator||(const A &a, compare_any<B> &&b) {return any_nonzero_elements(apply_elementwise(std::logical_or{}, a, b.value));}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator||(compare_all<A> &&a, const B &b) {return all_nonzero_elements(apply_elementwise(std::logical_or{}, a.value, b));}
@@ -1423,7 +1421,7 @@ namespace Math
         //{ Ranges
         template <typename T> class vector_range_t
         {
-            static_assert(!std::is_const_v<T> && std::is_integral_v<vec_base_t<T>>, "The template parameter must be an integral vector.");
+            static_assert(!std::is_const_v<T> && std::is_integral_v<vec_base_t<T>>, "The template parameter must be integral.");
 
             T vec_begin = T(0);
             T vec_end = T(0);
