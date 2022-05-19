@@ -7,7 +7,7 @@
 #include <sstream>
 #include <type_traits>
 
-#define VERSION "3.4.8"
+#define VERSION "3.4.9"
 
 #pragma GCC diagnostic ignored "-Wpragmas" // Silence GCC warning about the next line disabling a warning that GCC doesn't have.
 #pragma GCC diagnostic ignored "-Wstring-plus-int" // Silence clang warning about `1+R"()"` paUern.
@@ -680,10 +680,12 @@ int main(int argc, char **argv)
                                 output("[[nodiscard]] static constexpr vec dir8(int index, type len = 1) {vec array[8]{vec(len,0),vec(len,len),vec(0,len),vec(-len,len),vec(-len,0),vec(-len,-len),vec(0,-len),vec(len,-len)}; return array[index & 7];}\n");
 
                                 // Get the 4-direction
-                                output("[[nodiscard]] constexpr int angle4() const {type s = sum(); type d = diff(); return d<0&&s>=0?1:x<0&&d<=0?2:y<0&&s<=0?3:0;} // Non-cardinal directions round to the closest one, diagnoals round backwards, (0,0) returns zero.\n");
+                                output("[[nodiscard]] constexpr int angle4_round() const {type s = sum(); type d = diff(); return d<0&&s>=0?1:x<0&&d<=0?2:y<0&&s<=0?3:0;} // Non-cardinal directions round to the closest one, diagnoals round backwards, (0,0) returns zero.\n");
+                                output("[[nodiscard]] constexpr int angle4_floor() const {return y>0&&x<=0?1:x<0?2:y<0?3:0;}\n");
 
                                 // Get the 8-direction
-                                output("[[nodiscard]] constexpr int angle8() const {return y>0?(x>0?1:x==0?2:3):y<0?(x<0?5:x==0?6:7):(x<0?4:0);} // Non-cardinal directions count as diagonals, (0,0) returns zero.\n");
+                                output("[[nodiscard]] constexpr int angle8_sign() const {return y>0?(x>0?1:x==0?2:3):y<0?(x<0?5:x==0?6:7):(x<0?4:0);} // Non-cardinal directions count as diagonals, (0,0) returns zero.\n");
+                                output("[[nodiscard]] constexpr int angle8_floor() const {type s = sum(); type d = diff(); return y<0&&d>=0?(x<0?5:s<0?6:7):x<=0&&d<0?(y<=0?4:s<=0?3:2):y>0&&d<=0?1:0;}\n");
                             }
                         }
 
