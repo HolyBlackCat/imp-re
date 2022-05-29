@@ -6,7 +6,7 @@
 #include <utility>
 #include <vector>
 
-#include "macros/maybe_const.h"
+#include "macros/qualifiers.h"
 #include "program/errors.h"
 #include "stream/input.h"
 
@@ -106,18 +106,18 @@ namespace Audio
         // No setter is provided, reassign the class to change the value.
         [[nodiscard]] BitResolution Resolution() const {return resolution;}
 
-        MAYBE_CONST
+        QUAL_MAYBE_CONST
         (
             // Get an untyped pointer to the sound data.
-            [[nodiscard]] CV std::uint8_t *RawUntypedData() CV {return data.data();}
+            [[nodiscard]] QUAL std::uint8_t *RawUntypedData() QUAL {return data.data();}
 
             // Get a pointer to the sound data, casted to a specific type.
             // Triggers an assertion if the type doesn't match the `Resolution()`.
             template <typename T> requires std::is_same_v<T, std::uint8_t> || std::is_same_v<T, std::int16_t>
-            [[nodiscard]] CV T *Data() CV
+            [[nodiscard]] QUAL T *Data() QUAL
             {
                 ASSERT(sizeof(T) == BytesPerSample(), "Type mismatch.");
-                return reinterpret_cast<CV T *>(RawUntypedData());
+                return reinterpret_cast<QUAL T *>(RawUntypedData());
             }
         )
 

@@ -4,7 +4,7 @@
 #include <string>
 #include <type_traits>
 
-#include "macros/maybe_const.h"
+#include "macros/qualifiers.h"
 #include "reflection/full_with_poly.h"
 
 namespace GameUtils::State
@@ -48,8 +48,8 @@ namespace GameUtils::State
             return bool(state);
         }
 
-        MAYBE_CONST(
-            [[nodiscard]] auto Call(auto member, auto &&... params) CV
+        QUAL_MAYBE_CONST(
+            [[nodiscard]] auto Call(auto member, auto &&... params) QUAL
             {
                 if (state)
                     return (state.base().*member)(decltype(params)(params)...);
