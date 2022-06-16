@@ -1,6 +1,6 @@
 // mat.h
 // Vector and matrix math
-// Version 3.4.9
+// Version 3.4.10
 // Generated, don't touch.
 
 #pragma once
@@ -451,6 +451,7 @@ namespace Math
             template <typename U = floating_point_t<type>> [[nodiscard]] constexpr U angle() const {return std::atan2(U(y), U(x));}
             [[nodiscard]] constexpr vec rot90(int steps = 1) const {switch (steps & 3) {default: return *this; case 1: return {-y,x}; case 2: return -*this; case 3: return {y,-x};}}
             [[nodiscard]] static constexpr vec dir4(int index, type len = 1) {return vec(len,0).rot90(index);}
+            [[nodiscard]] static constexpr vec dir4_diag(int index, type len = 1) {return vec(len,len).rot90(index);}
             [[nodiscard]] static constexpr vec dir8(int index, type len = 1) {vec array[8]{vec(len,0),vec(len,len),vec(0,len),vec(-len,len),vec(-len,0),vec(-len,-len),vec(0,-len),vec(len,-len)}; return array[index & 7];}
             [[nodiscard]] constexpr int angle4_round() const {type s = sum(); type d = diff(); return d<0&&s>=0?1:x<0&&d<=0?2:y<0&&s<=0?3:0;} // Non-cardinal directions round to the closest one, diagnoals round backwards, (0,0) returns zero.
             [[nodiscard]] constexpr int angle4_floor() const {return y>0&&x<=0?1:x<0?2:y<0?3:0;}

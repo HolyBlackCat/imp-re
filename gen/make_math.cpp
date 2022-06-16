@@ -7,7 +7,7 @@
 #include <sstream>
 #include <type_traits>
 
-#define VERSION "3.4.9"
+#define VERSION "3.4.10"
 
 #pragma GCC diagnostic ignored "-Wpragmas" // Silence GCC warning about the next line disabling a warning that GCC doesn't have.
 #pragma GCC diagnostic ignored "-Wstring-plus-int" // Silence clang warning about `1+R"()"` paUern.
@@ -675,6 +675,8 @@ int main(int argc, char **argv)
 
                                 // Return one of the 4 main directions, `vec2(1,0).rot90(index)`
                                 output("[[nodiscard]] static constexpr vec dir4(int index, type len = 1) {return vec(len,0).rot90(index);}\n");
+                                // Return one of the 4 diagonal directions, `vec2(1,1).rot90(index)`
+                                output("[[nodiscard]] static constexpr vec dir4_diag(int index, type len = 1) {return vec(len,len).rot90(index);}\n");
 
                                 // Return one of the 8 main directions (including diagonals).
                                 output("[[nodiscard]] static constexpr vec dir8(int index, type len = 1) {vec array[8]{vec(len,0),vec(len,len),vec(0,len),vec(-len,len),vec(-len,0),vec(-len,-len),vec(0,-len),vec(len,-len)}; return array[index & 7];}\n");
