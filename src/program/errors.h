@@ -48,7 +48,7 @@ namespace Program
         Error(Strings::Concat(params...));
     }
 
-    void SetErrorHandlers(bool only_if_not_set_before = 1);
+    void SetErrorHandlers(bool replace_even_if_already_set = false);
 
 
     namespace impl

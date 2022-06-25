@@ -1,6 +1,7 @@
 #include "errors.h"
 
 #include <csignal>
+#include <cstddef>
 #include <exception>
 #include <type_traits>
 
@@ -61,8 +62,6 @@ namespace Program
         HardError("Terminated.");
     }
 
-    static bool handers_set = false;
-
     void HardError(const std::string &message)
     {
         static bool first = true;
@@ -74,18 +73,25 @@ namespace Program
         Exit(1);
     }
 
-    void SetErrorHandlers(bool only_if_not_set_before)
+    void SetErrorHandlers(bool replace_even_if_already_set)
     {
-        if (only_if_not_set_before && handers_set)
-            return;
+        bool just_set = false;
 
-        static constexpr int signal_enums[] {SIGSEGV, SIGABRT, SIGINT, SIGTERM, SIGFPE, SIGILL};
+        auto SetHandlers = [&]
+        {
+            static constexpr int signal_enums[] {SIGSEGV, SIGABRT, SIGINT, SIGTERM, SIGFPE, SIGILL};
+            for (int sig : signal_enums)
+                std::signal(sig, SignalHandler);
 
-        for (int sig : signal_enums)
-            std::signal(sig, SignalHandler);
+            std::set_terminate(TerminateHandler);
 
-        std::set_terminate(TerminateHandler);
+            just_set = true;
+            return nullptr;
+        };
 
-        handers_set = true;
+        [[maybe_unused]] static const std::nullptr_t once = SetHandlers();
+
+        if (!just_set && replace_even_if_already_set)
+            SetHandlers();
     }
 }
