@@ -381,7 +381,7 @@ export PKG_CONFIG_LIBDIR
 MODE :=# Build mode.
 CMAKE_GENERATOR :=# CMake generator, not quoted. Optional.
 COMMON_FLAGS :=# Used both when compiling and linking.
-LINKER :=# E.g. `lld` or `lld-13`. Can be empty to use the default one.
+LINKER := AUTO# E.g. `lld` or `lld-13`. Can be `AUTO` to guess LLD version, or empty to use the default one.
 ALLOW_PCH := 1# If 0 or empty, disable PCH.
 
 # Used both when compiling and linking. Those are set automatically.
@@ -518,7 +518,7 @@ endif
 ifeq ($(CXX),)
 override CXX := $(call find_versioned_tool,clang++)
 endif
-ifeq ($(LINKER),)
+ifeq ($(LINKER),AUTO)
 override LINKER := $(call find_versioned_tool,lld)
 endif
 
