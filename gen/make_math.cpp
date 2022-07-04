@@ -7,7 +7,7 @@
 #include <sstream>
 #include <type_traits>
 
-#define VERSION "3.4.10"
+#define VERSION "3.4.11"
 
 #pragma GCC diagnostic ignored "-Wpragmas" // Silence GCC warning about the next line disabling a warning that GCC doesn't have.
 #pragma GCC diagnostic ignored "-Wstring-plus-int" // Silence clang warning about `1+R"()"` paUern.
@@ -225,11 +225,13 @@ int main(int argc, char **argv)
             #  endif
             #endif
 
-            #ifndef IMP_MATH_ALWAYS_INLINE
+            #ifndef IMP_MATH_SMALL_FUNC
             #  ifndef _MSC_VER
-            #    define IMP_MATH_ALWAYS_INLINE __attribute__((__always_inline__))
+            #    define IMP_MATH_SMALL_FUNC   __attribute__((__always_inline__, __artificial__)) inline // Need explicit inline, otherwise `artificial` complains, even on implicitly inline functions.
+            #    define IMP_MATH_SMALL_LAMBDA __attribute__((__always_inline__, __artificial__))
             #  else
-            #    define IMP_MATH_ALWAYS_INLINE __forceinline
+            #    define IMP_MATH_SMALL_FUNC   [[msvc::forceinline]]
+            #    define IMP_MATH_SMALL_LAMBDA [[msvc::forceinline]] // There is also `__forceinline`, but it doesn't work on lambdas.
             #  endif
             #endif
         )");
@@ -510,21 +512,21 @@ int main(int argc, char **argv)
                             {
                                 for (int i = 0; i < w; i++)
                                 {
-                                    output("[[nodiscard]] constexpr type &",data::fields_alt[j][i],"() {return ",data::fields[i],";} ");
-                                    output("[[nodiscard]] constexpr const type &",data::fields_alt[j][i],"() const {return ",data::fields[i],";}\n");
+                                    output("[[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &",data::fields_alt[j][i],"() {return ",data::fields[i],";} ");
+                                    output("[[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &",data::fields_alt[j][i],"() const {return ",data::fields[i],";}\n");
                                 }
                             }
                         }
 
                         { // Constructors
                             // Default
-                            output("constexpr vec() : ",Fields(", ", "@{}")," {}\n");
+                            output("IMP_MATH_SMALL_FUNC constexpr vec() : ",Fields(", ", "@{}")," {}\n");
 
                             // Uninitialized
-                            output("constexpr vec(uninit) {}\n");
+                            output("IMP_MATH_SMALL_FUNC constexpr vec(uninit) {}\n");
 
                             // Element-wise
-                            output("constexpr vec(",Fields(", ","type @"),") : ");
+                            output("IMP_MATH_SMALL_FUNC constexpr vec(",Fields(", ","type @"),") : ");
                             for (int i = 0; i < w; i++)
                             {
                                 if (i != 0)
@@ -534,10 +536,10 @@ int main(int argc, char **argv)
                             output(" {}\n");
 
                             // Fill with a single value
-                            output("explicit constexpr vec(type obj) : ",Fields(", ","@(obj)")," {}\n");
+                            output("IMP_MATH_SMALL_FUNC explicit constexpr vec(type obj) : ",Fields(", ","@(obj)")," {}\n");
 
                             // Converting
-                            output("template <typename U> constexpr vec(vec",w,"<U> obj) : ",Fields(", ","@(obj.@)")," {}\n");
+                            output("template <typename U> IMP_MATH_SMALL_FUNC constexpr vec(vec",w,"<U> obj) : ",Fields(", ","@(obj.@)")," {}\n");
                         }
 
                         { // Customization point constructor and conversion operator
@@ -553,12 +555,12 @@ int main(int argc, char **argv)
 
                         { // Member access
                             // Operator []
-                            output("[[nodiscard]] constexpr       type &operator[](int i)       {if (!IMP_MATH_IS_CONSTANT(i)) return *(      type *)((      char *)this + sizeof(type)*i);",Fields("", " else if (i == #) return @;")," IMP_MATH_UNREACHABLE();}\n");
-                            output("[[nodiscard]] constexpr const type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const type *)((const char *)this + sizeof(type)*i);",Fields("", " else if (i == #) return @;")," IMP_MATH_UNREACHABLE();}\n");
+                            output("[[nodiscard]] IMP_MATH_SMALL_FUNC constexpr       type &operator[](int i)       {if (!IMP_MATH_IS_CONSTANT(i)) return *(      type *)((      char *)this + sizeof(type)*i);",Fields("", " else if (i == #) return @;")," IMP_MATH_UNREACHABLE();}\n");
+                            output("[[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const type *)((const char *)this + sizeof(type)*i);",Fields("", " else if (i == #) return @;")," IMP_MATH_UNREACHABLE();}\n");
 
                             // As array
-                            output("[[nodiscard]] type *as_array() {return &x;}\n");
-                            output("[[nodiscard]] const type *as_array() const {return &x;}\n");
+                            output("[[nodiscard]] IMP_MATH_SMALL_FUNC type *as_array() {return &x;}\n");
+                            output("[[nodiscard]] IMP_MATH_SMALL_FUNC const type *as_array() const {return &x;}\n");
                         }
 
                         { // Boolean
@@ -723,7 +725,7 @@ int main(int argc, char **argv)
 
                         { // Comparison helpers
                             for (const std::string &mode : data::compare_modes)
-                                output("[[nodiscard]] constexpr compare_",mode,"<vec> operator()(compare_",mode,"_tag) const {return compare_",mode,"(*this);}\n");
+                                output("[[nodiscard]] IMP_MATH_SMALL_FUNC constexpr compare_",mode,"<vec> operator()(compare_",mode,"_tag) const {return compare_",mode,"(*this);}\n");
                         }
                     });
                 }
@@ -801,8 +803,8 @@ int main(int argc, char **argv)
                             {
                                 for (int i = 0; i < w; i++)
                                 {
-                                    output("[[nodiscard]] constexpr type &",data::fields_alt[j][i],"() {return ",data::fields[i],";} ");
-                                    output("[[nodiscard]] constexpr const type &",data::fields_alt[j][i],"() const {return ",data::fields[i],";}\n");
+                                    output("[[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &",data::fields_alt[j][i],"() {return ",data::fields[i],";} ");
+                                    output("[[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &",data::fields_alt[j][i],"() const {return ",data::fields[i],";}\n");
                                 }
                             }
                         }
@@ -873,12 +875,12 @@ int main(int argc, char **argv)
 
                         { // Member access
                             // Operator []
-                            output("[[nodiscard]] constexpr       member_type &operator[](int i)       {if (!IMP_MATH_IS_CONSTANT(i)) return *(      member_type *)((      char *)this + sizeof(member_type)*i);",LargeFields("", " else if (i == #) return @;")," IMP_MATH_UNREACHABLE();}\n");
-                            output("[[nodiscard]] constexpr const member_type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const member_type *)((const char *)this + sizeof(member_type)*i);",LargeFields("", " else if (i == #) return @;")," IMP_MATH_UNREACHABLE();}\n");
+                            output("[[nodiscard]] IMP_MATH_SMALL_FUNC constexpr       member_type &operator[](int i)       {if (!IMP_MATH_IS_CONSTANT(i)) return *(      member_type *)((      char *)this + sizeof(member_type)*i);",LargeFields("", " else if (i == #) return @;")," IMP_MATH_UNREACHABLE();}\n");
+                            output("[[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const member_type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const member_type *)((const char *)this + sizeof(member_type)*i);",LargeFields("", " else if (i == #) return @;")," IMP_MATH_UNREACHABLE();}\n");
 
                             // As array
-                            output("[[nodiscard]] type *as_array() {return &x.x;}\n");
-                            output("[[nodiscard]] const type *as_array() const {return &x.x;}\n");
+                            output("[[nodiscard]] IMP_MATH_SMALL_FUNC type *as_array() {return &x.x;}\n");
+                            output("[[nodiscard]] IMP_MATH_SMALL_FUNC const type *as_array() const {return &x.x;}\n");
                         }
 
                         { // Resize
@@ -1175,7 +1177,7 @@ int main(int argc, char **argv)
             output(1+R"(
                 // Returns i-th vector element. Also works on scalar, ignoring the index.
                 template <typename T> requires vector_or_scalar<std::remove_reference_t<T>>
-                [[nodiscard]] constexpr decltype(auto) vec_elem(int i, T &&vec)
+                [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr decltype(auto) vec_elem(int i, T &&vec)
                 {
                     if constexpr (std::is_lvalue_reference_v<T>)
                     {
@@ -1198,7 +1200,7 @@ int main(int argc, char **argv)
                 // If at least one vector is passed, the result is also a vector.
                 // If `D != 1`, forces the result to be the vector of this size, or causes a hard error if not possible.
                 template <int D = 1, typename F, typename ...P, typename = std::enable_if_t<(vector_or_scalar<std::remove_reference_t<P>> && ...)>> // Trying to put this condition into `requires` crashes Clang 14.
-                constexpr auto apply_elementwise(F &&func, P &&... params) -> vec_or_scalar_t<common_vec_size_v<D, vec_size_v<std::remove_reference_t<P>>...>, decltype(std::declval<F>()(vec_elem(0, std::declval<P>())...))>
+                IMP_MATH_SMALL_FUNC constexpr auto apply_elementwise(F &&func, P &&... params) -> vec_or_scalar_t<common_vec_size_v<D, vec_size_v<std::remove_reference_t<P>>...>, decltype(std::declval<F>()(vec_elem(0, std::declval<P>())...))>
                 {
                     constexpr int size = common_vec_size_v<D, vec_size_v<std::remove_reference_t<P>>...>;
                     using R = vec_or_scalar_t<size, decltype(std::declval<F>()(vec_elem(0, std::declval<P>())...))>;
@@ -1279,32 +1281,32 @@ int main(int argc, char **argv)
             for (auto op : ops2)
             {
                 // {vec,scalar} @ {vec,scalar}
-                output("template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr auto operator",op,"(const A &a, const B &b)"
-                       " -> vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, decltype(std::declval<vec_base_t<A>>() ",op," std::declval<vec_base_t<B>>())> {return apply_elementwise([](vec_base_t<A> a, vec_base_t<B> b){return a ",op," b;}, a, b);}\n");
+                output("template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr auto operator",op,"(const A &a, const B &b)"
+                       " -> vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, decltype(std::declval<vec_base_t<A>>() ",op," std::declval<vec_base_t<B>>())> {return apply_elementwise([](vec_base_t<A> a, vec_base_t<B> b) IMP_MATH_SMALL_LAMBDA {return a ",op," b;}, a, b);}\n");
             }
 
             for (auto op : ops1)
             {
                 // @ vec
-                output("template <vector V> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr auto operator",op,"(const V &v)"
-                       " -> change_vec_base_t<V, decltype(",op,"v.x)> {return apply_elementwise([](vec_base_t<V> v){return ",op,"v;}, v);}\n");
+                output("template <vector V> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr auto operator",op,"(const V &v)"
+                       " -> change_vec_base_t<V, decltype(",op,"v.x)> {return apply_elementwise([](vec_base_t<V> v) IMP_MATH_SMALL_LAMBDA {return ",op,"v;}, v);}\n");
             }
 
             for (auto op : ops1incdec)
             {
                 // @ vec
-                output("template <vector V> IMP_MATH_ALWAYS_INLINE constexpr V &operator",op,"(V &v) {apply_elementwise([](vec_base_t<V> &v){",op,"v;}, v); return v;}\n");
+                output("template <vector V> IMP_MATH_SMALL_FUNC constexpr V &operator",op,"(V &v) {apply_elementwise([](vec_base_t<V> &v) IMP_MATH_SMALL_LAMBDA {",op,"v;}, v); return v;}\n");
 
                 // vec @
-                output("template <vector V> IMP_MATH_ALWAYS_INLINE constexpr V operator",op,"(V &v, int) {V ret = v; apply_elementwise([](vec_base_t<V> &v){",op,"v;}, v); return ret;}\n");
+                output("template <vector V> IMP_MATH_SMALL_FUNC constexpr V operator",op,"(V &v, int) {V ret = v; apply_elementwise([](vec_base_t<V> &v) IMP_MATH_SMALL_LAMBDA {",op,"v;}, v); return ret;}\n");
             }
 
             for (auto op : ops2as)
             {
                 // vec @= {vec,scalar}
-                output("template <vector A, vector_or_scalar B> IMP_MATH_ALWAYS_INLINE constexpr auto operator",op,"(A &a, const B &b)"
+                output("template <vector A, vector_or_scalar B> IMP_MATH_SMALL_FUNC constexpr auto operator",op,"(A &a, const B &b)"
                        " -> std::enable_if_t<have_common_vec_size<vec_size_strong_v<A>, vec_size_strong_v<B>> && (std::is_floating_point_v<vec_base_t<B>> <= std::is_floating_point_v<vec_base_t<A>>), decltype(void(std::declval<vec_base_t<A> &>() ",op," std::declval<vec_base_t<B>>()), std::declval<A &>())>"
-                       " {apply_elementwise([](vec_base_t<A> &a, vec_base_t<B> b){a ",op," b;}, a, b); return a;}\n");
+                       " {apply_elementwise([](vec_base_t<A> &a, vec_base_t<B> b) IMP_MATH_SMALL_LAMBDA {a ",op," b;}, a, b); return a;}\n");
             }
 
             for (const auto& [op, std_op] : ops2comp)
@@ -1314,7 +1316,7 @@ int main(int argc, char **argv)
 
                 if (!default_mode.empty())
                 {
-                    output("template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr ",
+                    output("template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr ",
                            default_mode != "elemwise" ? "bool" : "vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool>",
                            " operator",op,"(const A &a, const B &b) {if constexpr (vector<A>) return compare_",default_mode,"(a) ",op," b; else return a ",op," compare_",default_mode,"(b);}\n");
                 }
@@ -1324,12 +1326,12 @@ int main(int argc, char **argv)
                     bool elemwise = mode == "elemwise";
 
                     // comp({vec,scalar}) @ {vec,scalar}
-                    output("template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr ",!elemwise?"bool":"vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool>",
+                    output("template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr ",!elemwise?"bool":"vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool>",
                            " operator",op,"(compare_",mode,"<A> &&a, const B &b)"
                            " {return ",mode == "elemwise" ? "" : make_str(mode,"_nonzero_elements("),"apply_elementwise(",std_op,"{}, a.value, b)",mode == "elemwise" ? "" : ")",";}\n");
 
                     // {vec,scalar} @ comp({vec,scalar})
-                    output("template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr ",!elemwise?"bool":"vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool>",
+                    output("template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr ",!elemwise?"bool":"vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool>",
                            " operator",op,"(const A &a, compare_",mode,"<B> &&b)"
                            " {return ",mode == "elemwise" ? "" : make_str(mode,"_nonzero_elements("),"apply_elementwise(",std_op,"{}, a, b.value)",mode == "elemwise" ? "" : ")",";}\n");
                 }

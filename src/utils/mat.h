@@ -1,6 +1,6 @@
 // mat.h
 // Vector and matrix math
-// Version 3.4.10
+// Version 3.4.11
 // Generated, don't touch.
 
 #pragma once
@@ -35,11 +35,13 @@
 #  endif
 #endif
 
-#ifndef IMP_MATH_ALWAYS_INLINE
+#ifndef IMP_MATH_SMALL_FUNC
 #  ifndef _MSC_VER
-#    define IMP_MATH_ALWAYS_INLINE __attribute__((__always_inline__))
+#    define IMP_MATH_SMALL_FUNC   __attribute__((__always_inline__, __artificial__)) inline // Need explicit inline, otherwise `artificial` complains, even on implicitly inline functions.
+#    define IMP_MATH_SMALL_LAMBDA __attribute__((__always_inline__, __artificial__))
 #  else
-#    define IMP_MATH_ALWAYS_INLINE __forceinline
+#    define IMP_MATH_SMALL_FUNC   [[msvc::forceinline]]
+#    define IMP_MATH_SMALL_LAMBDA [[msvc::forceinline]] // There is also `__forceinline`, but it doesn't work on lambdas.
 #  endif
 #endif
 
@@ -411,20 +413,20 @@ namespace Math
             static constexpr int size = 2;
             static constexpr bool is_floating_point = std::is_floating_point_v<type>;
             type x, y;
-            [[nodiscard]] constexpr type &r() {return x;} [[nodiscard]] constexpr const type &r() const {return x;}
-            [[nodiscard]] constexpr type &g() {return y;} [[nodiscard]] constexpr const type &g() const {return y;}
-            constexpr vec() : x{}, y{} {}
-            constexpr vec(uninit) {}
-            constexpr vec(type x, type y) : x(x), y(y) {}
-            explicit constexpr vec(type obj) : x(obj), y(obj) {}
-            template <typename U> constexpr vec(vec2<U> obj) : x(obj.x), y(obj.y) {}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &r() {return x;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &r() const {return x;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &g() {return y;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &g() const {return y;}
+            IMP_MATH_SMALL_FUNC constexpr vec() : x{}, y{} {}
+            IMP_MATH_SMALL_FUNC constexpr vec(uninit) {}
+            IMP_MATH_SMALL_FUNC constexpr vec(type x, type y) : x(x), y(y) {}
+            IMP_MATH_SMALL_FUNC explicit constexpr vec(type obj) : x(obj), y(obj) {}
+            template <typename U> IMP_MATH_SMALL_FUNC constexpr vec(vec2<U> obj) : x(obj.x), y(obj.y) {}
             template <typename U> requires Custom::convertible<U, vec> explicit constexpr vec(const U &obj) {*this = Custom::Convert<U, vec>{}(obj);}
             template <typename U> requires Custom::convertible<vec, U> explicit operator U() const {return Custom::Convert<vec, U>{}(*this);}
             template <typename U> [[nodiscard]] constexpr vec2<U> to() const {return vec2<U>(U(x), U(y));}
-            [[nodiscard]] constexpr       type &operator[](int i)       {if (!IMP_MATH_IS_CONSTANT(i)) return *(      type *)((      char *)this + sizeof(type)*i); else if (i == 0) return x; else if (i == 1) return y; IMP_MATH_UNREACHABLE();}
-            [[nodiscard]] constexpr const type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const type *)((const char *)this + sizeof(type)*i); else if (i == 0) return x; else if (i == 1) return y; IMP_MATH_UNREACHABLE();}
-            [[nodiscard]] type *as_array() {return &x;}
-            [[nodiscard]] const type *as_array() const {return &x;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr       type &operator[](int i)       {if (!IMP_MATH_IS_CONSTANT(i)) return *(      type *)((      char *)this + sizeof(type)*i); else if (i == 0) return x; else if (i == 1) return y; IMP_MATH_UNREACHABLE();}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const type *)((const char *)this + sizeof(type)*i); else if (i == 0) return x; else if (i == 1) return y; IMP_MATH_UNREACHABLE();}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC type *as_array() {return &x;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC const type *as_array() const {return &x;}
             [[nodiscard]] explicit constexpr operator bool() const requires(!std::is_same_v<type, bool>) {return any();} // Use the explicit methods below for vectors of bool.
             [[nodiscard]] constexpr bool any() const {return x || y;}
             [[nodiscard]] constexpr bool all() const {return x && y;}
@@ -463,11 +465,11 @@ namespace Math
             [[nodiscard]] constexpr auto tie() const & {return std::tie(x,y);}
             template <int I> [[nodiscard]] constexpr type &get() & {return std::get<I>(tie());}
             template <int I> [[nodiscard]] constexpr const type &get() const & {return std::get<I>(tie());}
-            [[nodiscard]] constexpr compare_any<vec> operator()(compare_any_tag) const {return compare_any(*this);}
-            [[nodiscard]] constexpr compare_all<vec> operator()(compare_all_tag) const {return compare_all(*this);}
-            [[nodiscard]] constexpr compare_none<vec> operator()(compare_none_tag) const {return compare_none(*this);}
-            [[nodiscard]] constexpr compare_not_all<vec> operator()(compare_not_all_tag) const {return compare_not_all(*this);}
-            [[nodiscard]] constexpr compare_elemwise<vec> operator()(compare_elemwise_tag) const {return compare_elemwise(*this);}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr compare_any<vec> operator()(compare_any_tag) const {return compare_any(*this);}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr compare_all<vec> operator()(compare_all_tag) const {return compare_all(*this);}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr compare_none<vec> operator()(compare_none_tag) const {return compare_none(*this);}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr compare_not_all<vec> operator()(compare_not_all_tag) const {return compare_not_all(*this);}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr compare_elemwise<vec> operator()(compare_elemwise_tag) const {return compare_elemwise(*this);}
         };
 
         template <typename T> struct vec<3,T> // vec3
@@ -476,21 +478,21 @@ namespace Math
             static constexpr int size = 3;
             static constexpr bool is_floating_point = std::is_floating_point_v<type>;
             type x, y, z;
-            [[nodiscard]] constexpr type &r() {return x;} [[nodiscard]] constexpr const type &r() const {return x;}
-            [[nodiscard]] constexpr type &g() {return y;} [[nodiscard]] constexpr const type &g() const {return y;}
-            [[nodiscard]] constexpr type &b() {return z;} [[nodiscard]] constexpr const type &b() const {return z;}
-            constexpr vec() : x{}, y{}, z{} {}
-            constexpr vec(uninit) {}
-            constexpr vec(type x, type y, type z) : x(x), y(y), z(z) {}
-            explicit constexpr vec(type obj) : x(obj), y(obj), z(obj) {}
-            template <typename U> constexpr vec(vec3<U> obj) : x(obj.x), y(obj.y), z(obj.z) {}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &r() {return x;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &r() const {return x;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &g() {return y;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &g() const {return y;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &b() {return z;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &b() const {return z;}
+            IMP_MATH_SMALL_FUNC constexpr vec() : x{}, y{}, z{} {}
+            IMP_MATH_SMALL_FUNC constexpr vec(uninit) {}
+            IMP_MATH_SMALL_FUNC constexpr vec(type x, type y, type z) : x(x), y(y), z(z) {}
+            IMP_MATH_SMALL_FUNC explicit constexpr vec(type obj) : x(obj), y(obj), z(obj) {}
+            template <typename U> IMP_MATH_SMALL_FUNC constexpr vec(vec3<U> obj) : x(obj.x), y(obj.y), z(obj.z) {}
             template <typename U> requires Custom::convertible<U, vec> explicit constexpr vec(const U &obj) {*this = Custom::Convert<U, vec>{}(obj);}
             template <typename U> requires Custom::convertible<vec, U> explicit operator U() const {return Custom::Convert<vec, U>{}(*this);}
             template <typename U> [[nodiscard]] constexpr vec3<U> to() const {return vec3<U>(U(x), U(y), U(z));}
-            [[nodiscard]] constexpr       type &operator[](int i)       {if (!IMP_MATH_IS_CONSTANT(i)) return *(      type *)((      char *)this + sizeof(type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; IMP_MATH_UNREACHABLE();}
-            [[nodiscard]] constexpr const type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const type *)((const char *)this + sizeof(type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; IMP_MATH_UNREACHABLE();}
-            [[nodiscard]] type *as_array() {return &x;}
-            [[nodiscard]] const type *as_array() const {return &x;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr       type &operator[](int i)       {if (!IMP_MATH_IS_CONSTANT(i)) return *(      type *)((      char *)this + sizeof(type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; IMP_MATH_UNREACHABLE();}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const type *)((const char *)this + sizeof(type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; IMP_MATH_UNREACHABLE();}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC type *as_array() {return &x;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC const type *as_array() const {return &x;}
             [[nodiscard]] explicit constexpr operator bool() const requires(!std::is_same_v<type, bool>) {return any();} // Use the explicit methods below for vectors of bool.
             [[nodiscard]] constexpr bool any() const {return x || y || z;}
             [[nodiscard]] constexpr bool all() const {return x && y && z;}
@@ -516,11 +518,11 @@ namespace Math
             [[nodiscard]] constexpr auto tie() const & {return std::tie(x,y,z);}
             template <int I> [[nodiscard]] constexpr type &get() & {return std::get<I>(tie());}
             template <int I> [[nodiscard]] constexpr const type &get() const & {return std::get<I>(tie());}
-            [[nodiscard]] constexpr compare_any<vec> operator()(compare_any_tag) const {return compare_any(*this);}
-            [[nodiscard]] constexpr compare_all<vec> operator()(compare_all_tag) const {return compare_all(*this);}
-            [[nodiscard]] constexpr compare_none<vec> operator()(compare_none_tag) const {return compare_none(*this);}
-            [[nodiscard]] constexpr compare_not_all<vec> operator()(compare_not_all_tag) const {return compare_not_all(*this);}
-            [[nodiscard]] constexpr compare_elemwise<vec> operator()(compare_elemwise_tag) const {return compare_elemwise(*this);}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr compare_any<vec> operator()(compare_any_tag) const {return compare_any(*this);}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr compare_all<vec> operator()(compare_all_tag) const {return compare_all(*this);}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr compare_none<vec> operator()(compare_none_tag) const {return compare_none(*this);}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr compare_not_all<vec> operator()(compare_not_all_tag) const {return compare_not_all(*this);}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr compare_elemwise<vec> operator()(compare_elemwise_tag) const {return compare_elemwise(*this);}
         };
 
         template <typename T> struct vec<4,T> // vec4
@@ -529,22 +531,22 @@ namespace Math
             static constexpr int size = 4;
             static constexpr bool is_floating_point = std::is_floating_point_v<type>;
             type x, y, z, w;
-            [[nodiscard]] constexpr type &r() {return x;} [[nodiscard]] constexpr const type &r() const {return x;}
-            [[nodiscard]] constexpr type &g() {return y;} [[nodiscard]] constexpr const type &g() const {return y;}
-            [[nodiscard]] constexpr type &b() {return z;} [[nodiscard]] constexpr const type &b() const {return z;}
-            [[nodiscard]] constexpr type &a() {return w;} [[nodiscard]] constexpr const type &a() const {return w;}
-            constexpr vec() : x{}, y{}, z{}, w{} {}
-            constexpr vec(uninit) {}
-            constexpr vec(type x, type y, type z, type w) : x(x), y(y), z(z), w(w) {}
-            explicit constexpr vec(type obj) : x(obj), y(obj), z(obj), w(obj) {}
-            template <typename U> constexpr vec(vec4<U> obj) : x(obj.x), y(obj.y), z(obj.z), w(obj.w) {}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &r() {return x;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &r() const {return x;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &g() {return y;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &g() const {return y;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &b() {return z;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &b() const {return z;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &a() {return w;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &a() const {return w;}
+            IMP_MATH_SMALL_FUNC constexpr vec() : x{}, y{}, z{}, w{} {}
+            IMP_MATH_SMALL_FUNC constexpr vec(uninit) {}
+            IMP_MATH_SMALL_FUNC constexpr vec(type x, type y, type z, type w) : x(x), y(y), z(z), w(w) {}
+            IMP_MATH_SMALL_FUNC explicit constexpr vec(type obj) : x(obj), y(obj), z(obj), w(obj) {}
+            template <typename U> IMP_MATH_SMALL_FUNC constexpr vec(vec4<U> obj) : x(obj.x), y(obj.y), z(obj.z), w(obj.w) {}
             template <typename U> requires Custom::convertible<U, vec> explicit constexpr vec(const U &obj) {*this = Custom::Convert<U, vec>{}(obj);}
             template <typename U> requires Custom::convertible<vec, U> explicit operator U() const {return Custom::Convert<vec, U>{}(*this);}
             template <typename U> [[nodiscard]] constexpr vec4<U> to() const {return vec4<U>(U(x), U(y), U(z), U(w));}
-            [[nodiscard]] constexpr       type &operator[](int i)       {if (!IMP_MATH_IS_CONSTANT(i)) return *(      type *)((      char *)this + sizeof(type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; else if (i == 3) return w; IMP_MATH_UNREACHABLE();}
-            [[nodiscard]] constexpr const type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const type *)((const char *)this + sizeof(type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; else if (i == 3) return w; IMP_MATH_UNREACHABLE();}
-            [[nodiscard]] type *as_array() {return &x;}
-            [[nodiscard]] const type *as_array() const {return &x;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr       type &operator[](int i)       {if (!IMP_MATH_IS_CONSTANT(i)) return *(      type *)((      char *)this + sizeof(type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; else if (i == 3) return w; IMP_MATH_UNREACHABLE();}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const type *)((const char *)this + sizeof(type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; else if (i == 3) return w; IMP_MATH_UNREACHABLE();}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC type *as_array() {return &x;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC const type *as_array() const {return &x;}
             [[nodiscard]] explicit constexpr operator bool() const requires(!std::is_same_v<type, bool>) {return any();} // Use the explicit methods below for vectors of bool.
             [[nodiscard]] constexpr bool any() const {return x || y || z || w;}
             [[nodiscard]] constexpr bool all() const {return x && y && z && w;}
@@ -568,11 +570,11 @@ namespace Math
             [[nodiscard]] constexpr auto tie() const & {return std::tie(x,y,z,w);}
             template <int I> [[nodiscard]] constexpr type &get() & {return std::get<I>(tie());}
             template <int I> [[nodiscard]] constexpr const type &get() const & {return std::get<I>(tie());}
-            [[nodiscard]] constexpr compare_any<vec> operator()(compare_any_tag) const {return compare_any(*this);}
-            [[nodiscard]] constexpr compare_all<vec> operator()(compare_all_tag) const {return compare_all(*this);}
-            [[nodiscard]] constexpr compare_none<vec> operator()(compare_none_tag) const {return compare_none(*this);}
-            [[nodiscard]] constexpr compare_not_all<vec> operator()(compare_not_all_tag) const {return compare_not_all(*this);}
-            [[nodiscard]] constexpr compare_elemwise<vec> operator()(compare_elemwise_tag) const {return compare_elemwise(*this);}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr compare_any<vec> operator()(compare_any_tag) const {return compare_any(*this);}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr compare_all<vec> operator()(compare_all_tag) const {return compare_all(*this);}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr compare_none<vec> operator()(compare_none_tag) const {return compare_none(*this);}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr compare_not_all<vec> operator()(compare_not_all_tag) const {return compare_not_all(*this);}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr compare_elemwise<vec> operator()(compare_elemwise_tag) const {return compare_elemwise(*this);}
         };
 
         template <typename ...P, typename = std::enable_if_t<sizeof...(P) >= 2 && sizeof...(P) <= 4>> vec(P...) -> vec<sizeof...(P), larger_t<P...>>;
@@ -587,8 +589,8 @@ namespace Math
             static constexpr int size = 2;
             static constexpr bool is_floating_point = std::is_floating_point_v<type>;
             member_type x, y;
-            [[nodiscard]] constexpr type &r() {return x;} [[nodiscard]] constexpr const type &r() const {return x;}
-            [[nodiscard]] constexpr type &g() {return y;} [[nodiscard]] constexpr const type &g() const {return y;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &r() {return x;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &r() const {return x;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &g() {return y;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &g() const {return y;}
             constexpr mat() : mat(1,0,0,1) {}
             constexpr mat(uninit) : x(uninit{}), y(uninit{}) {}
             constexpr mat(const member_type &x, const member_type &y) : x(x), y(y) {}
@@ -597,10 +599,10 @@ namespace Math
             template <typename U> requires Custom::convertible<U, mat> explicit constexpr mat(const U &obj) {*this = Custom::Convert<U, mat>{}(obj);}
             template <typename U> requires Custom::convertible<mat, U> explicit operator U() const {return Custom::Convert<mat, U>{}(*this);}
             template <typename U> [[nodiscard]] constexpr mat2x2<U> to() const {return mat2x2<U>(U(x.x), U(y.x), U(x.y), U(y.y));}
-            [[nodiscard]] constexpr       member_type &operator[](int i)       {if (!IMP_MATH_IS_CONSTANT(i)) return *(      member_type *)((      char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; IMP_MATH_UNREACHABLE();}
-            [[nodiscard]] constexpr const member_type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const member_type *)((const char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; IMP_MATH_UNREACHABLE();}
-            [[nodiscard]] type *as_array() {return &x.x;}
-            [[nodiscard]] const type *as_array() const {return &x.x;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr       member_type &operator[](int i)       {if (!IMP_MATH_IS_CONSTANT(i)) return *(      member_type *)((      char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; IMP_MATH_UNREACHABLE();}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const member_type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const member_type *)((const char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; IMP_MATH_UNREACHABLE();}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC type *as_array() {return &x.x;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC const type *as_array() const {return &x.x;}
             [[nodiscard]] constexpr mat3x2<type> to_vec3(const member_type &nz) const {return {x, y, nz};}
             [[nodiscard]] constexpr mat4x2<type> to_vec4(const member_type &nz, const member_type &nw) const {return {x, y, nz, nw};}
             [[nodiscard]] constexpr mat3x2<type> to_vec3() const {return to_vec3({});}
@@ -658,8 +660,8 @@ namespace Math
             static constexpr int width = 2, height = 3;
             static constexpr bool is_floating_point = std::is_floating_point_v<type>;
             member_type x, y;
-            [[nodiscard]] constexpr type &r() {return x;} [[nodiscard]] constexpr const type &r() const {return x;}
-            [[nodiscard]] constexpr type &g() {return y;} [[nodiscard]] constexpr const type &g() const {return y;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &r() {return x;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &r() const {return x;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &g() {return y;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &g() const {return y;}
             constexpr mat() : mat(1,0,0,1,0,0) {}
             constexpr mat(uninit) : x(uninit{}), y(uninit{}) {}
             constexpr mat(const member_type &x, const member_type &y) : x(x), y(y) {}
@@ -668,10 +670,10 @@ namespace Math
             template <typename U> requires Custom::convertible<U, mat> explicit constexpr mat(const U &obj) {*this = Custom::Convert<U, mat>{}(obj);}
             template <typename U> requires Custom::convertible<mat, U> explicit operator U() const {return Custom::Convert<mat, U>{}(*this);}
             template <typename U> [[nodiscard]] constexpr mat2x3<U> to() const {return mat2x3<U>(U(x.x), U(y.x), U(x.y), U(y.y), U(x.z), U(y.z));}
-            [[nodiscard]] constexpr       member_type &operator[](int i)       {if (!IMP_MATH_IS_CONSTANT(i)) return *(      member_type *)((      char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; IMP_MATH_UNREACHABLE();}
-            [[nodiscard]] constexpr const member_type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const member_type *)((const char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; IMP_MATH_UNREACHABLE();}
-            [[nodiscard]] type *as_array() {return &x.x;}
-            [[nodiscard]] const type *as_array() const {return &x.x;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr       member_type &operator[](int i)       {if (!IMP_MATH_IS_CONSTANT(i)) return *(      member_type *)((      char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; IMP_MATH_UNREACHABLE();}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const member_type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const member_type *)((const char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; IMP_MATH_UNREACHABLE();}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC type *as_array() {return &x.x;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC const type *as_array() const {return &x.x;}
             [[nodiscard]] constexpr mat3x3<type> to_vec3(const member_type &nz) const {return {x, y, nz};}
             [[nodiscard]] constexpr mat4x3<type> to_vec4(const member_type &nz, const member_type &nw) const {return {x, y, nz, nw};}
             [[nodiscard]] constexpr mat3x3<type> to_vec3() const {return to_vec3({});}
@@ -697,8 +699,8 @@ namespace Math
             static constexpr int width = 2, height = 4;
             static constexpr bool is_floating_point = std::is_floating_point_v<type>;
             member_type x, y;
-            [[nodiscard]] constexpr type &r() {return x;} [[nodiscard]] constexpr const type &r() const {return x;}
-            [[nodiscard]] constexpr type &g() {return y;} [[nodiscard]] constexpr const type &g() const {return y;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &r() {return x;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &r() const {return x;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &g() {return y;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &g() const {return y;}
             constexpr mat() : mat(1,0,0,1,0,0,0,0) {}
             constexpr mat(uninit) : x(uninit{}), y(uninit{}) {}
             constexpr mat(const member_type &x, const member_type &y) : x(x), y(y) {}
@@ -707,10 +709,10 @@ namespace Math
             template <typename U> requires Custom::convertible<U, mat> explicit constexpr mat(const U &obj) {*this = Custom::Convert<U, mat>{}(obj);}
             template <typename U> requires Custom::convertible<mat, U> explicit operator U() const {return Custom::Convert<mat, U>{}(*this);}
             template <typename U> [[nodiscard]] constexpr mat2x4<U> to() const {return mat2x4<U>(U(x.x), U(y.x), U(x.y), U(y.y), U(x.z), U(y.z), U(x.w), U(y.w));}
-            [[nodiscard]] constexpr       member_type &operator[](int i)       {if (!IMP_MATH_IS_CONSTANT(i)) return *(      member_type *)((      char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; IMP_MATH_UNREACHABLE();}
-            [[nodiscard]] constexpr const member_type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const member_type *)((const char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; IMP_MATH_UNREACHABLE();}
-            [[nodiscard]] type *as_array() {return &x.x;}
-            [[nodiscard]] const type *as_array() const {return &x.x;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr       member_type &operator[](int i)       {if (!IMP_MATH_IS_CONSTANT(i)) return *(      member_type *)((      char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; IMP_MATH_UNREACHABLE();}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const member_type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const member_type *)((const char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; IMP_MATH_UNREACHABLE();}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC type *as_array() {return &x.x;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC const type *as_array() const {return &x.x;}
             [[nodiscard]] constexpr mat3x4<type> to_vec3(const member_type &nz) const {return {x, y, nz};}
             [[nodiscard]] constexpr mat4x4<type> to_vec4(const member_type &nz, const member_type &nw) const {return {x, y, nz, nw};}
             [[nodiscard]] constexpr mat3x4<type> to_vec3() const {return to_vec3({});}
@@ -736,9 +738,9 @@ namespace Math
             static constexpr int width = 3, height = 2;
             static constexpr bool is_floating_point = std::is_floating_point_v<type>;
             member_type x, y, z;
-            [[nodiscard]] constexpr type &r() {return x;} [[nodiscard]] constexpr const type &r() const {return x;}
-            [[nodiscard]] constexpr type &g() {return y;} [[nodiscard]] constexpr const type &g() const {return y;}
-            [[nodiscard]] constexpr type &b() {return z;} [[nodiscard]] constexpr const type &b() const {return z;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &r() {return x;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &r() const {return x;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &g() {return y;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &g() const {return y;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &b() {return z;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &b() const {return z;}
             constexpr mat() : mat(1,0,0,0,1,0) {}
             constexpr mat(uninit) : x(uninit{}), y(uninit{}), z(uninit{}) {}
             constexpr mat(const member_type &x, const member_type &y, const member_type &z) : x(x), y(y), z(z) {}
@@ -747,10 +749,10 @@ namespace Math
             template <typename U> requires Custom::convertible<U, mat> explicit constexpr mat(const U &obj) {*this = Custom::Convert<U, mat>{}(obj);}
             template <typename U> requires Custom::convertible<mat, U> explicit operator U() const {return Custom::Convert<mat, U>{}(*this);}
             template <typename U> [[nodiscard]] constexpr mat3x2<U> to() const {return mat3x2<U>(U(x.x), U(y.x), U(z.x), U(x.y), U(y.y), U(z.y));}
-            [[nodiscard]] constexpr       member_type &operator[](int i)       {if (!IMP_MATH_IS_CONSTANT(i)) return *(      member_type *)((      char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; IMP_MATH_UNREACHABLE();}
-            [[nodiscard]] constexpr const member_type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const member_type *)((const char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; IMP_MATH_UNREACHABLE();}
-            [[nodiscard]] type *as_array() {return &x.x;}
-            [[nodiscard]] const type *as_array() const {return &x.x;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr       member_type &operator[](int i)       {if (!IMP_MATH_IS_CONSTANT(i)) return *(      member_type *)((      char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; IMP_MATH_UNREACHABLE();}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const member_type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const member_type *)((const char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; IMP_MATH_UNREACHABLE();}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC type *as_array() {return &x.x;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC const type *as_array() const {return &x.x;}
             [[nodiscard]] constexpr mat2x2<type> to_vec2() const {return {x, y};}
             [[nodiscard]] constexpr mat4x2<type> to_vec4(const member_type &nw) const {return {x, y, z, nw};}
             [[nodiscard]] constexpr mat4x2<type> to_vec4() const {return to_vec4({});}
@@ -776,9 +778,9 @@ namespace Math
             static constexpr int size = 3;
             static constexpr bool is_floating_point = std::is_floating_point_v<type>;
             member_type x, y, z;
-            [[nodiscard]] constexpr type &r() {return x;} [[nodiscard]] constexpr const type &r() const {return x;}
-            [[nodiscard]] constexpr type &g() {return y;} [[nodiscard]] constexpr const type &g() const {return y;}
-            [[nodiscard]] constexpr type &b() {return z;} [[nodiscard]] constexpr const type &b() const {return z;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &r() {return x;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &r() const {return x;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &g() {return y;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &g() const {return y;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &b() {return z;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &b() const {return z;}
             constexpr mat() : mat(1,0,0,0,1,0,0,0,1) {}
             constexpr mat(uninit) : x(uninit{}), y(uninit{}), z(uninit{}) {}
             constexpr mat(const member_type &x, const member_type &y, const member_type &z) : x(x), y(y), z(z) {}
@@ -787,10 +789,10 @@ namespace Math
             template <typename U> requires Custom::convertible<U, mat> explicit constexpr mat(const U &obj) {*this = Custom::Convert<U, mat>{}(obj);}
             template <typename U> requires Custom::convertible<mat, U> explicit operator U() const {return Custom::Convert<mat, U>{}(*this);}
             template <typename U> [[nodiscard]] constexpr mat3x3<U> to() const {return mat3x3<U>(U(x.x), U(y.x), U(z.x), U(x.y), U(y.y), U(z.y), U(x.z), U(y.z), U(z.z));}
-            [[nodiscard]] constexpr       member_type &operator[](int i)       {if (!IMP_MATH_IS_CONSTANT(i)) return *(      member_type *)((      char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; IMP_MATH_UNREACHABLE();}
-            [[nodiscard]] constexpr const member_type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const member_type *)((const char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; IMP_MATH_UNREACHABLE();}
-            [[nodiscard]] type *as_array() {return &x.x;}
-            [[nodiscard]] const type *as_array() const {return &x.x;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr       member_type &operator[](int i)       {if (!IMP_MATH_IS_CONSTANT(i)) return *(      member_type *)((      char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; IMP_MATH_UNREACHABLE();}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const member_type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const member_type *)((const char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; IMP_MATH_UNREACHABLE();}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC type *as_array() {return &x.x;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC const type *as_array() const {return &x.x;}
             [[nodiscard]] constexpr mat2x3<type> to_vec2() const {return {x, y};}
             [[nodiscard]] constexpr mat4x3<type> to_vec4(const member_type &nw) const {return {x, y, z, nw};}
             [[nodiscard]] constexpr mat4x3<type> to_vec4() const {return to_vec4({});}
@@ -874,9 +876,9 @@ namespace Math
             static constexpr int width = 3, height = 4;
             static constexpr bool is_floating_point = std::is_floating_point_v<type>;
             member_type x, y, z;
-            [[nodiscard]] constexpr type &r() {return x;} [[nodiscard]] constexpr const type &r() const {return x;}
-            [[nodiscard]] constexpr type &g() {return y;} [[nodiscard]] constexpr const type &g() const {return y;}
-            [[nodiscard]] constexpr type &b() {return z;} [[nodiscard]] constexpr const type &b() const {return z;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &r() {return x;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &r() const {return x;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &g() {return y;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &g() const {return y;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &b() {return z;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &b() const {return z;}
             constexpr mat() : mat(1,0,0,0,1,0,0,0,1,0,0,0) {}
             constexpr mat(uninit) : x(uninit{}), y(uninit{}), z(uninit{}) {}
             constexpr mat(const member_type &x, const member_type &y, const member_type &z) : x(x), y(y), z(z) {}
@@ -885,10 +887,10 @@ namespace Math
             template <typename U> requires Custom::convertible<U, mat> explicit constexpr mat(const U &obj) {*this = Custom::Convert<U, mat>{}(obj);}
             template <typename U> requires Custom::convertible<mat, U> explicit operator U() const {return Custom::Convert<mat, U>{}(*this);}
             template <typename U> [[nodiscard]] constexpr mat3x4<U> to() const {return mat3x4<U>(U(x.x), U(y.x), U(z.x), U(x.y), U(y.y), U(z.y), U(x.z), U(y.z), U(z.z), U(x.w), U(y.w), U(z.w));}
-            [[nodiscard]] constexpr       member_type &operator[](int i)       {if (!IMP_MATH_IS_CONSTANT(i)) return *(      member_type *)((      char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; IMP_MATH_UNREACHABLE();}
-            [[nodiscard]] constexpr const member_type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const member_type *)((const char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; IMP_MATH_UNREACHABLE();}
-            [[nodiscard]] type *as_array() {return &x.x;}
-            [[nodiscard]] const type *as_array() const {return &x.x;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr       member_type &operator[](int i)       {if (!IMP_MATH_IS_CONSTANT(i)) return *(      member_type *)((      char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; IMP_MATH_UNREACHABLE();}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const member_type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const member_type *)((const char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; IMP_MATH_UNREACHABLE();}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC type *as_array() {return &x.x;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC const type *as_array() const {return &x.x;}
             [[nodiscard]] constexpr mat2x4<type> to_vec2() const {return {x, y};}
             [[nodiscard]] constexpr mat4x4<type> to_vec4(const member_type &nw) const {return {x, y, z, nw};}
             [[nodiscard]] constexpr mat4x4<type> to_vec4() const {return to_vec4({});}
@@ -913,10 +915,10 @@ namespace Math
             static constexpr int width = 4, height = 2;
             static constexpr bool is_floating_point = std::is_floating_point_v<type>;
             member_type x, y, z, w;
-            [[nodiscard]] constexpr type &r() {return x;} [[nodiscard]] constexpr const type &r() const {return x;}
-            [[nodiscard]] constexpr type &g() {return y;} [[nodiscard]] constexpr const type &g() const {return y;}
-            [[nodiscard]] constexpr type &b() {return z;} [[nodiscard]] constexpr const type &b() const {return z;}
-            [[nodiscard]] constexpr type &a() {return w;} [[nodiscard]] constexpr const type &a() const {return w;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &r() {return x;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &r() const {return x;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &g() {return y;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &g() const {return y;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &b() {return z;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &b() const {return z;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &a() {return w;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &a() const {return w;}
             constexpr mat() : mat(1,0,0,0,0,1,0,0) {}
             constexpr mat(uninit) : x(uninit{}), y(uninit{}), z(uninit{}), w(uninit{}) {}
             constexpr mat(const member_type &x, const member_type &y, const member_type &z, const member_type &w) : x(x), y(y), z(z), w(w) {}
@@ -925,10 +927,10 @@ namespace Math
             template <typename U> requires Custom::convertible<U, mat> explicit constexpr mat(const U &obj) {*this = Custom::Convert<U, mat>{}(obj);}
             template <typename U> requires Custom::convertible<mat, U> explicit operator U() const {return Custom::Convert<mat, U>{}(*this);}
             template <typename U> [[nodiscard]] constexpr mat4x2<U> to() const {return mat4x2<U>(U(x.x), U(y.x), U(z.x), U(w.x), U(x.y), U(y.y), U(z.y), U(w.y));}
-            [[nodiscard]] constexpr       member_type &operator[](int i)       {if (!IMP_MATH_IS_CONSTANT(i)) return *(      member_type *)((      char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; else if (i == 3) return w; IMP_MATH_UNREACHABLE();}
-            [[nodiscard]] constexpr const member_type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const member_type *)((const char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; else if (i == 3) return w; IMP_MATH_UNREACHABLE();}
-            [[nodiscard]] type *as_array() {return &x.x;}
-            [[nodiscard]] const type *as_array() const {return &x.x;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr       member_type &operator[](int i)       {if (!IMP_MATH_IS_CONSTANT(i)) return *(      member_type *)((      char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; else if (i == 3) return w; IMP_MATH_UNREACHABLE();}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const member_type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const member_type *)((const char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; else if (i == 3) return w; IMP_MATH_UNREACHABLE();}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC type *as_array() {return &x.x;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC const type *as_array() const {return &x.x;}
             [[nodiscard]] constexpr mat2x2<type> to_vec2() const {return {x, y};}
             [[nodiscard]] constexpr mat3x2<type> to_vec3() const {return {x, y, z};}
             [[nodiscard]] constexpr mat2x2<type> to_mat2x2() const {return {x.x,y.x,x.y,y.y};}
@@ -952,10 +954,10 @@ namespace Math
             static constexpr int width = 4, height = 3;
             static constexpr bool is_floating_point = std::is_floating_point_v<type>;
             member_type x, y, z, w;
-            [[nodiscard]] constexpr type &r() {return x;} [[nodiscard]] constexpr const type &r() const {return x;}
-            [[nodiscard]] constexpr type &g() {return y;} [[nodiscard]] constexpr const type &g() const {return y;}
-            [[nodiscard]] constexpr type &b() {return z;} [[nodiscard]] constexpr const type &b() const {return z;}
-            [[nodiscard]] constexpr type &a() {return w;} [[nodiscard]] constexpr const type &a() const {return w;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &r() {return x;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &r() const {return x;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &g() {return y;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &g() const {return y;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &b() {return z;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &b() const {return z;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &a() {return w;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &a() const {return w;}
             constexpr mat() : mat(1,0,0,0,0,1,0,0,0,0,1,0) {}
             constexpr mat(uninit) : x(uninit{}), y(uninit{}), z(uninit{}), w(uninit{}) {}
             constexpr mat(const member_type &x, const member_type &y, const member_type &z, const member_type &w) : x(x), y(y), z(z), w(w) {}
@@ -964,10 +966,10 @@ namespace Math
             template <typename U> requires Custom::convertible<U, mat> explicit constexpr mat(const U &obj) {*this = Custom::Convert<U, mat>{}(obj);}
             template <typename U> requires Custom::convertible<mat, U> explicit operator U() const {return Custom::Convert<mat, U>{}(*this);}
             template <typename U> [[nodiscard]] constexpr mat4x3<U> to() const {return mat4x3<U>(U(x.x), U(y.x), U(z.x), U(w.x), U(x.y), U(y.y), U(z.y), U(w.y), U(x.z), U(y.z), U(z.z), U(w.z));}
-            [[nodiscard]] constexpr       member_type &operator[](int i)       {if (!IMP_MATH_IS_CONSTANT(i)) return *(      member_type *)((      char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; else if (i == 3) return w; IMP_MATH_UNREACHABLE();}
-            [[nodiscard]] constexpr const member_type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const member_type *)((const char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; else if (i == 3) return w; IMP_MATH_UNREACHABLE();}
-            [[nodiscard]] type *as_array() {return &x.x;}
-            [[nodiscard]] const type *as_array() const {return &x.x;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr       member_type &operator[](int i)       {if (!IMP_MATH_IS_CONSTANT(i)) return *(      member_type *)((      char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; else if (i == 3) return w; IMP_MATH_UNREACHABLE();}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const member_type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const member_type *)((const char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; else if (i == 3) return w; IMP_MATH_UNREACHABLE();}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC type *as_array() {return &x.x;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC const type *as_array() const {return &x.x;}
             [[nodiscard]] constexpr mat2x3<type> to_vec2() const {return {x, y};}
             [[nodiscard]] constexpr mat3x3<type> to_vec3() const {return {x, y, z};}
             [[nodiscard]] constexpr mat2x2<type> to_mat2x2() const {return {x.x,y.x,x.y,y.y};}
@@ -992,10 +994,10 @@ namespace Math
             static constexpr int size = 4;
             static constexpr bool is_floating_point = std::is_floating_point_v<type>;
             member_type x, y, z, w;
-            [[nodiscard]] constexpr type &r() {return x;} [[nodiscard]] constexpr const type &r() const {return x;}
-            [[nodiscard]] constexpr type &g() {return y;} [[nodiscard]] constexpr const type &g() const {return y;}
-            [[nodiscard]] constexpr type &b() {return z;} [[nodiscard]] constexpr const type &b() const {return z;}
-            [[nodiscard]] constexpr type &a() {return w;} [[nodiscard]] constexpr const type &a() const {return w;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &r() {return x;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &r() const {return x;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &g() {return y;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &g() const {return y;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &b() {return z;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &b() const {return z;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &a() {return w;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &a() const {return w;}
             constexpr mat() : mat(1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1) {}
             constexpr mat(uninit) : x(uninit{}), y(uninit{}), z(uninit{}), w(uninit{}) {}
             constexpr mat(const member_type &x, const member_type &y, const member_type &z, const member_type &w) : x(x), y(y), z(z), w(w) {}
@@ -1004,10 +1006,10 @@ namespace Math
             template <typename U> requires Custom::convertible<U, mat> explicit constexpr mat(const U &obj) {*this = Custom::Convert<U, mat>{}(obj);}
             template <typename U> requires Custom::convertible<mat, U> explicit operator U() const {return Custom::Convert<mat, U>{}(*this);}
             template <typename U> [[nodiscard]] constexpr mat4x4<U> to() const {return mat4x4<U>(U(x.x), U(y.x), U(z.x), U(w.x), U(x.y), U(y.y), U(z.y), U(w.y), U(x.z), U(y.z), U(z.z), U(w.z), U(x.w), U(y.w), U(z.w), U(w.w));}
-            [[nodiscard]] constexpr       member_type &operator[](int i)       {if (!IMP_MATH_IS_CONSTANT(i)) return *(      member_type *)((      char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; else if (i == 3) return w; IMP_MATH_UNREACHABLE();}
-            [[nodiscard]] constexpr const member_type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const member_type *)((const char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; else if (i == 3) return w; IMP_MATH_UNREACHABLE();}
-            [[nodiscard]] type *as_array() {return &x.x;}
-            [[nodiscard]] const type *as_array() const {return &x.x;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr       member_type &operator[](int i)       {if (!IMP_MATH_IS_CONSTANT(i)) return *(      member_type *)((      char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; else if (i == 3) return w; IMP_MATH_UNREACHABLE();}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const member_type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const member_type *)((const char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; else if (i == 3) return w; IMP_MATH_UNREACHABLE();}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC type *as_array() {return &x.x;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC const type *as_array() const {return &x.x;}
             [[nodiscard]] constexpr mat2x4<type> to_vec2() const {return {x, y};}
             [[nodiscard]] constexpr mat3x4<type> to_vec3() const {return {x, y, z};}
             [[nodiscard]] constexpr mat2x2<type> to_mat2x2() const {return {x.x,y.x,x.y,y.y};}
@@ -1108,7 +1110,7 @@ namespace Math
     {
         // Returns i-th vector element. Also works on scalar, ignoring the index.
         template <typename T> requires vector_or_scalar<std::remove_reference_t<T>>
-        [[nodiscard]] constexpr decltype(auto) vec_elem(int i, T &&vec)
+        [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr decltype(auto) vec_elem(int i, T &&vec)
         {
             if constexpr (std::is_lvalue_reference_v<T>)
             {
@@ -1131,7 +1133,7 @@ namespace Math
         // If at least one vector is passed, the result is also a vector.
         // If `D != 1`, forces the result to be the vector of this size, or causes a hard error if not possible.
         template <int D = 1, typename F, typename ...P, typename = std::enable_if_t<(vector_or_scalar<std::remove_reference_t<P>> && ...)>> // Trying to put this condition into `requires` crashes Clang 14.
-        constexpr auto apply_elementwise(F &&func, P &&... params) -> vec_or_scalar_t<common_vec_size_v<D, vec_size_v<std::remove_reference_t<P>>...>, decltype(std::declval<F>()(vec_elem(0, std::declval<P>())...))>
+        IMP_MATH_SMALL_FUNC constexpr auto apply_elementwise(F &&func, P &&... params) -> vec_or_scalar_t<common_vec_size_v<D, vec_size_v<std::remove_reference_t<P>>...>, decltype(std::declval<F>()(vec_elem(0, std::declval<P>())...))>
         {
             constexpr int size = common_vec_size_v<D, vec_size_v<std::remove_reference_t<P>>...>;
             using R = vec_or_scalar_t<size, decltype(std::declval<F>()(vec_elem(0, std::declval<P>())...))>;
@@ -1183,119 +1185,119 @@ namespace Math
 
     inline namespace Vector // Operators
     {
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr auto operator+(const A &a, const B &b) -> vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, decltype(std::declval<vec_base_t<A>>() + std::declval<vec_base_t<B>>())> {return apply_elementwise([](vec_base_t<A> a, vec_base_t<B> b){return a + b;}, a, b);}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr auto operator-(const A &a, const B &b) -> vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, decltype(std::declval<vec_base_t<A>>() - std::declval<vec_base_t<B>>())> {return apply_elementwise([](vec_base_t<A> a, vec_base_t<B> b){return a - b;}, a, b);}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr auto operator*(const A &a, const B &b) -> vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, decltype(std::declval<vec_base_t<A>>() * std::declval<vec_base_t<B>>())> {return apply_elementwise([](vec_base_t<A> a, vec_base_t<B> b){return a * b;}, a, b);}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr auto operator/(const A &a, const B &b) -> vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, decltype(std::declval<vec_base_t<A>>() / std::declval<vec_base_t<B>>())> {return apply_elementwise([](vec_base_t<A> a, vec_base_t<B> b){return a / b;}, a, b);}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr auto operator%(const A &a, const B &b) -> vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, decltype(std::declval<vec_base_t<A>>() % std::declval<vec_base_t<B>>())> {return apply_elementwise([](vec_base_t<A> a, vec_base_t<B> b){return a % b;}, a, b);}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr auto operator^(const A &a, const B &b) -> vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, decltype(std::declval<vec_base_t<A>>() ^ std::declval<vec_base_t<B>>())> {return apply_elementwise([](vec_base_t<A> a, vec_base_t<B> b){return a ^ b;}, a, b);}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr auto operator&(const A &a, const B &b) -> vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, decltype(std::declval<vec_base_t<A>>() & std::declval<vec_base_t<B>>())> {return apply_elementwise([](vec_base_t<A> a, vec_base_t<B> b){return a & b;}, a, b);}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr auto operator|(const A &a, const B &b) -> vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, decltype(std::declval<vec_base_t<A>>() | std::declval<vec_base_t<B>>())> {return apply_elementwise([](vec_base_t<A> a, vec_base_t<B> b){return a | b;}, a, b);}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr auto operator<<(const A &a, const B &b) -> vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, decltype(std::declval<vec_base_t<A>>() << std::declval<vec_base_t<B>>())> {return apply_elementwise([](vec_base_t<A> a, vec_base_t<B> b){return a << b;}, a, b);}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr auto operator>>(const A &a, const B &b) -> vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, decltype(std::declval<vec_base_t<A>>() >> std::declval<vec_base_t<B>>())> {return apply_elementwise([](vec_base_t<A> a, vec_base_t<B> b){return a >> b;}, a, b);}
-        template <vector V> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr auto operator~(const V &v) -> change_vec_base_t<V, decltype(~v.x)> {return apply_elementwise([](vec_base_t<V> v){return ~v;}, v);}
-        template <vector V> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr auto operator+(const V &v) -> change_vec_base_t<V, decltype(+v.x)> {return apply_elementwise([](vec_base_t<V> v){return +v;}, v);}
-        template <vector V> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr auto operator-(const V &v) -> change_vec_base_t<V, decltype(-v.x)> {return apply_elementwise([](vec_base_t<V> v){return -v;}, v);}
-        template <vector V> IMP_MATH_ALWAYS_INLINE constexpr V &operator++(V &v) {apply_elementwise([](vec_base_t<V> &v){++v;}, v); return v;}
-        template <vector V> IMP_MATH_ALWAYS_INLINE constexpr V operator++(V &v, int) {V ret = v; apply_elementwise([](vec_base_t<V> &v){++v;}, v); return ret;}
-        template <vector V> IMP_MATH_ALWAYS_INLINE constexpr V &operator--(V &v) {apply_elementwise([](vec_base_t<V> &v){--v;}, v); return v;}
-        template <vector V> IMP_MATH_ALWAYS_INLINE constexpr V operator--(V &v, int) {V ret = v; apply_elementwise([](vec_base_t<V> &v){--v;}, v); return ret;}
-        template <vector A, vector_or_scalar B> IMP_MATH_ALWAYS_INLINE constexpr auto operator+=(A &a, const B &b) -> std::enable_if_t<have_common_vec_size<vec_size_strong_v<A>, vec_size_strong_v<B>> && (std::is_floating_point_v<vec_base_t<B>> <= std::is_floating_point_v<vec_base_t<A>>), decltype(void(std::declval<vec_base_t<A> &>() += std::declval<vec_base_t<B>>()), std::declval<A &>())> {apply_elementwise([](vec_base_t<A> &a, vec_base_t<B> b){a += b;}, a, b); return a;}
-        template <vector A, vector_or_scalar B> IMP_MATH_ALWAYS_INLINE constexpr auto operator-=(A &a, const B &b) -> std::enable_if_t<have_common_vec_size<vec_size_strong_v<A>, vec_size_strong_v<B>> && (std::is_floating_point_v<vec_base_t<B>> <= std::is_floating_point_v<vec_base_t<A>>), decltype(void(std::declval<vec_base_t<A> &>() -= std::declval<vec_base_t<B>>()), std::declval<A &>())> {apply_elementwise([](vec_base_t<A> &a, vec_base_t<B> b){a -= b;}, a, b); return a;}
-        template <vector A, vector_or_scalar B> IMP_MATH_ALWAYS_INLINE constexpr auto operator*=(A &a, const B &b) -> std::enable_if_t<have_common_vec_size<vec_size_strong_v<A>, vec_size_strong_v<B>> && (std::is_floating_point_v<vec_base_t<B>> <= std::is_floating_point_v<vec_base_t<A>>), decltype(void(std::declval<vec_base_t<A> &>() *= std::declval<vec_base_t<B>>()), std::declval<A &>())> {apply_elementwise([](vec_base_t<A> &a, vec_base_t<B> b){a *= b;}, a, b); return a;}
-        template <vector A, vector_or_scalar B> IMP_MATH_ALWAYS_INLINE constexpr auto operator/=(A &a, const B &b) -> std::enable_if_t<have_common_vec_size<vec_size_strong_v<A>, vec_size_strong_v<B>> && (std::is_floating_point_v<vec_base_t<B>> <= std::is_floating_point_v<vec_base_t<A>>), decltype(void(std::declval<vec_base_t<A> &>() /= std::declval<vec_base_t<B>>()), std::declval<A &>())> {apply_elementwise([](vec_base_t<A> &a, vec_base_t<B> b){a /= b;}, a, b); return a;}
-        template <vector A, vector_or_scalar B> IMP_MATH_ALWAYS_INLINE constexpr auto operator%=(A &a, const B &b) -> std::enable_if_t<have_common_vec_size<vec_size_strong_v<A>, vec_size_strong_v<B>> && (std::is_floating_point_v<vec_base_t<B>> <= std::is_floating_point_v<vec_base_t<A>>), decltype(void(std::declval<vec_base_t<A> &>() %= std::declval<vec_base_t<B>>()), std::declval<A &>())> {apply_elementwise([](vec_base_t<A> &a, vec_base_t<B> b){a %= b;}, a, b); return a;}
-        template <vector A, vector_or_scalar B> IMP_MATH_ALWAYS_INLINE constexpr auto operator^=(A &a, const B &b) -> std::enable_if_t<have_common_vec_size<vec_size_strong_v<A>, vec_size_strong_v<B>> && (std::is_floating_point_v<vec_base_t<B>> <= std::is_floating_point_v<vec_base_t<A>>), decltype(void(std::declval<vec_base_t<A> &>() ^= std::declval<vec_base_t<B>>()), std::declval<A &>())> {apply_elementwise([](vec_base_t<A> &a, vec_base_t<B> b){a ^= b;}, a, b); return a;}
-        template <vector A, vector_or_scalar B> IMP_MATH_ALWAYS_INLINE constexpr auto operator&=(A &a, const B &b) -> std::enable_if_t<have_common_vec_size<vec_size_strong_v<A>, vec_size_strong_v<B>> && (std::is_floating_point_v<vec_base_t<B>> <= std::is_floating_point_v<vec_base_t<A>>), decltype(void(std::declval<vec_base_t<A> &>() &= std::declval<vec_base_t<B>>()), std::declval<A &>())> {apply_elementwise([](vec_base_t<A> &a, vec_base_t<B> b){a &= b;}, a, b); return a;}
-        template <vector A, vector_or_scalar B> IMP_MATH_ALWAYS_INLINE constexpr auto operator|=(A &a, const B &b) -> std::enable_if_t<have_common_vec_size<vec_size_strong_v<A>, vec_size_strong_v<B>> && (std::is_floating_point_v<vec_base_t<B>> <= std::is_floating_point_v<vec_base_t<A>>), decltype(void(std::declval<vec_base_t<A> &>() |= std::declval<vec_base_t<B>>()), std::declval<A &>())> {apply_elementwise([](vec_base_t<A> &a, vec_base_t<B> b){a |= b;}, a, b); return a;}
-        template <vector A, vector_or_scalar B> IMP_MATH_ALWAYS_INLINE constexpr auto operator<<=(A &a, const B &b) -> std::enable_if_t<have_common_vec_size<vec_size_strong_v<A>, vec_size_strong_v<B>> && (std::is_floating_point_v<vec_base_t<B>> <= std::is_floating_point_v<vec_base_t<A>>), decltype(void(std::declval<vec_base_t<A> &>() <<= std::declval<vec_base_t<B>>()), std::declval<A &>())> {apply_elementwise([](vec_base_t<A> &a, vec_base_t<B> b){a <<= b;}, a, b); return a;}
-        template <vector A, vector_or_scalar B> IMP_MATH_ALWAYS_INLINE constexpr auto operator>>=(A &a, const B &b) -> std::enable_if_t<have_common_vec_size<vec_size_strong_v<A>, vec_size_strong_v<B>> && (std::is_floating_point_v<vec_base_t<B>> <= std::is_floating_point_v<vec_base_t<A>>), decltype(void(std::declval<vec_base_t<A> &>() >>= std::declval<vec_base_t<B>>()), std::declval<A &>())> {apply_elementwise([](vec_base_t<A> &a, vec_base_t<B> b){a >>= b;}, a, b); return a;}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator<(const A &a, const B &b) {if constexpr (vector<A>) return compare_elemwise(a) < b; else return a < compare_elemwise(b);}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator<(compare_any<A> &&a, const B &b) {return any_nonzero_elements(apply_elementwise(std::less{}, a.value, b));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator<(const A &a, compare_any<B> &&b) {return any_nonzero_elements(apply_elementwise(std::less{}, a, b.value));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator<(compare_all<A> &&a, const B &b) {return all_nonzero_elements(apply_elementwise(std::less{}, a.value, b));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator<(const A &a, compare_all<B> &&b) {return all_nonzero_elements(apply_elementwise(std::less{}, a, b.value));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator<(compare_none<A> &&a, const B &b) {return none_nonzero_elements(apply_elementwise(std::less{}, a.value, b));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator<(const A &a, compare_none<B> &&b) {return none_nonzero_elements(apply_elementwise(std::less{}, a, b.value));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator<(compare_not_all<A> &&a, const B &b) {return not_all_nonzero_elements(apply_elementwise(std::less{}, a.value, b));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator<(const A &a, compare_not_all<B> &&b) {return not_all_nonzero_elements(apply_elementwise(std::less{}, a, b.value));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator<(compare_elemwise<A> &&a, const B &b) {return apply_elementwise(std::less{}, a.value, b);}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator<(const A &a, compare_elemwise<B> &&b) {return apply_elementwise(std::less{}, a, b.value);}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator>(const A &a, const B &b) {if constexpr (vector<A>) return compare_elemwise(a) > b; else return a > compare_elemwise(b);}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator>(compare_any<A> &&a, const B &b) {return any_nonzero_elements(apply_elementwise(std::greater{}, a.value, b));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator>(const A &a, compare_any<B> &&b) {return any_nonzero_elements(apply_elementwise(std::greater{}, a, b.value));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator>(compare_all<A> &&a, const B &b) {return all_nonzero_elements(apply_elementwise(std::greater{}, a.value, b));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator>(const A &a, compare_all<B> &&b) {return all_nonzero_elements(apply_elementwise(std::greater{}, a, b.value));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator>(compare_none<A> &&a, const B &b) {return none_nonzero_elements(apply_elementwise(std::greater{}, a.value, b));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator>(const A &a, compare_none<B> &&b) {return none_nonzero_elements(apply_elementwise(std::greater{}, a, b.value));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator>(compare_not_all<A> &&a, const B &b) {return not_all_nonzero_elements(apply_elementwise(std::greater{}, a.value, b));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator>(const A &a, compare_not_all<B> &&b) {return not_all_nonzero_elements(apply_elementwise(std::greater{}, a, b.value));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator>(compare_elemwise<A> &&a, const B &b) {return apply_elementwise(std::greater{}, a.value, b);}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator>(const A &a, compare_elemwise<B> &&b) {return apply_elementwise(std::greater{}, a, b.value);}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator<=(const A &a, const B &b) {if constexpr (vector<A>) return compare_elemwise(a) <= b; else return a <= compare_elemwise(b);}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator<=(compare_any<A> &&a, const B &b) {return any_nonzero_elements(apply_elementwise(std::less_equal{}, a.value, b));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator<=(const A &a, compare_any<B> &&b) {return any_nonzero_elements(apply_elementwise(std::less_equal{}, a, b.value));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator<=(compare_all<A> &&a, const B &b) {return all_nonzero_elements(apply_elementwise(std::less_equal{}, a.value, b));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator<=(const A &a, compare_all<B> &&b) {return all_nonzero_elements(apply_elementwise(std::less_equal{}, a, b.value));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator<=(compare_none<A> &&a, const B &b) {return none_nonzero_elements(apply_elementwise(std::less_equal{}, a.value, b));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator<=(const A &a, compare_none<B> &&b) {return none_nonzero_elements(apply_elementwise(std::less_equal{}, a, b.value));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator<=(compare_not_all<A> &&a, const B &b) {return not_all_nonzero_elements(apply_elementwise(std::less_equal{}, a.value, b));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator<=(const A &a, compare_not_all<B> &&b) {return not_all_nonzero_elements(apply_elementwise(std::less_equal{}, a, b.value));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator<=(compare_elemwise<A> &&a, const B &b) {return apply_elementwise(std::less_equal{}, a.value, b);}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator<=(const A &a, compare_elemwise<B> &&b) {return apply_elementwise(std::less_equal{}, a, b.value);}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator>=(const A &a, const B &b) {if constexpr (vector<A>) return compare_elemwise(a) >= b; else return a >= compare_elemwise(b);}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator>=(compare_any<A> &&a, const B &b) {return any_nonzero_elements(apply_elementwise(std::greater_equal{}, a.value, b));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator>=(const A &a, compare_any<B> &&b) {return any_nonzero_elements(apply_elementwise(std::greater_equal{}, a, b.value));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator>=(compare_all<A> &&a, const B &b) {return all_nonzero_elements(apply_elementwise(std::greater_equal{}, a.value, b));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator>=(const A &a, compare_all<B> &&b) {return all_nonzero_elements(apply_elementwise(std::greater_equal{}, a, b.value));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator>=(compare_none<A> &&a, const B &b) {return none_nonzero_elements(apply_elementwise(std::greater_equal{}, a.value, b));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator>=(const A &a, compare_none<B> &&b) {return none_nonzero_elements(apply_elementwise(std::greater_equal{}, a, b.value));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator>=(compare_not_all<A> &&a, const B &b) {return not_all_nonzero_elements(apply_elementwise(std::greater_equal{}, a.value, b));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator>=(const A &a, compare_not_all<B> &&b) {return not_all_nonzero_elements(apply_elementwise(std::greater_equal{}, a, b.value));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator>=(compare_elemwise<A> &&a, const B &b) {return apply_elementwise(std::greater_equal{}, a.value, b);}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator>=(const A &a, compare_elemwise<B> &&b) {return apply_elementwise(std::greater_equal{}, a, b.value);}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator==(const A &a, const B &b) {if constexpr (vector<A>) return compare_all(a) == b; else return a == compare_all(b);}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator==(compare_any<A> &&a, const B &b) {return any_nonzero_elements(apply_elementwise(std::equal_to{}, a.value, b));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator==(const A &a, compare_any<B> &&b) {return any_nonzero_elements(apply_elementwise(std::equal_to{}, a, b.value));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator==(compare_all<A> &&a, const B &b) {return all_nonzero_elements(apply_elementwise(std::equal_to{}, a.value, b));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator==(const A &a, compare_all<B> &&b) {return all_nonzero_elements(apply_elementwise(std::equal_to{}, a, b.value));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator==(compare_none<A> &&a, const B &b) {return none_nonzero_elements(apply_elementwise(std::equal_to{}, a.value, b));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator==(const A &a, compare_none<B> &&b) {return none_nonzero_elements(apply_elementwise(std::equal_to{}, a, b.value));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator==(compare_not_all<A> &&a, const B &b) {return not_all_nonzero_elements(apply_elementwise(std::equal_to{}, a.value, b));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator==(const A &a, compare_not_all<B> &&b) {return not_all_nonzero_elements(apply_elementwise(std::equal_to{}, a, b.value));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator==(compare_elemwise<A> &&a, const B &b) {return apply_elementwise(std::equal_to{}, a.value, b);}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator==(const A &a, compare_elemwise<B> &&b) {return apply_elementwise(std::equal_to{}, a, b.value);}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator!=(const A &a, const B &b) {if constexpr (vector<A>) return compare_any(a) != b; else return a != compare_any(b);}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator!=(compare_any<A> &&a, const B &b) {return any_nonzero_elements(apply_elementwise(std::not_equal_to{}, a.value, b));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator!=(const A &a, compare_any<B> &&b) {return any_nonzero_elements(apply_elementwise(std::not_equal_to{}, a, b.value));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator!=(compare_all<A> &&a, const B &b) {return all_nonzero_elements(apply_elementwise(std::not_equal_to{}, a.value, b));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator!=(const A &a, compare_all<B> &&b) {return all_nonzero_elements(apply_elementwise(std::not_equal_to{}, a, b.value));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator!=(compare_none<A> &&a, const B &b) {return none_nonzero_elements(apply_elementwise(std::not_equal_to{}, a.value, b));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator!=(const A &a, compare_none<B> &&b) {return none_nonzero_elements(apply_elementwise(std::not_equal_to{}, a, b.value));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator!=(compare_not_all<A> &&a, const B &b) {return not_all_nonzero_elements(apply_elementwise(std::not_equal_to{}, a.value, b));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator!=(const A &a, compare_not_all<B> &&b) {return not_all_nonzero_elements(apply_elementwise(std::not_equal_to{}, a, b.value));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator!=(compare_elemwise<A> &&a, const B &b) {return apply_elementwise(std::not_equal_to{}, a.value, b);}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator!=(const A &a, compare_elemwise<B> &&b) {return apply_elementwise(std::not_equal_to{}, a, b.value);}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator&&(compare_any<A> &&a, const B &b) {return any_nonzero_elements(apply_elementwise(std::logical_and{}, a.value, b));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator&&(const A &a, compare_any<B> &&b) {return any_nonzero_elements(apply_elementwise(std::logical_and{}, a, b.value));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator&&(compare_all<A> &&a, const B &b) {return all_nonzero_elements(apply_elementwise(std::logical_and{}, a.value, b));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator&&(const A &a, compare_all<B> &&b) {return all_nonzero_elements(apply_elementwise(std::logical_and{}, a, b.value));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator&&(compare_none<A> &&a, const B &b) {return none_nonzero_elements(apply_elementwise(std::logical_and{}, a.value, b));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator&&(const A &a, compare_none<B> &&b) {return none_nonzero_elements(apply_elementwise(std::logical_and{}, a, b.value));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator&&(compare_not_all<A> &&a, const B &b) {return not_all_nonzero_elements(apply_elementwise(std::logical_and{}, a.value, b));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator&&(const A &a, compare_not_all<B> &&b) {return not_all_nonzero_elements(apply_elementwise(std::logical_and{}, a, b.value));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator&&(compare_elemwise<A> &&a, const B &b) {return apply_elementwise(std::logical_and{}, a.value, b);}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator&&(const A &a, compare_elemwise<B> &&b) {return apply_elementwise(std::logical_and{}, a, b.value);}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator||(compare_any<A> &&a, const B &b) {return any_nonzero_elements(apply_elementwise(std::logical_or{}, a.value, b));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator||(const A &a, compare_any<B> &&b) {return any_nonzero_elements(apply_elementwise(std::logical_or{}, a, b.value));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator||(compare_all<A> &&a, const B &b) {return all_nonzero_elements(apply_elementwise(std::logical_or{}, a.value, b));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator||(const A &a, compare_all<B> &&b) {return all_nonzero_elements(apply_elementwise(std::logical_or{}, a, b.value));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator||(compare_none<A> &&a, const B &b) {return none_nonzero_elements(apply_elementwise(std::logical_or{}, a.value, b));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator||(const A &a, compare_none<B> &&b) {return none_nonzero_elements(apply_elementwise(std::logical_or{}, a, b.value));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator||(compare_not_all<A> &&a, const B &b) {return not_all_nonzero_elements(apply_elementwise(std::logical_or{}, a.value, b));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr bool operator||(const A &a, compare_not_all<B> &&b) {return not_all_nonzero_elements(apply_elementwise(std::logical_or{}, a, b.value));}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator||(compare_elemwise<A> &&a, const B &b) {return apply_elementwise(std::logical_or{}, a.value, b);}
-        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_ALWAYS_INLINE constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator||(const A &a, compare_elemwise<B> &&b) {return apply_elementwise(std::logical_or{}, a, b.value);}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr auto operator+(const A &a, const B &b) -> vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, decltype(std::declval<vec_base_t<A>>() + std::declval<vec_base_t<B>>())> {return apply_elementwise([](vec_base_t<A> a, vec_base_t<B> b) IMP_MATH_SMALL_LAMBDA {return a + b;}, a, b);}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr auto operator-(const A &a, const B &b) -> vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, decltype(std::declval<vec_base_t<A>>() - std::declval<vec_base_t<B>>())> {return apply_elementwise([](vec_base_t<A> a, vec_base_t<B> b) IMP_MATH_SMALL_LAMBDA {return a - b;}, a, b);}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr auto operator*(const A &a, const B &b) -> vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, decltype(std::declval<vec_base_t<A>>() * std::declval<vec_base_t<B>>())> {return apply_elementwise([](vec_base_t<A> a, vec_base_t<B> b) IMP_MATH_SMALL_LAMBDA {return a * b;}, a, b);}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr auto operator/(const A &a, const B &b) -> vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, decltype(std::declval<vec_base_t<A>>() / std::declval<vec_base_t<B>>())> {return apply_elementwise([](vec_base_t<A> a, vec_base_t<B> b) IMP_MATH_SMALL_LAMBDA {return a / b;}, a, b);}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr auto operator%(const A &a, const B &b) -> vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, decltype(std::declval<vec_base_t<A>>() % std::declval<vec_base_t<B>>())> {return apply_elementwise([](vec_base_t<A> a, vec_base_t<B> b) IMP_MATH_SMALL_LAMBDA {return a % b;}, a, b);}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr auto operator^(const A &a, const B &b) -> vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, decltype(std::declval<vec_base_t<A>>() ^ std::declval<vec_base_t<B>>())> {return apply_elementwise([](vec_base_t<A> a, vec_base_t<B> b) IMP_MATH_SMALL_LAMBDA {return a ^ b;}, a, b);}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr auto operator&(const A &a, const B &b) -> vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, decltype(std::declval<vec_base_t<A>>() & std::declval<vec_base_t<B>>())> {return apply_elementwise([](vec_base_t<A> a, vec_base_t<B> b) IMP_MATH_SMALL_LAMBDA {return a & b;}, a, b);}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr auto operator|(const A &a, const B &b) -> vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, decltype(std::declval<vec_base_t<A>>() | std::declval<vec_base_t<B>>())> {return apply_elementwise([](vec_base_t<A> a, vec_base_t<B> b) IMP_MATH_SMALL_LAMBDA {return a | b;}, a, b);}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr auto operator<<(const A &a, const B &b) -> vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, decltype(std::declval<vec_base_t<A>>() << std::declval<vec_base_t<B>>())> {return apply_elementwise([](vec_base_t<A> a, vec_base_t<B> b) IMP_MATH_SMALL_LAMBDA {return a << b;}, a, b);}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr auto operator>>(const A &a, const B &b) -> vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, decltype(std::declval<vec_base_t<A>>() >> std::declval<vec_base_t<B>>())> {return apply_elementwise([](vec_base_t<A> a, vec_base_t<B> b) IMP_MATH_SMALL_LAMBDA {return a >> b;}, a, b);}
+        template <vector V> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr auto operator~(const V &v) -> change_vec_base_t<V, decltype(~v.x)> {return apply_elementwise([](vec_base_t<V> v) IMP_MATH_SMALL_LAMBDA {return ~v;}, v);}
+        template <vector V> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr auto operator+(const V &v) -> change_vec_base_t<V, decltype(+v.x)> {return apply_elementwise([](vec_base_t<V> v) IMP_MATH_SMALL_LAMBDA {return +v;}, v);}
+        template <vector V> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr auto operator-(const V &v) -> change_vec_base_t<V, decltype(-v.x)> {return apply_elementwise([](vec_base_t<V> v) IMP_MATH_SMALL_LAMBDA {return -v;}, v);}
+        template <vector V> IMP_MATH_SMALL_FUNC constexpr V &operator++(V &v) {apply_elementwise([](vec_base_t<V> &v) IMP_MATH_SMALL_LAMBDA {++v;}, v); return v;}
+        template <vector V> IMP_MATH_SMALL_FUNC constexpr V operator++(V &v, int) {V ret = v; apply_elementwise([](vec_base_t<V> &v) IMP_MATH_SMALL_LAMBDA {++v;}, v); return ret;}
+        template <vector V> IMP_MATH_SMALL_FUNC constexpr V &operator--(V &v) {apply_elementwise([](vec_base_t<V> &v) IMP_MATH_SMALL_LAMBDA {--v;}, v); return v;}
+        template <vector V> IMP_MATH_SMALL_FUNC constexpr V operator--(V &v, int) {V ret = v; apply_elementwise([](vec_base_t<V> &v) IMP_MATH_SMALL_LAMBDA {--v;}, v); return ret;}
+        template <vector A, vector_or_scalar B> IMP_MATH_SMALL_FUNC constexpr auto operator+=(A &a, const B &b) -> std::enable_if_t<have_common_vec_size<vec_size_strong_v<A>, vec_size_strong_v<B>> && (std::is_floating_point_v<vec_base_t<B>> <= std::is_floating_point_v<vec_base_t<A>>), decltype(void(std::declval<vec_base_t<A> &>() += std::declval<vec_base_t<B>>()), std::declval<A &>())> {apply_elementwise([](vec_base_t<A> &a, vec_base_t<B> b) IMP_MATH_SMALL_LAMBDA {a += b;}, a, b); return a;}
+        template <vector A, vector_or_scalar B> IMP_MATH_SMALL_FUNC constexpr auto operator-=(A &a, const B &b) -> std::enable_if_t<have_common_vec_size<vec_size_strong_v<A>, vec_size_strong_v<B>> && (std::is_floating_point_v<vec_base_t<B>> <= std::is_floating_point_v<vec_base_t<A>>), decltype(void(std::declval<vec_base_t<A> &>() -= std::declval<vec_base_t<B>>()), std::declval<A &>())> {apply_elementwise([](vec_base_t<A> &a, vec_base_t<B> b) IMP_MATH_SMALL_LAMBDA {a -= b;}, a, b); return a;}
+        template <vector A, vector_or_scalar B> IMP_MATH_SMALL_FUNC constexpr auto operator*=(A &a, const B &b) -> std::enable_if_t<have_common_vec_size<vec_size_strong_v<A>, vec_size_strong_v<B>> && (std::is_floating_point_v<vec_base_t<B>> <= std::is_floating_point_v<vec_base_t<A>>), decltype(void(std::declval<vec_base_t<A> &>() *= std::declval<vec_base_t<B>>()), std::declval<A &>())> {apply_elementwise([](vec_base_t<A> &a, vec_base_t<B> b) IMP_MATH_SMALL_LAMBDA {a *= b;}, a, b); return a;}
+        template <vector A, vector_or_scalar B> IMP_MATH_SMALL_FUNC constexpr auto operator/=(A &a, const B &b) -> std::enable_if_t<have_common_vec_size<vec_size_strong_v<A>, vec_size_strong_v<B>> && (std::is_floating_point_v<vec_base_t<B>> <= std::is_floating_point_v<vec_base_t<A>>), decltype(void(std::declval<vec_base_t<A> &>() /= std::declval<vec_base_t<B>>()), std::declval<A &>())> {apply_elementwise([](vec_base_t<A> &a, vec_base_t<B> b) IMP_MATH_SMALL_LAMBDA {a /= b;}, a, b); return a;}
+        template <vector A, vector_or_scalar B> IMP_MATH_SMALL_FUNC constexpr auto operator%=(A &a, const B &b) -> std::enable_if_t<have_common_vec_size<vec_size_strong_v<A>, vec_size_strong_v<B>> && (std::is_floating_point_v<vec_base_t<B>> <= std::is_floating_point_v<vec_base_t<A>>), decltype(void(std::declval<vec_base_t<A> &>() %= std::declval<vec_base_t<B>>()), std::declval<A &>())> {apply_elementwise([](vec_base_t<A> &a, vec_base_t<B> b) IMP_MATH_SMALL_LAMBDA {a %= b;}, a, b); return a;}
+        template <vector A, vector_or_scalar B> IMP_MATH_SMALL_FUNC constexpr auto operator^=(A &a, const B &b) -> std::enable_if_t<have_common_vec_size<vec_size_strong_v<A>, vec_size_strong_v<B>> && (std::is_floating_point_v<vec_base_t<B>> <= std::is_floating_point_v<vec_base_t<A>>), decltype(void(std::declval<vec_base_t<A> &>() ^= std::declval<vec_base_t<B>>()), std::declval<A &>())> {apply_elementwise([](vec_base_t<A> &a, vec_base_t<B> b) IMP_MATH_SMALL_LAMBDA {a ^= b;}, a, b); return a;}
+        template <vector A, vector_or_scalar B> IMP_MATH_SMALL_FUNC constexpr auto operator&=(A &a, const B &b) -> std::enable_if_t<have_common_vec_size<vec_size_strong_v<A>, vec_size_strong_v<B>> && (std::is_floating_point_v<vec_base_t<B>> <= std::is_floating_point_v<vec_base_t<A>>), decltype(void(std::declval<vec_base_t<A> &>() &= std::declval<vec_base_t<B>>()), std::declval<A &>())> {apply_elementwise([](vec_base_t<A> &a, vec_base_t<B> b) IMP_MATH_SMALL_LAMBDA {a &= b;}, a, b); return a;}
+        template <vector A, vector_or_scalar B> IMP_MATH_SMALL_FUNC constexpr auto operator|=(A &a, const B &b) -> std::enable_if_t<have_common_vec_size<vec_size_strong_v<A>, vec_size_strong_v<B>> && (std::is_floating_point_v<vec_base_t<B>> <= std::is_floating_point_v<vec_base_t<A>>), decltype(void(std::declval<vec_base_t<A> &>() |= std::declval<vec_base_t<B>>()), std::declval<A &>())> {apply_elementwise([](vec_base_t<A> &a, vec_base_t<B> b) IMP_MATH_SMALL_LAMBDA {a |= b;}, a, b); return a;}
+        template <vector A, vector_or_scalar B> IMP_MATH_SMALL_FUNC constexpr auto operator<<=(A &a, const B &b) -> std::enable_if_t<have_common_vec_size<vec_size_strong_v<A>, vec_size_strong_v<B>> && (std::is_floating_point_v<vec_base_t<B>> <= std::is_floating_point_v<vec_base_t<A>>), decltype(void(std::declval<vec_base_t<A> &>() <<= std::declval<vec_base_t<B>>()), std::declval<A &>())> {apply_elementwise([](vec_base_t<A> &a, vec_base_t<B> b) IMP_MATH_SMALL_LAMBDA {a <<= b;}, a, b); return a;}
+        template <vector A, vector_or_scalar B> IMP_MATH_SMALL_FUNC constexpr auto operator>>=(A &a, const B &b) -> std::enable_if_t<have_common_vec_size<vec_size_strong_v<A>, vec_size_strong_v<B>> && (std::is_floating_point_v<vec_base_t<B>> <= std::is_floating_point_v<vec_base_t<A>>), decltype(void(std::declval<vec_base_t<A> &>() >>= std::declval<vec_base_t<B>>()), std::declval<A &>())> {apply_elementwise([](vec_base_t<A> &a, vec_base_t<B> b) IMP_MATH_SMALL_LAMBDA {a >>= b;}, a, b); return a;}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator<(const A &a, const B &b) {if constexpr (vector<A>) return compare_elemwise(a) < b; else return a < compare_elemwise(b);}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator<(compare_any<A> &&a, const B &b) {return any_nonzero_elements(apply_elementwise(std::less{}, a.value, b));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator<(const A &a, compare_any<B> &&b) {return any_nonzero_elements(apply_elementwise(std::less{}, a, b.value));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator<(compare_all<A> &&a, const B &b) {return all_nonzero_elements(apply_elementwise(std::less{}, a.value, b));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator<(const A &a, compare_all<B> &&b) {return all_nonzero_elements(apply_elementwise(std::less{}, a, b.value));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator<(compare_none<A> &&a, const B &b) {return none_nonzero_elements(apply_elementwise(std::less{}, a.value, b));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator<(const A &a, compare_none<B> &&b) {return none_nonzero_elements(apply_elementwise(std::less{}, a, b.value));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator<(compare_not_all<A> &&a, const B &b) {return not_all_nonzero_elements(apply_elementwise(std::less{}, a.value, b));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator<(const A &a, compare_not_all<B> &&b) {return not_all_nonzero_elements(apply_elementwise(std::less{}, a, b.value));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator<(compare_elemwise<A> &&a, const B &b) {return apply_elementwise(std::less{}, a.value, b);}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator<(const A &a, compare_elemwise<B> &&b) {return apply_elementwise(std::less{}, a, b.value);}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator>(const A &a, const B &b) {if constexpr (vector<A>) return compare_elemwise(a) > b; else return a > compare_elemwise(b);}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator>(compare_any<A> &&a, const B &b) {return any_nonzero_elements(apply_elementwise(std::greater{}, a.value, b));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator>(const A &a, compare_any<B> &&b) {return any_nonzero_elements(apply_elementwise(std::greater{}, a, b.value));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator>(compare_all<A> &&a, const B &b) {return all_nonzero_elements(apply_elementwise(std::greater{}, a.value, b));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator>(const A &a, compare_all<B> &&b) {return all_nonzero_elements(apply_elementwise(std::greater{}, a, b.value));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator>(compare_none<A> &&a, const B &b) {return none_nonzero_elements(apply_elementwise(std::greater{}, a.value, b));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator>(const A &a, compare_none<B> &&b) {return none_nonzero_elements(apply_elementwise(std::greater{}, a, b.value));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator>(compare_not_all<A> &&a, const B &b) {return not_all_nonzero_elements(apply_elementwise(std::greater{}, a.value, b));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator>(const A &a, compare_not_all<B> &&b) {return not_all_nonzero_elements(apply_elementwise(std::greater{}, a, b.value));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator>(compare_elemwise<A> &&a, const B &b) {return apply_elementwise(std::greater{}, a.value, b);}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator>(const A &a, compare_elemwise<B> &&b) {return apply_elementwise(std::greater{}, a, b.value);}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator<=(const A &a, const B &b) {if constexpr (vector<A>) return compare_elemwise(a) <= b; else return a <= compare_elemwise(b);}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator<=(compare_any<A> &&a, const B &b) {return any_nonzero_elements(apply_elementwise(std::less_equal{}, a.value, b));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator<=(const A &a, compare_any<B> &&b) {return any_nonzero_elements(apply_elementwise(std::less_equal{}, a, b.value));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator<=(compare_all<A> &&a, const B &b) {return all_nonzero_elements(apply_elementwise(std::less_equal{}, a.value, b));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator<=(const A &a, compare_all<B> &&b) {return all_nonzero_elements(apply_elementwise(std::less_equal{}, a, b.value));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator<=(compare_none<A> &&a, const B &b) {return none_nonzero_elements(apply_elementwise(std::less_equal{}, a.value, b));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator<=(const A &a, compare_none<B> &&b) {return none_nonzero_elements(apply_elementwise(std::less_equal{}, a, b.value));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator<=(compare_not_all<A> &&a, const B &b) {return not_all_nonzero_elements(apply_elementwise(std::less_equal{}, a.value, b));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator<=(const A &a, compare_not_all<B> &&b) {return not_all_nonzero_elements(apply_elementwise(std::less_equal{}, a, b.value));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator<=(compare_elemwise<A> &&a, const B &b) {return apply_elementwise(std::less_equal{}, a.value, b);}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator<=(const A &a, compare_elemwise<B> &&b) {return apply_elementwise(std::less_equal{}, a, b.value);}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator>=(const A &a, const B &b) {if constexpr (vector<A>) return compare_elemwise(a) >= b; else return a >= compare_elemwise(b);}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator>=(compare_any<A> &&a, const B &b) {return any_nonzero_elements(apply_elementwise(std::greater_equal{}, a.value, b));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator>=(const A &a, compare_any<B> &&b) {return any_nonzero_elements(apply_elementwise(std::greater_equal{}, a, b.value));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator>=(compare_all<A> &&a, const B &b) {return all_nonzero_elements(apply_elementwise(std::greater_equal{}, a.value, b));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator>=(const A &a, compare_all<B> &&b) {return all_nonzero_elements(apply_elementwise(std::greater_equal{}, a, b.value));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator>=(compare_none<A> &&a, const B &b) {return none_nonzero_elements(apply_elementwise(std::greater_equal{}, a.value, b));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator>=(const A &a, compare_none<B> &&b) {return none_nonzero_elements(apply_elementwise(std::greater_equal{}, a, b.value));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator>=(compare_not_all<A> &&a, const B &b) {return not_all_nonzero_elements(apply_elementwise(std::greater_equal{}, a.value, b));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator>=(const A &a, compare_not_all<B> &&b) {return not_all_nonzero_elements(apply_elementwise(std::greater_equal{}, a, b.value));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator>=(compare_elemwise<A> &&a, const B &b) {return apply_elementwise(std::greater_equal{}, a.value, b);}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator>=(const A &a, compare_elemwise<B> &&b) {return apply_elementwise(std::greater_equal{}, a, b.value);}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator==(const A &a, const B &b) {if constexpr (vector<A>) return compare_all(a) == b; else return a == compare_all(b);}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator==(compare_any<A> &&a, const B &b) {return any_nonzero_elements(apply_elementwise(std::equal_to{}, a.value, b));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator==(const A &a, compare_any<B> &&b) {return any_nonzero_elements(apply_elementwise(std::equal_to{}, a, b.value));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator==(compare_all<A> &&a, const B &b) {return all_nonzero_elements(apply_elementwise(std::equal_to{}, a.value, b));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator==(const A &a, compare_all<B> &&b) {return all_nonzero_elements(apply_elementwise(std::equal_to{}, a, b.value));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator==(compare_none<A> &&a, const B &b) {return none_nonzero_elements(apply_elementwise(std::equal_to{}, a.value, b));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator==(const A &a, compare_none<B> &&b) {return none_nonzero_elements(apply_elementwise(std::equal_to{}, a, b.value));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator==(compare_not_all<A> &&a, const B &b) {return not_all_nonzero_elements(apply_elementwise(std::equal_to{}, a.value, b));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator==(const A &a, compare_not_all<B> &&b) {return not_all_nonzero_elements(apply_elementwise(std::equal_to{}, a, b.value));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator==(compare_elemwise<A> &&a, const B &b) {return apply_elementwise(std::equal_to{}, a.value, b);}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator==(const A &a, compare_elemwise<B> &&b) {return apply_elementwise(std::equal_to{}, a, b.value);}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator!=(const A &a, const B &b) {if constexpr (vector<A>) return compare_any(a) != b; else return a != compare_any(b);}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator!=(compare_any<A> &&a, const B &b) {return any_nonzero_elements(apply_elementwise(std::not_equal_to{}, a.value, b));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator!=(const A &a, compare_any<B> &&b) {return any_nonzero_elements(apply_elementwise(std::not_equal_to{}, a, b.value));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator!=(compare_all<A> &&a, const B &b) {return all_nonzero_elements(apply_elementwise(std::not_equal_to{}, a.value, b));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator!=(const A &a, compare_all<B> &&b) {return all_nonzero_elements(apply_elementwise(std::not_equal_to{}, a, b.value));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator!=(compare_none<A> &&a, const B &b) {return none_nonzero_elements(apply_elementwise(std::not_equal_to{}, a.value, b));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator!=(const A &a, compare_none<B> &&b) {return none_nonzero_elements(apply_elementwise(std::not_equal_to{}, a, b.value));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator!=(compare_not_all<A> &&a, const B &b) {return not_all_nonzero_elements(apply_elementwise(std::not_equal_to{}, a.value, b));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator!=(const A &a, compare_not_all<B> &&b) {return not_all_nonzero_elements(apply_elementwise(std::not_equal_to{}, a, b.value));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator!=(compare_elemwise<A> &&a, const B &b) {return apply_elementwise(std::not_equal_to{}, a.value, b);}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator!=(const A &a, compare_elemwise<B> &&b) {return apply_elementwise(std::not_equal_to{}, a, b.value);}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator&&(compare_any<A> &&a, const B &b) {return any_nonzero_elements(apply_elementwise(std::logical_and{}, a.value, b));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator&&(const A &a, compare_any<B> &&b) {return any_nonzero_elements(apply_elementwise(std::logical_and{}, a, b.value));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator&&(compare_all<A> &&a, const B &b) {return all_nonzero_elements(apply_elementwise(std::logical_and{}, a.value, b));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator&&(const A &a, compare_all<B> &&b) {return all_nonzero_elements(apply_elementwise(std::logical_and{}, a, b.value));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator&&(compare_none<A> &&a, const B &b) {return none_nonzero_elements(apply_elementwise(std::logical_and{}, a.value, b));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator&&(const A &a, compare_none<B> &&b) {return none_nonzero_elements(apply_elementwise(std::logical_and{}, a, b.value));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator&&(compare_not_all<A> &&a, const B &b) {return not_all_nonzero_elements(apply_elementwise(std::logical_and{}, a.value, b));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator&&(const A &a, compare_not_all<B> &&b) {return not_all_nonzero_elements(apply_elementwise(std::logical_and{}, a, b.value));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator&&(compare_elemwise<A> &&a, const B &b) {return apply_elementwise(std::logical_and{}, a.value, b);}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator&&(const A &a, compare_elemwise<B> &&b) {return apply_elementwise(std::logical_and{}, a, b.value);}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator||(compare_any<A> &&a, const B &b) {return any_nonzero_elements(apply_elementwise(std::logical_or{}, a.value, b));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator||(const A &a, compare_any<B> &&b) {return any_nonzero_elements(apply_elementwise(std::logical_or{}, a, b.value));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator||(compare_all<A> &&a, const B &b) {return all_nonzero_elements(apply_elementwise(std::logical_or{}, a.value, b));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator||(const A &a, compare_all<B> &&b) {return all_nonzero_elements(apply_elementwise(std::logical_or{}, a, b.value));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator||(compare_none<A> &&a, const B &b) {return none_nonzero_elements(apply_elementwise(std::logical_or{}, a.value, b));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator||(const A &a, compare_none<B> &&b) {return none_nonzero_elements(apply_elementwise(std::logical_or{}, a, b.value));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator||(compare_not_all<A> &&a, const B &b) {return not_all_nonzero_elements(apply_elementwise(std::logical_or{}, a.value, b));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator||(const A &a, compare_not_all<B> &&b) {return not_all_nonzero_elements(apply_elementwise(std::logical_or{}, a, b.value));}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator||(compare_elemwise<A> &&a, const B &b) {return apply_elementwise(std::logical_or{}, a.value, b);}
+        template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator||(const A &a, compare_elemwise<B> &&b) {return apply_elementwise(std::logical_or{}, a, b.value);}
 
         //{ input/output
         template <typename A, typename B, int D, typename T> std::basic_ostream<A,B> &operator<<(std::basic_ostream<A,B> &s, const vec<D,T> &v)
