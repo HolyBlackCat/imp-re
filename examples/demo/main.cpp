@@ -67,7 +67,7 @@ struct Application : Program::DefaultBasicState
     void EndFrame() override
     {
         fps_counter.Update();
-        window.SetTitle(STR((window_name), " TPS:", (fps_counter.Tps()), " FPS:", (fps_counter.Fps())));
+        window.SetTitle(STR((window_name), " TPS:", (fps_counter.Tps()), " FPS:", (fps_counter.Fps()), " SOUNDS:", (audio_controller.ActiveSources())));
     }
 
     void Tick() override
