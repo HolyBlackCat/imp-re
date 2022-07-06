@@ -40,7 +40,7 @@ endif
 
 # --- Project config ---
 
-_proj_cxxflags += -std=c++2b -pedantic-errors -Wall -Wextra -Wdeprecated -Wextra-semi -Wno-gnu-zero-variadic-macro-arguments
+_proj_cxxflags += -std=c++2b -pedantic-errors -Wall -Wextra -Wdeprecated -Wextra-semi
 _proj_cxxflags += -include src/program/common_macros.h -include src/program/parachute.h
 _proj_cxxflags += -Isrc -Ilib/include
 _proj_cxxflags += -Ilib/include/cglfl_gl3.2_core # OpenGL version
