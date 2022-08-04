@@ -1988,6 +1988,13 @@ namespace Math
             return ((a1.y - b1.y) * delta_b.x - (a1.x - b1.x) * delta_b.y) / (delta_a.x * delta_b.y - delta_a.y * delta_b.x) * delta_a + a1;
         }
 
+        // Finds an intersection point of a line and a plane.
+        template <typename T> [[nodiscard]] constexpr vec3<T> line_plane_intersection(vec3<T> line_point, vec3<T> line_dir, vec3<T> plane_point, vec3<T> plane_normal)
+        {
+            static_assert(std::is_floating_point_v<T>, "Arguments must be floating-point.");
+            return (plane_point - line_point).dot(plane_normal) / line_dir.dot(plane_normal) * line_dir + line_point;
+        }
+
         // Projects a point onto a line. `dir` is assumed to be normalized.
         template <int D, typename T> [[nodiscard]] constexpr vec<D,T> project_onto_line_norm(vec<D,T> point, vec<D,T> dir)
         {
