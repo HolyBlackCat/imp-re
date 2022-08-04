@@ -1,6 +1,6 @@
 // mat.h
 // Vector and matrix math
-// Version 3.4.11
+// Version 3.4.12
 // Generated, don't touch.
 
 #pragma once
@@ -441,8 +441,8 @@ namespace Math
             [[nodiscard]] constexpr vec abs() const {return vec(std::abs(x), std::abs(y));}
             [[nodiscard]] constexpr vec3<type> to_vec3(type nz) const {return {x, y, nz};}
             [[nodiscard]] constexpr vec4<type> to_vec4(type nz, type nw) const {return {x, y, nz, nw};}
-            [[nodiscard]] constexpr vec3<type> to_vec3() const {return to_vec3(0);}
-            [[nodiscard]] constexpr vec4<type> to_vec4() const {return to_vec4(0, 1);}
+            [[nodiscard]] constexpr vec3<type> to_vec3() const {return {x, y, 0};}
+            [[nodiscard]] constexpr vec4<type> to_vec4() const {return {x, y, 0, 0};}
             [[nodiscard]] constexpr auto len_sqr() const {return x*x + y*y;}
             [[nodiscard]] constexpr auto len() const {return std::sqrt(len_sqr());}
             [[nodiscard]] constexpr auto norm() const -> vec2<decltype(type{}/len())> {if (auto l = len()) return *this / l; else return vec(0);}
@@ -505,7 +505,7 @@ namespace Math
             [[nodiscard]] constexpr vec abs() const {return vec(std::abs(x), std::abs(y), std::abs(z));}
             [[nodiscard]] constexpr vec2<type> to_vec2() const {return {x, y};}
             [[nodiscard]] constexpr vec4<type> to_vec4(type nw) const {return {x, y, z, nw};}
-            [[nodiscard]] constexpr vec4<type> to_vec4() const {return to_vec4(1);}
+            [[nodiscard]] constexpr vec4<type> to_vec4() const {return {x, y, z, 0};}
             [[nodiscard]] constexpr auto len_sqr() const {return x*x + y*y + z*z;}
             [[nodiscard]] constexpr auto len() const {return std::sqrt(len_sqr());}
             [[nodiscard]] constexpr auto norm() const -> vec3<decltype(type{}/len())> {if (auto l = len()) return *this / l; else return vec(0);}

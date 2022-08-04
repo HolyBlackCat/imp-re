@@ -7,7 +7,7 @@
 #include <sstream>
 #include <type_traits>
 
-#define VERSION "3.4.11"
+#define VERSION "3.4.12"
 
 #pragma GCC diagnostic ignored "-Wpragmas" // Silence GCC warning about the next line disabling a warning that GCC doesn't have.
 #pragma GCC diagnostic ignored "-Wstring-plus-int" // Silence clang warning about `1+R"()"` paUern.
@@ -629,14 +629,18 @@ int main(int argc, char **argv)
                             }
                             for (int i = w+1; i <= 4; i++)
                             {
-                                output("[[nodiscard]] constexpr vec",i,"<type> to_vec",i,"() const {return to_vec",i,"(");
-                                for (int j = w; j < i; j++)
+                                output("[[nodiscard]] constexpr vec",i,"<type> to_vec",i,"() const {return {");
+                                for (int j = 0; j < i; j++)
                                 {
-                                    if (j != w)
+                                    if (j != 0)
                                         output(", ");
-                                    output("01"[j == 3]);
+
+                                    if (j >= w)
+                                        output("0");
+                                    else
+                                        output(data::fields[j]);
                                 }
-                                output(");}\n");
+                                output("};}\n");
                             }
                         }
 
