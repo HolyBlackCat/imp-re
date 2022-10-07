@@ -229,7 +229,7 @@ namespace Strings
             return string; \
         }; \
         /* The below part mimics `FMT_STRING`. */\
-        struct S : ::fmt::compile_string \
+        struct S : ::fmt::detail::compile_string \
         { \
             /* Not sure if this alias is necessary, but `FMT_STRING` has one, so I'll keep it for a good measure. */\
             using char_type = C; \
