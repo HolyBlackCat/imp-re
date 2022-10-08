@@ -379,10 +379,11 @@ override PKG_CONFIG_LIBDIR :=
 export PKG_CONFIG_LIBDIR
 
 MODE :=# Build mode.
-CMAKE_GENERATOR :=# CMake generator, not quoted. Optional.
 COMMON_FLAGS :=# Used both when compiling and linking.
 LINKER := AUTO# E.g. `lld` or `lld-13`. Can be `AUTO` to guess LLD version, or empty to use the default one.
 ALLOW_PCH := 1# If 0 or empty, disable PCH.
+CMAKE_GENERATOR := Ninja# CMake generator, not quoted. Optional.
+CMAKE_BUILD_TOOL := ninja# CMake build tool, such as `make` or `ninja`. Optional. If specified, must match the generator.
 
 # Used both when compiling and linking. Those are set automatically.
 COMMON_FLAGS_IMPLICIT :=
@@ -1268,7 +1269,7 @@ override buildsystem-cmake = \
 	$(call var,__bs_cflags := $(CFLAGS) $(__libsetting_common_flags_$(__lib_name)) $(__libsetting_cflags_$(__lib_name)) $(__bs_include_paths))\
 	$(call var,__bs_cxxflags := $(CXXFLAGS) $(__libsetting_common_flags_$(__lib_name)) $(__libsetting_cxxflags_$(__lib_name)) $(__bs_include_paths))\
 	$(call var,__bs_ldflags := $(LDFLAGS) $(__libsetting_common_flags_$(__lib_name)) $(__libsetting_ldflags_$(__lib_name)))\
-	$(call safe_shell_exec,cmake\
+	$(call safe_shell_exec,PKG_CONFIG_PATH= PKG_CONFIG_LIBDIR= cmake\
 		-S $(call quote,$(__source_dir))\
 		-B $(call quote,$(__build_dir))\
 		-Wno-dev\
@@ -1288,10 +1289,21 @@ override buildsystem-cmake = \
 		$(call, ### Note the fancy logic that attempts to support spaces in paths.)\
 		-DCMAKE_PREFIX_PATH=$(call quote,$(abspath $(__install_dir))$(subst $(space)$(cmake_host_sep),$(cmake_host_sep),$(foreach x,$(call lib_name_to_prefix,$(__libsetting_deps_$(__lib_name))),$(cmake_host_sep)$(abspath $x))))\
 		$(call, ### Prevent CMake from finding system packages. Tested on freetype2, which finds system zlib otherwise.)\
+		$(call, ### Note: this disables various ..._SYSTEM_..., variables, so we can't use those, even though they would be more appropriate otherwise.)\
+		$(call, ### We can't not disable those, enabling this seems to add parents of PATH directories to the prefixes, and so on.)\
 		-DCMAKE_FIND_USE_CMAKE_SYSTEM_PATH=OFF\
 		$(call, ### This is only useful when cross-compiling, to undo the effects of CMAKE_FIND_ROOT_PATH in a toolchain file, which otherwise restricts library search to that path.)\
+		$(call, ### We set the value to /, except on Windows hosts, where it's set to the drive letter, since the plain slash doesn't work.)\
 		$(call, ### This also resets the install path, so we need to specify it again with installing.)\
-		-DCMAKE_STAGING_PREFIX=/\
+		-DCMAKE_STAGING_PREFIX=$(if $(filter windows,$(HOST_OS)),$(firstword $(subst \, ,$(call safe_shell,cygpath -w $(call quote,$(CURDIR))))),/)\
+		$(call, ### On Windows hosts, ignore PATH completely. Windows hosts are unusual in that they find not only executables,)\
+		$(call, ### but also libraries in the prefixes that have their `bin` directories added to PATH. This is issue https://gitlab.kitware.com/cmake/cmake/-/issues/24036)\
+		$(call, ### Disabling this also stops CMake from finding any programs in PATH. We compensate by setting `CMAKE_PROGRAM_PATH`,)\
+		$(call, ### but it's ignored for Binutils search, and possibly others. But for those, CMake magically searches the `bin` directory of the specified compiler.)\
+		$(call, ### On Quasi-MSYS2 it causes CMake to be unable to find AR and others, since the compiler is stored separately, but on Windows it's not a problem.)\
+		$(if $(filter windows,$(HOST_OS)),-DCMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH=OFF -DCMAKE_PROGRAM_PATH=$(call quote,$(subst :,$(cmake_host_sep),$(PATH))))\
+		$(call, ### This is needed because of `-DCMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH=OFF`.)\
+		$(if $(CMAKE_BUILD_TOOL),-DCMAKE_MAKE_PROGRAM=$(call quote,$(CMAKE_BUILD_TOOL)))\
 		$(if $(CMAKE_GENERATOR),$(call quote,-G$(CMAKE_GENERATOR)))\
 		$(__libsetting_cmake_flags_$(__lib_name))\
 		>>$(call quote,$(__log_path))\
