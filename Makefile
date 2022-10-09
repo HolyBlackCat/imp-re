@@ -1038,7 +1038,7 @@ commands:
 	$(file >$(COMMANDS_FILE),[)
 	$(foreach x,$(proj_list),$(foreach y,$(__proj_allsources_$x),\
 		$(call, ### Note the trick to set ALLOW_PCH to 0 just for this line.)\
-		$(file >>$(COMMANDS_FILE),   $(if $(__first),$(call var,__first :=) ,$(comma)){"directory": $(__curdir), "file": $(call doublequote,$(abspath $y)), "command": $(call doublequote,$(foreach ALLOW_PCH,0,$(call language_command-$(call guess_lang_from_filename,$y),$y,,$x)))})\
+		$(file >>$(COMMANDS_FILE),   $(if $(__first),$(call var,__first :=) ,$(comma)){"directory": $(__curdir), "file": $(call doublequote,$(call abs_path_to_host,$(abspath $y))), "command": $(call doublequote,$(foreach ALLOW_PCH,0,$(call language_command-$(call guess_lang_from_filename,$y),$y,,$x)))})\
 	))
 	$(file >>$(COMMANDS_FILE),])
 	@true
