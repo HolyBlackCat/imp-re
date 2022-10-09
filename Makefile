@@ -11,7 +11,9 @@ MAKEFLAGS += rR -Otarget
 # Automatically parallelize.
 JOBS := $(shell nproc)$(if $(filter-out 0,$(.SHELLSTATUS)),$(info [Warning] Unable to determine the number of cores.)1)
 $(if $(filter 1,$(JOBS)),$(info [Warning] Building in a single thread.))
+ifneq ($(JOBS),)
 MAKEFLAGS += -j$(JOBS)
+endif
 
 # Prevent recursive invocations of Make from using our flags.
 # This fixes some really obscure bugs.
