@@ -16,13 +16,14 @@ $(Mode)CXXFLAGS := -D_GLIBCXX_ASSERTIONS
 $(call NewMode,release)
 $(Mode)COMMON_FLAGS := -O3
 $(Mode)_proj_commonflags := -flto
-$(Mode)CXXFLAGS := -DNDEBUG -DIMP_PLATFORM_FLAG_prod=1
+$(Mode)CXXFLAGS := -DNDEBUG
+$(Mode)_proj_cxxflags := -DIMP_PLATFORM_FLAG_prod=1
 $(Mode)LDFLAGS := -s
 $(Mode)_proj_win_subsystem := -mwindows
 
 $(call NewMode,profile)
 $(Mode)COMMON_FLAGS := -O3 -pg
-$(Mode)CXXFLAGS := -DNDEBUG -DIMP_PLATFORM_FLAG_prod=1
+$(Mode)CXXFLAGS := -DNDEBUG
 $(Mode)_proj_win_subsystem := -mwindows
 
 $(call NewMode,sanitize_address)
@@ -41,7 +42,7 @@ endif
 # --- Project config ---
 
 _proj_cxxflags += -std=c++2b -pedantic-errors -Wall -Wextra -Wdeprecated -Wextra-semi
-_proj_cxxflags += -include src/program/common_macros.h -include src/program/parachute.h
+_proj_cxxflags += -includesrc/program/common_macros.h -includesrc/program/parachute.h
 _proj_cxxflags += -Isrc -Ilib/include
 _proj_cxxflags += -Ilib/include/cglfl_gl3.2_core# OpenGL version
 _proj_cxxflags += -DFMT_DEPRECATED_OSTREAM# See issue: https://github.com/fmtlib/fmt/issues/3088

@@ -1271,17 +1271,16 @@ override buildsystem-cmake = \
 	$(call var,__bs_cflags := $(CFLAGS) $(__libsetting_common_flags_$(__lib_name)) $(__libsetting_cflags_$(__lib_name)) $(__bs_include_paths))\
 	$(call var,__bs_cxxflags := $(CXXFLAGS) $(__libsetting_common_flags_$(__lib_name)) $(__libsetting_cxxflags_$(__lib_name)) $(__bs_include_paths))\
 	$(call var,__bs_ldflags := $(LDFLAGS) $(__libsetting_common_flags_$(__lib_name)) $(__libsetting_ldflags_$(__lib_name)))\
-	$(call safe_shell_exec,PKG_CONFIG_PATH= PKG_CONFIG_LIBDIR= cmake\
+	$(call safe_shell_exec,\
+		$(call, ### Using the env variables instead of the CMake variables to silence the unused variable warnings. Also this is less verbose.)\
+		CC=$(call quote,$(CC)) CXX=$(call quote,$(CXX))\
+		CFLAGS=$(call quote,$(__bs_cflags)) CXXFLAGS=$(call quote,$(__bs_cxxflags)) LDFLAGS=$(call quote,$(__bs_ldflags))\
+		$(call, ### Resetting the pkg-config variables here prevents freetype from finding the system harfbuzz, and possibly more.)\
+		PKG_CONFIG_PATH= PKG_CONFIG_LIBDIR=\
+		cmake\
 		-S $(call quote,$(__source_dir))\
 		-B $(call quote,$(__build_dir))\
 		-Wno-dev\
-		-DCMAKE_C_COMPILER=$(call quote,$(subst $(space),$(cmake_host_sep),$(CC)))\
-		-DCMAKE_CXX_COMPILER=$(call quote,$(subst $(space),$(cmake_host_sep),$(CXX)))\
-		-DCMAKE_C_FLAGS=$(call quote,$(__bs_cflags))\
-		-DCMAKE_CXX_FLAGS=$(call quote,$(__bs_cxxflags))\
-		-DCMAKE_EXE_LINKER_FLAGS=$(call quote,$(__bs_ldflags))\
-		-DCMAKE_MODULE_LINKER_FLAGS=$(call quote,$(__bs_ldflags))\
-		-DCMAKE_SHARED_LINKER_FLAGS=$(call quote,$(__bs_ldflags))\
 		$(call, ### Weird semi-documented flags. Helps at least for freetype, ogg, vorbis.)\
 		-DBUILD_SHARED_LIBS=ON\
 		$(call, ### Specifying an invalid build type disables built-in flags.)\
