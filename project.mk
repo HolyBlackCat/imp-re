@@ -98,10 +98,9 @@ _win_is_x32 :=
 _win_sdl2_arch := $(if $(_win_is_x32),i686-w64-mingw32,x86_64-w64-mingw32)
 
 # Disable unnecessary stuff.
-# Note that cmake logs say that "BUILD_CLSOCKET BUILD_CPU_DEMOS BUILD_ENET" variables we set aren't "used".
-# But even if we don't set them, they still appear in the cmake cache, so we set them just to be sure.
-_bullet_flags := -DBUILD_BULLET2_DEMOS:BOOL=OFF -DBUILD_EXTRAS:BOOL=OFF -DBUILD_OPENGL3_DEMOS:BOOL=OFF \
-	-DBUILD_UNIT_TESTS:BOOL=OFF -DBUILD_CLSOCKET:BOOL=OFF -DBUILD_CPU_DEMOS:BOOL=OFF -DBUILD_ENET:BOOL=OFF
+# I'd also pass `-DBUILD_CLSOCKET:BOOL=OFF -DBUILD_CPU_DEMOS:BOOL=OFF -DBUILD_ENET:BOOL=OFF`, but CMake considers them unused,
+# even though they appear in the cache even if not specified. Maybe they're related to the things we've removed from the Bullet distribution?
+_bullet_flags := -DBUILD_BULLET2_DEMOS:BOOL=OFF -DBUILD_EXTRAS:BOOL=OFF -DBUILD_OPENGL3_DEMOS:BOOL=OFF -DBUILD_UNIT_TESTS:BOOL=OFF
 # Use doubles instead of floats.
 _bullet_flags += -DUSE_DOUBLE_PRECISION:BOOL=ON
 # Disable shared libraries. This should be the default behavior (with the flags above), but we also set it for a good measure.
@@ -113,13 +112,7 @@ _bullet_flags += -DINSTALL_LIBS:BOOL=ON
 _openal_flags := -DALSOFT_EXAMPLES=FALSE
 # Enable SDL2 backend.
 _openal_flags += -DALSOFT_REQUIRE_SDL2=TRUE -DALSOFT_BACKEND_SDL2=TRUE
-ifneq ($(TARGET_OS),windows)
-# On Linux, disable all the extra backends to make sure we only depend on SDL2.
-# The list of backends was obtained by stopping the build after configuration, and looking at the CMake variables.
-# We don't disable `ALSOFT_BACKEND_SDL2`, and also `ALSOFT_BACKEND_WAVE` (which is a backend that writes to a file, so it's harmless).
-# The list of backends was last updated at OpenAL-soft 1.21.1.
-_openal_flags += -DALSOFT_BACKEND_ALSA=FALSE -DALSOFT_BACKEND_OSS=FALSE -DALSOFT_BACKEND_PULSEAUDIO=FALSE -DALSOFT_BACKEND_SNDIO=FALSE
-endif
+# We used to disable other backends here, but it seems our CMake isolation works well enough to make this unnecessary.
 
 # Need to set `cc`, otherwise Zlib makefile uses the executable named `cc` to link, which doesn't support `-fuse-ld=lld-N`, it seems. Last tested on 1.2.12.
 _zlib_env_vars := cc="$$CC"
