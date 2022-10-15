@@ -55,7 +55,7 @@ namespace Program
     {
         // An assertion function.
         // Making it constexpr allows us using it in compile-time contexts (as long as the condition is true, which is exactly the point).
-        inline constexpr void Assert(const char *context, const char *function, bool condition, std::string_view message_or_expr, const char *expr_or_nothing = nullptr)
+        inline constexpr void Assert(const char *context, const char *function, const bool &condition, std::string_view message_or_expr, const char *expr_or_nothing = nullptr)
         {
             if (condition)
                 return;
@@ -73,9 +73,11 @@ namespace Program
         }
 
         // A template overload that allows using explicitly-but-not-implicitly-convertible-to-bool expressions as conditions.
+        // Passing arrays is banned for obvious reasons, but not in SFINAE-friendly way to avoid falling back to the `bool` overload.
         template <typename T>
         constexpr void Assert(const char *context, const char *function, const T &condition, std::string_view message_or_expr, const char *expr_or_nothing = nullptr)
         {
+            static_assert(!std::is_array_v<T>, "The first argument of `ASSERT()` is a boolean, but an array is always truthy.");
             return Assert(context, function, bool(condition), message_or_expr, expr_or_nothing);
         }
     }
