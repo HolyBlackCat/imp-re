@@ -33,6 +33,7 @@ namespace Audio
         }
 
         // Releases sources that aren't playing (i.e. are stopped, paused, or not played yet).
+        // Call this at the end of every tick.
         void Tick()
         {
             std::erase_if(sources, [](const std::shared_ptr<Source> &ptr){return !ptr->IsPlaying();});

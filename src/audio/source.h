@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cmath>
 #include <limits>
 #include <memory>
 #include <unordered_set>
@@ -156,13 +157,19 @@ namespace Audio
 
         // Common parameters.
 
-        Source &volume(float v)
+        Source &volume(float v) // Defaults to 1.
         {
             if (data.handle)
                 alSourcef(data.handle, AL_GAIN, v);
             return *this;
         }
-        Source &pitch(float p)
+        Source &pitch(float p) // Defaults to 0. The preferred range is -1..1.
+        {
+            if (data.handle)
+                raw_pitch(std::exp2(p));
+            return *this;
+        }
+        Source &raw_pitch(float p) // Defaults to 1, must be positive. The playback speed is multiplied by this number.
         {
             if (data.handle)
                 alSourcef(data.handle, AL_PITCH, p);

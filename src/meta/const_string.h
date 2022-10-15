@@ -11,7 +11,7 @@
 //     foo<"123">();
 // Example 2:
 //     template <Meta::ConstString Name> void foo(Meta::ConstStringParam<Name>) {std::cout << Name.str << '\n';}
-//     foo("123"_c);
+//     foo("123"_const);
 
 namespace Meta
 {
@@ -65,16 +65,16 @@ namespace Meta
     }
 
 
-    // A tag structure returned by `operator""_c` below.
+    // A tag structure returned by `operator""_const` below.
     template <Meta::ConstString S>
     struct ConstStringParam {};
 
     // Returns a string encoded into a template parameter of a tag structure `ConstStringParam`.
     template <Meta::ConstString S>
-    [[nodiscard]] constexpr ConstStringParam<S> operator""_c()
+    [[nodiscard]] constexpr ConstStringParam<S> operator""_const()
     {
         return {};
     }
 }
 
-using Meta::operator""_c;
+using Meta::operator""_const;
