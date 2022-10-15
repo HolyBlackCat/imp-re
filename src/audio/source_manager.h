@@ -23,6 +23,7 @@ namespace Audio
         // It should be `play()`ed immediately, otherwise it will be removed at the next `Tick()`.
         void Add(std::shared_ptr<Source> source)
         {
+            ASSERT(source, "Passing a null source.");
             ASSERT(std::find(sources.begin(), sources.end(), source) == sources.end(), "Adding a duplicate source to `Audio::SourceManager`.");
             sources.push_back(std::move(source));
         }

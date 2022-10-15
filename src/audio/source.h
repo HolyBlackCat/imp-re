@@ -87,7 +87,7 @@ namespace Audio
         {
             if (!data.handle)
                 return SourceState::stopped;
-            int state;
+            int state = 0;
             alGetSourcei(data.handle, AL_SOURCE_STATE, &state);
             switch (state)
             {
@@ -96,6 +96,7 @@ namespace Audio
                 case AL_PAUSED:  return SourceState::paused;
                 case AL_STOPPED: return SourceState::stopped;
             }
+            ASSERT(false, "Unknown audio source state.");
             return SourceState::stopped;
         }
 
@@ -177,24 +178,31 @@ namespace Audio
 
         // State control.
 
+        // Start playing.
+        // If the source was paused, resumes from that position.
+        // In any other case starts from the beginning (if the source was stopped or finished playing).
         Source &play()
         {
             if (data.handle)
                 alSourcePlay(data.handle);
             return *this;
         }
+        // Pause if playing.
+        // If the source is playing, pauses it at the current position. Otherwise does nothing.
         Source &pause()
         {
             if (data.handle)
                 alSourcePause(data.handle);
             return *this;
         }
+        // Stop playing, and forget the current position.
         Source &stop()
         {
             if (data.handle)
                 alSourceStop(data.handle);
             return *this;
         }
+        // Same as `stop()`, but the state becomes `initial` rather than `stopped`.
         Source &rewind()
         {
             if (data.handle)
