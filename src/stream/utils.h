@@ -22,7 +22,7 @@ namespace Stream
     {
         // Checks if `T` is a container consisting of single-byte arithmetic objects.
         template <typename T>
-        concept FlatByteContainer = requires(const T t)
+        concept FlatByteContainer = requires(const T &t)
         {
             std::data(t);
             std::size(t);

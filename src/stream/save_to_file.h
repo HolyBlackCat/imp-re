@@ -15,13 +15,14 @@
 
 namespace Stream
 {
-    enum SaveMode
+    enum class SaveMode
     {
         binary,
         append_binary,
         text,
         append_text,
     };
+    using enum SaveMode;
 
     [[nodiscard]] inline const char *SaveModeStringRepresentation(SaveMode mode)
     {
@@ -33,6 +34,7 @@ namespace Stream
             case append_text:   return "a";
         }
 
+        ASSERT(false, "Invalid file save mode.");
         return SaveModeStringRepresentation(binary);
     }
 
