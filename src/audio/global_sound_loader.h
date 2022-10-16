@@ -14,7 +14,7 @@
 
 // Provides singletones to conveniently load sounds.
 
-namespace Audio::AutoLoad
+namespace Audio::GlobalData
 {
     template <typename T> concept ChannelsOrNullptr = Meta::same_as_any_of<T, Channels, std::nullptr_t>;
     template <typename T> concept FormatOrNullptr = Meta::same_as_any_of<T, Format, std::nullptr_t>;
@@ -63,7 +63,7 @@ namespace Audio::AutoLoad
         return impl::RegisterAutoLoadedBuffer<Name, ChannelCount, FileFormat>::ref;
     }
 
-    // Loads (or reloads) all files requested with `Audio::AutoLoad::File()`. Consider using the simplified overload, defined below.
+    // Loads (or reloads) all files requested with `Audio::GlobalData::File()`. Consider using the simplified overload, defined below.
     // The number of channels and the file format can be overridden by the `File()` calls.
     // `get_stream` is called repeatedly for all needed files.
     inline void Load(std::optional<Channels> channels, Format format, std::function<Stream::Input(const std::string &name, std::optional<Channels> channels, Format format)> get_stream)

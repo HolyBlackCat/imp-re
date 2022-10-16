@@ -117,7 +117,7 @@ struct Application : Program::DefaultBasicState
         Graphics::Blending::Enable();
         Graphics::Blending::FuncNormalPre();
 
-        Audio::AutoLoad::Load(Audio::mono, Audio::wav, Program::ExeDir() + "assets/sounds/");
+        Audio::GlobalData::Load(Audio::mono, Audio::wav, Program::ExeDir() + "assets/sounds/");
 
         state_manager.SetState("World{}");
     }

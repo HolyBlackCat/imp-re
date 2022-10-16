@@ -10,7 +10,7 @@
 #include "utils/mat.h"
 
 // Provides a convenient audio player that wraps `Audio::Context` and `Audio::SourceManager`.
-// Don't forget to call `Audio::AutoLoad::Load()` to load the used sounds.
+// Don't forget to call `Audio::GlobalData::Load()` to load the used sounds.
 
 namespace Audio
 {
@@ -27,10 +27,10 @@ namespace Audio
         }
 
         // With fvec3 position.
-        template <Meta::ConstString Name, AutoLoad::ChannelsOrNullptr auto ChannelCount = nullptr, AutoLoad::FormatOrNullptr auto FileFormat = nullptr>
+        template <Meta::ConstString Name, GlobalData::ChannelsOrNullptr auto ChannelCount = nullptr, GlobalData::FormatOrNullptr auto FileFormat = nullptr>
         std::shared_ptr<Audio::Source> play(fvec3 pos, float volume = 1, float pitch = 0)
         {
-            auto ret = manager.Add(AutoLoad::File<Name, ChannelCount, FileFormat>());
+            auto ret = manager.Add(GlobalData::File<Name, ChannelCount, FileFormat>());
             ret->pos(pos);
             ret->volume(volume);
             ret->pitch(pitch);
@@ -39,10 +39,10 @@ namespace Audio
         }
 
         // With fvec2 position.
-        template <Meta::ConstString Name, AutoLoad::ChannelsOrNullptr auto ChannelCount = nullptr, AutoLoad::FormatOrNullptr auto FileFormat = nullptr>
+        template <Meta::ConstString Name, GlobalData::ChannelsOrNullptr auto ChannelCount = nullptr, GlobalData::FormatOrNullptr auto FileFormat = nullptr>
         std::shared_ptr<Audio::Source> play(fvec2 pos, float volume = 1, float pitch = 0)
         {
-            auto ret = manager.Add(AutoLoad::File<Name, ChannelCount, FileFormat>());
+            auto ret = manager.Add(GlobalData::File<Name, ChannelCount, FileFormat>());
             ret->pos(pos);
             ret->volume(volume);
             ret->pitch(pitch);
@@ -51,10 +51,10 @@ namespace Audio
         }
 
         // Without position.
-        template <Meta::ConstString Name, AutoLoad::ChannelsOrNullptr auto ChannelCount = nullptr, AutoLoad::FormatOrNullptr auto FileFormat = nullptr>
+        template <Meta::ConstString Name, GlobalData::ChannelsOrNullptr auto ChannelCount = nullptr, GlobalData::FormatOrNullptr auto FileFormat = nullptr>
         std::shared_ptr<Audio::Source> play(float volume = 1, float pitch = 0)
         {
-            auto ret = manager.Add(AutoLoad::File<Name, ChannelCount, FileFormat>());
+            auto ret = manager.Add(GlobalData::File<Name, ChannelCount, FileFormat>());
             ret->relative();
             ret->volume(volume);
             ret->pitch(pitch);
