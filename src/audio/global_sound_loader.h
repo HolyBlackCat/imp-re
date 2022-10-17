@@ -63,6 +63,13 @@ namespace Audio::GlobalData
         return impl::RegisterAutoLoadedBuffer<Name, ChannelCount, FileFormat>::ref;
     }
 
+    // Same as `File()`, but without the optional parameters.
+    template <Meta::ConstString Name>
+    [[nodiscard]] const Buffer &operator""_sound()
+    {
+        return File<Name>();
+    }
+
     // Loads (or reloads) all files requested with `Audio::GlobalData::File()`. Consider using the simplified overload, defined below.
     // The number of channels and the file format can be overridden by the `File()` calls.
     // `get_stream` is called repeatedly for all needed files.
@@ -93,3 +100,5 @@ namespace Audio::GlobalData
         });
     }
 }
+
+using Audio::GlobalData::operator""_sound;

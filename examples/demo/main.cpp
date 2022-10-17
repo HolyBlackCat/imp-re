@@ -7,7 +7,7 @@ Interface::Window window(std::string(window_name), screen_size * 2, Interface::w
 static Graphics::DummyVertexArray dummy_vao = nullptr;
 
 Audio::Context audio_context = nullptr;
-Audio::SimplePlayer audio;
+Audio::SourceManager audio;
 
 const Graphics::ShaderConfig shader_config = Graphics::ShaderConfig::Core();
 Interface::ImGuiController gui_controller(Poly::derived<Interface::ImGuiController::GraphicsBackend_Modern>, adjust_(Interface::ImGuiController::Config{}, shader_header = shader_config.common_header, store_state_in_file = {}));
@@ -67,7 +67,7 @@ struct Application : Program::DefaultBasicState
     void EndFrame() override
     {
         fps_counter.Update();
-        window.SetTitle(STR((window_name), " TPS:", (fps_counter.Tps()), " FPS:", (fps_counter.Fps()), " SOUNDS:", (audio.manager.ActiveSources())));
+        window.SetTitle(STR((window_name), " TPS:", (fps_counter.Tps()), " FPS:", (fps_counter.Fps()), " SOUNDS:", (audio.ActiveSources())));
     }
 
     void Tick() override

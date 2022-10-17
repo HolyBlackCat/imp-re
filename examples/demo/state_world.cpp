@@ -26,21 +26,7 @@ namespace States
             ImGui::ShowDemoWindow();
 
             if (mouse.right.pressed())
-            {
-                static Audio::Buffer buf = []{
-                    int16_t array[10000];
-                    for (size_t i = 0; i < std::size(array); i++)
-                        array[i] = std::sin(i / 30.f) * 0x7fff;
-                    return Audio::Sound(48000, Audio::mono, std::size(array), array);
-                }();
-                src = audio.manager.Add(buf);
-                src->play();
-            }
-
-            /* This requires `assets/assets/sounds/foo.wav` (sic) to exist. The directory can be changed in `main.cpp`.
-            if (mouse.left.pressed())
-                audio.play<"foo">(mouse.pos(), 0.3);
-            */
+                audio.Play("test_sound"_sound, mouse.pos()); // Use `Audio::GlobalData::File()` instead of `_sound` for more customization.
         }
 
         void Render() const override
@@ -51,7 +37,7 @@ namespace States
             r.BindShader();
 
             r.iquad(mouse.pos(), ivec2(32)).center().rotate(angle).color(mouse.left.down() ? fvec3(1,0.5,0) : fvec3(0,0.5,1));
-            r.itext(mouse.pos(), Graphics::Text(Fonts::main, STR((audio.manager.ActiveSources())))).color(fvec3(1));
+            r.itext(mouse.pos(), Graphics::Text(Fonts::main, STR((audio.ActiveSources())))).color(fvec3(1));
 
             r.Finish();
         }

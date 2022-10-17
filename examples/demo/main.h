@@ -6,7 +6,7 @@ extern const std::string_view window_name;
 extern Interface::Window window;
 
 extern Audio::Context audio_context;
-extern Audio::SimplePlayer audio;
+extern Audio::SourceManager audio;
 
 extern const Graphics::ShaderConfig shader_config;
 extern Interface::ImGuiController gui_controller;
