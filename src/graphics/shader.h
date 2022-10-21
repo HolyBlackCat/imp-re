@@ -260,7 +260,7 @@ namespace Graphics
 
                 glCompileShader(object);
 
-                GLint status;
+                GLint status = 0;
                 glGetShaderiv(object, GL_COMPILE_STATUS, &status);
 
                 if (!status) // Compilation error
@@ -285,13 +285,12 @@ namespace Graphics
                 glAttachShader(data.handle, object);
             }
 
-            int attrib_index = 0;
-            for (const std::string &attrib : attributes)
+            for (int attrib_index = 0; const std::string &attrib : attributes)
                 glBindAttribLocation(data.handle, attrib_index++, attrib.c_str());
 
             glLinkProgram(data.handle);
 
-            GLint status;
+            GLint status = 0;
             glGetProgramiv(data.handle, GL_LINK_STATUS, &status);
 
             if (!status) // Linking error
