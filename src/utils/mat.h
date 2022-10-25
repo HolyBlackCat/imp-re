@@ -1,6 +1,6 @@
 // mat.h
 // Vector and matrix math
-// Version 3.4.12
+// Version 3.5.0
 // Generated, don't touch.
 
 #pragma once
@@ -60,219 +60,271 @@ namespace Math
     inline namespace Vector // Declarations
     {
         template <int D, cv_unqualified_scalar T> struct vec;
+        template <int D, cv_unqualified_scalar T> struct rect;
         template <int W, int H, cv_unqualified_scalar T> struct mat;
     }
 
     inline namespace Alias // Short type aliases
     {
         template <typename T> using vec2 = vec<2,T>; template <typename T> using vec3 = vec<3,T>; template <typename T> using vec4 = vec<4,T>;
+        template <typename T> using rect2 = rect<2,T>; template <typename T> using rect3 = rect<3,T>; template <typename T> using rect4 = rect<4,T>;
         template <typename T> using mat2x2 = mat<2,2,T>; template <typename T> using mat3x2 = mat<3,2,T>; template <typename T> using mat4x2 = mat<4,2,T>;
         template <typename T> using mat2x3 = mat<2,3,T>; template <typename T> using mat3x3 = mat<3,3,T>; template <typename T> using mat4x3 = mat<4,3,T>;
         template <typename T> using mat2x4 = mat<2,4,T>; template <typename T> using mat3x4 = mat<3,4,T>; template <typename T> using mat4x4 = mat<4,4,T>;
         template <typename T> using mat2 = mat2x2<T>; template <typename T> using mat3 = mat3x3<T>; template <typename T> using mat4 = mat4x4<T>;
 
         template <int D> using bvec = vec<D,bool>;
+        template <int D> using brect = rect<D,bool>;
         template <int W, int H> using bmat = mat<W,H,bool>;
         using bvec2 = vec<2,bool>; using bvec3 = vec<3,bool>; using bvec4 = vec<4,bool>;
+        using brect2 = rect<2,bool>; using brect3 = rect<3,bool>; using brect4 = rect<4,bool>;
         using bmat2x2 = mat<2,2,bool>; using bmat3x2 = mat<3,2,bool>; using bmat4x2 = mat<4,2,bool>;
         using bmat2x3 = mat<2,3,bool>; using bmat3x3 = mat<3,3,bool>; using bmat4x3 = mat<4,3,bool>;
         using bmat2x4 = mat<2,4,bool>; using bmat3x4 = mat<3,4,bool>; using bmat4x4 = mat<4,4,bool>;
         using bmat2 = bmat2x2; using bmat3 = bmat3x3; using bmat4 = bmat4x4;
 
         template <int D> using cvec = vec<D,char>;
+        template <int D> using crect = rect<D,char>;
         template <int W, int H> using cmat = mat<W,H,char>;
         using cvec2 = vec<2,char>; using cvec3 = vec<3,char>; using cvec4 = vec<4,char>;
+        using crect2 = rect<2,char>; using crect3 = rect<3,char>; using crect4 = rect<4,char>;
         using cmat2x2 = mat<2,2,char>; using cmat3x2 = mat<3,2,char>; using cmat4x2 = mat<4,2,char>;
         using cmat2x3 = mat<2,3,char>; using cmat3x3 = mat<3,3,char>; using cmat4x3 = mat<4,3,char>;
         using cmat2x4 = mat<2,4,char>; using cmat3x4 = mat<3,4,char>; using cmat4x4 = mat<4,4,char>;
         using cmat2 = cmat2x2; using cmat3 = cmat3x3; using cmat4 = cmat4x4;
 
         template <int D> using ucvec = vec<D,unsigned char>;
+        template <int D> using ucrect = rect<D,unsigned char>;
         template <int W, int H> using ucmat = mat<W,H,unsigned char>;
         using ucvec2 = vec<2,unsigned char>; using ucvec3 = vec<3,unsigned char>; using ucvec4 = vec<4,unsigned char>;
+        using ucrect2 = rect<2,unsigned char>; using ucrect3 = rect<3,unsigned char>; using ucrect4 = rect<4,unsigned char>;
         using ucmat2x2 = mat<2,2,unsigned char>; using ucmat3x2 = mat<3,2,unsigned char>; using ucmat4x2 = mat<4,2,unsigned char>;
         using ucmat2x3 = mat<2,3,unsigned char>; using ucmat3x3 = mat<3,3,unsigned char>; using ucmat4x3 = mat<4,3,unsigned char>;
         using ucmat2x4 = mat<2,4,unsigned char>; using ucmat3x4 = mat<3,4,unsigned char>; using ucmat4x4 = mat<4,4,unsigned char>;
         using ucmat2 = ucmat2x2; using ucmat3 = ucmat3x3; using ucmat4 = ucmat4x4;
 
         template <int D> using scvec = vec<D,signed char>;
+        template <int D> using screct = rect<D,signed char>;
         template <int W, int H> using scmat = mat<W,H,signed char>;
         using scvec2 = vec<2,signed char>; using scvec3 = vec<3,signed char>; using scvec4 = vec<4,signed char>;
+        using screct2 = rect<2,signed char>; using screct3 = rect<3,signed char>; using screct4 = rect<4,signed char>;
         using scmat2x2 = mat<2,2,signed char>; using scmat3x2 = mat<3,2,signed char>; using scmat4x2 = mat<4,2,signed char>;
         using scmat2x3 = mat<2,3,signed char>; using scmat3x3 = mat<3,3,signed char>; using scmat4x3 = mat<4,3,signed char>;
         using scmat2x4 = mat<2,4,signed char>; using scmat3x4 = mat<3,4,signed char>; using scmat4x4 = mat<4,4,signed char>;
         using scmat2 = scmat2x2; using scmat3 = scmat3x3; using scmat4 = scmat4x4;
 
         template <int D> using svec = vec<D,short>;
+        template <int D> using srect = rect<D,short>;
         template <int W, int H> using smat = mat<W,H,short>;
         using svec2 = vec<2,short>; using svec3 = vec<3,short>; using svec4 = vec<4,short>;
+        using srect2 = rect<2,short>; using srect3 = rect<3,short>; using srect4 = rect<4,short>;
         using smat2x2 = mat<2,2,short>; using smat3x2 = mat<3,2,short>; using smat4x2 = mat<4,2,short>;
         using smat2x3 = mat<2,3,short>; using smat3x3 = mat<3,3,short>; using smat4x3 = mat<4,3,short>;
         using smat2x4 = mat<2,4,short>; using smat3x4 = mat<3,4,short>; using smat4x4 = mat<4,4,short>;
         using smat2 = smat2x2; using smat3 = smat3x3; using smat4 = smat4x4;
 
         template <int D> using usvec = vec<D,unsigned short>;
+        template <int D> using usrect = rect<D,unsigned short>;
         template <int W, int H> using usmat = mat<W,H,unsigned short>;
         using usvec2 = vec<2,unsigned short>; using usvec3 = vec<3,unsigned short>; using usvec4 = vec<4,unsigned short>;
+        using usrect2 = rect<2,unsigned short>; using usrect3 = rect<3,unsigned short>; using usrect4 = rect<4,unsigned short>;
         using usmat2x2 = mat<2,2,unsigned short>; using usmat3x2 = mat<3,2,unsigned short>; using usmat4x2 = mat<4,2,unsigned short>;
         using usmat2x3 = mat<2,3,unsigned short>; using usmat3x3 = mat<3,3,unsigned short>; using usmat4x3 = mat<4,3,unsigned short>;
         using usmat2x4 = mat<2,4,unsigned short>; using usmat3x4 = mat<3,4,unsigned short>; using usmat4x4 = mat<4,4,unsigned short>;
         using usmat2 = usmat2x2; using usmat3 = usmat3x3; using usmat4 = usmat4x4;
 
         template <int D> using ivec = vec<D,int>;
+        template <int D> using irect = rect<D,int>;
         template <int W, int H> using imat = mat<W,H,int>;
         using ivec2 = vec<2,int>; using ivec3 = vec<3,int>; using ivec4 = vec<4,int>;
+        using irect2 = rect<2,int>; using irect3 = rect<3,int>; using irect4 = rect<4,int>;
         using imat2x2 = mat<2,2,int>; using imat3x2 = mat<3,2,int>; using imat4x2 = mat<4,2,int>;
         using imat2x3 = mat<2,3,int>; using imat3x3 = mat<3,3,int>; using imat4x3 = mat<4,3,int>;
         using imat2x4 = mat<2,4,int>; using imat3x4 = mat<3,4,int>; using imat4x4 = mat<4,4,int>;
         using imat2 = imat2x2; using imat3 = imat3x3; using imat4 = imat4x4;
 
         template <int D> using uvec = vec<D,unsigned int>;
+        template <int D> using urect = rect<D,unsigned int>;
         template <int W, int H> using umat = mat<W,H,unsigned int>;
         using uvec2 = vec<2,unsigned int>; using uvec3 = vec<3,unsigned int>; using uvec4 = vec<4,unsigned int>;
+        using urect2 = rect<2,unsigned int>; using urect3 = rect<3,unsigned int>; using urect4 = rect<4,unsigned int>;
         using umat2x2 = mat<2,2,unsigned int>; using umat3x2 = mat<3,2,unsigned int>; using umat4x2 = mat<4,2,unsigned int>;
         using umat2x3 = mat<2,3,unsigned int>; using umat3x3 = mat<3,3,unsigned int>; using umat4x3 = mat<4,3,unsigned int>;
         using umat2x4 = mat<2,4,unsigned int>; using umat3x4 = mat<3,4,unsigned int>; using umat4x4 = mat<4,4,unsigned int>;
         using umat2 = umat2x2; using umat3 = umat3x3; using umat4 = umat4x4;
 
         template <int D> using lvec = vec<D,long>;
+        template <int D> using lrect = rect<D,long>;
         template <int W, int H> using lmat = mat<W,H,long>;
         using lvec2 = vec<2,long>; using lvec3 = vec<3,long>; using lvec4 = vec<4,long>;
+        using lrect2 = rect<2,long>; using lrect3 = rect<3,long>; using lrect4 = rect<4,long>;
         using lmat2x2 = mat<2,2,long>; using lmat3x2 = mat<3,2,long>; using lmat4x2 = mat<4,2,long>;
         using lmat2x3 = mat<2,3,long>; using lmat3x3 = mat<3,3,long>; using lmat4x3 = mat<4,3,long>;
         using lmat2x4 = mat<2,4,long>; using lmat3x4 = mat<3,4,long>; using lmat4x4 = mat<4,4,long>;
         using lmat2 = lmat2x2; using lmat3 = lmat3x3; using lmat4 = lmat4x4;
 
         template <int D> using ulvec = vec<D,unsigned long>;
+        template <int D> using ulrect = rect<D,unsigned long>;
         template <int W, int H> using ulmat = mat<W,H,unsigned long>;
         using ulvec2 = vec<2,unsigned long>; using ulvec3 = vec<3,unsigned long>; using ulvec4 = vec<4,unsigned long>;
+        using ulrect2 = rect<2,unsigned long>; using ulrect3 = rect<3,unsigned long>; using ulrect4 = rect<4,unsigned long>;
         using ulmat2x2 = mat<2,2,unsigned long>; using ulmat3x2 = mat<3,2,unsigned long>; using ulmat4x2 = mat<4,2,unsigned long>;
         using ulmat2x3 = mat<2,3,unsigned long>; using ulmat3x3 = mat<3,3,unsigned long>; using ulmat4x3 = mat<4,3,unsigned long>;
         using ulmat2x4 = mat<2,4,unsigned long>; using ulmat3x4 = mat<3,4,unsigned long>; using ulmat4x4 = mat<4,4,unsigned long>;
         using ulmat2 = ulmat2x2; using ulmat3 = ulmat3x3; using ulmat4 = ulmat4x4;
 
         template <int D> using llvec = vec<D,long long>;
+        template <int D> using llrect = rect<D,long long>;
         template <int W, int H> using llmat = mat<W,H,long long>;
         using llvec2 = vec<2,long long>; using llvec3 = vec<3,long long>; using llvec4 = vec<4,long long>;
+        using llrect2 = rect<2,long long>; using llrect3 = rect<3,long long>; using llrect4 = rect<4,long long>;
         using llmat2x2 = mat<2,2,long long>; using llmat3x2 = mat<3,2,long long>; using llmat4x2 = mat<4,2,long long>;
         using llmat2x3 = mat<2,3,long long>; using llmat3x3 = mat<3,3,long long>; using llmat4x3 = mat<4,3,long long>;
         using llmat2x4 = mat<2,4,long long>; using llmat3x4 = mat<3,4,long long>; using llmat4x4 = mat<4,4,long long>;
         using llmat2 = llmat2x2; using llmat3 = llmat3x3; using llmat4 = llmat4x4;
 
         template <int D> using ullvec = vec<D,unsigned long long>;
+        template <int D> using ullrect = rect<D,unsigned long long>;
         template <int W, int H> using ullmat = mat<W,H,unsigned long long>;
         using ullvec2 = vec<2,unsigned long long>; using ullvec3 = vec<3,unsigned long long>; using ullvec4 = vec<4,unsigned long long>;
+        using ullrect2 = rect<2,unsigned long long>; using ullrect3 = rect<3,unsigned long long>; using ullrect4 = rect<4,unsigned long long>;
         using ullmat2x2 = mat<2,2,unsigned long long>; using ullmat3x2 = mat<3,2,unsigned long long>; using ullmat4x2 = mat<4,2,unsigned long long>;
         using ullmat2x3 = mat<2,3,unsigned long long>; using ullmat3x3 = mat<3,3,unsigned long long>; using ullmat4x3 = mat<4,3,unsigned long long>;
         using ullmat2x4 = mat<2,4,unsigned long long>; using ullmat3x4 = mat<3,4,unsigned long long>; using ullmat4x4 = mat<4,4,unsigned long long>;
         using ullmat2 = ullmat2x2; using ullmat3 = ullmat3x3; using ullmat4 = ullmat4x4;
 
         template <int D> using fvec = vec<D,float>;
+        template <int D> using frect = rect<D,float>;
         template <int W, int H> using fmat = mat<W,H,float>;
         using fvec2 = vec<2,float>; using fvec3 = vec<3,float>; using fvec4 = vec<4,float>;
+        using frect2 = rect<2,float>; using frect3 = rect<3,float>; using frect4 = rect<4,float>;
         using fmat2x2 = mat<2,2,float>; using fmat3x2 = mat<3,2,float>; using fmat4x2 = mat<4,2,float>;
         using fmat2x3 = mat<2,3,float>; using fmat3x3 = mat<3,3,float>; using fmat4x3 = mat<4,3,float>;
         using fmat2x4 = mat<2,4,float>; using fmat3x4 = mat<3,4,float>; using fmat4x4 = mat<4,4,float>;
         using fmat2 = fmat2x2; using fmat3 = fmat3x3; using fmat4 = fmat4x4;
 
         template <int D> using dvec = vec<D,double>;
+        template <int D> using drect = rect<D,double>;
         template <int W, int H> using dmat = mat<W,H,double>;
         using dvec2 = vec<2,double>; using dvec3 = vec<3,double>; using dvec4 = vec<4,double>;
+        using drect2 = rect<2,double>; using drect3 = rect<3,double>; using drect4 = rect<4,double>;
         using dmat2x2 = mat<2,2,double>; using dmat3x2 = mat<3,2,double>; using dmat4x2 = mat<4,2,double>;
         using dmat2x3 = mat<2,3,double>; using dmat3x3 = mat<3,3,double>; using dmat4x3 = mat<4,3,double>;
         using dmat2x4 = mat<2,4,double>; using dmat3x4 = mat<3,4,double>; using dmat4x4 = mat<4,4,double>;
         using dmat2 = dmat2x2; using dmat3 = dmat3x3; using dmat4 = dmat4x4;
 
         template <int D> using ldvec = vec<D,long double>;
+        template <int D> using ldrect = rect<D,long double>;
         template <int W, int H> using ldmat = mat<W,H,long double>;
         using ldvec2 = vec<2,long double>; using ldvec3 = vec<3,long double>; using ldvec4 = vec<4,long double>;
+        using ldrect2 = rect<2,long double>; using ldrect3 = rect<3,long double>; using ldrect4 = rect<4,long double>;
         using ldmat2x2 = mat<2,2,long double>; using ldmat3x2 = mat<3,2,long double>; using ldmat4x2 = mat<4,2,long double>;
         using ldmat2x3 = mat<2,3,long double>; using ldmat3x3 = mat<3,3,long double>; using ldmat4x3 = mat<4,3,long double>;
         using ldmat2x4 = mat<2,4,long double>; using ldmat3x4 = mat<3,4,long double>; using ldmat4x4 = mat<4,4,long double>;
         using ldmat2 = ldmat2x2; using ldmat3 = ldmat3x3; using ldmat4 = ldmat4x4;
 
         template <int D> using i8vec = vec<D,std::int8_t>;
+        template <int D> using i8rect = rect<D,std::int8_t>;
         template <int W, int H> using i8mat = mat<W,H,std::int8_t>;
         using i8vec2 = vec<2,std::int8_t>; using i8vec3 = vec<3,std::int8_t>; using i8vec4 = vec<4,std::int8_t>;
+        using i8rect2 = rect<2,std::int8_t>; using i8rect3 = rect<3,std::int8_t>; using i8rect4 = rect<4,std::int8_t>;
         using i8mat2x2 = mat<2,2,std::int8_t>; using i8mat3x2 = mat<3,2,std::int8_t>; using i8mat4x2 = mat<4,2,std::int8_t>;
         using i8mat2x3 = mat<2,3,std::int8_t>; using i8mat3x3 = mat<3,3,std::int8_t>; using i8mat4x3 = mat<4,3,std::int8_t>;
         using i8mat2x4 = mat<2,4,std::int8_t>; using i8mat3x4 = mat<3,4,std::int8_t>; using i8mat4x4 = mat<4,4,std::int8_t>;
         using i8mat2 = i8mat2x2; using i8mat3 = i8mat3x3; using i8mat4 = i8mat4x4;
 
         template <int D> using u8vec = vec<D,std::uint8_t>;
+        template <int D> using u8rect = rect<D,std::uint8_t>;
         template <int W, int H> using u8mat = mat<W,H,std::uint8_t>;
         using u8vec2 = vec<2,std::uint8_t>; using u8vec3 = vec<3,std::uint8_t>; using u8vec4 = vec<4,std::uint8_t>;
+        using u8rect2 = rect<2,std::uint8_t>; using u8rect3 = rect<3,std::uint8_t>; using u8rect4 = rect<4,std::uint8_t>;
         using u8mat2x2 = mat<2,2,std::uint8_t>; using u8mat3x2 = mat<3,2,std::uint8_t>; using u8mat4x2 = mat<4,2,std::uint8_t>;
         using u8mat2x3 = mat<2,3,std::uint8_t>; using u8mat3x3 = mat<3,3,std::uint8_t>; using u8mat4x3 = mat<4,3,std::uint8_t>;
         using u8mat2x4 = mat<2,4,std::uint8_t>; using u8mat3x4 = mat<3,4,std::uint8_t>; using u8mat4x4 = mat<4,4,std::uint8_t>;
         using u8mat2 = u8mat2x2; using u8mat3 = u8mat3x3; using u8mat4 = u8mat4x4;
 
         template <int D> using i16vec = vec<D,std::int16_t>;
+        template <int D> using i16rect = rect<D,std::int16_t>;
         template <int W, int H> using i16mat = mat<W,H,std::int16_t>;
         using i16vec2 = vec<2,std::int16_t>; using i16vec3 = vec<3,std::int16_t>; using i16vec4 = vec<4,std::int16_t>;
+        using i16rect2 = rect<2,std::int16_t>; using i16rect3 = rect<3,std::int16_t>; using i16rect4 = rect<4,std::int16_t>;
         using i16mat2x2 = mat<2,2,std::int16_t>; using i16mat3x2 = mat<3,2,std::int16_t>; using i16mat4x2 = mat<4,2,std::int16_t>;
         using i16mat2x3 = mat<2,3,std::int16_t>; using i16mat3x3 = mat<3,3,std::int16_t>; using i16mat4x3 = mat<4,3,std::int16_t>;
         using i16mat2x4 = mat<2,4,std::int16_t>; using i16mat3x4 = mat<3,4,std::int16_t>; using i16mat4x4 = mat<4,4,std::int16_t>;
         using i16mat2 = i16mat2x2; using i16mat3 = i16mat3x3; using i16mat4 = i16mat4x4;
 
         template <int D> using u16vec = vec<D,std::uint16_t>;
+        template <int D> using u16rect = rect<D,std::uint16_t>;
         template <int W, int H> using u16mat = mat<W,H,std::uint16_t>;
         using u16vec2 = vec<2,std::uint16_t>; using u16vec3 = vec<3,std::uint16_t>; using u16vec4 = vec<4,std::uint16_t>;
+        using u16rect2 = rect<2,std::uint16_t>; using u16rect3 = rect<3,std::uint16_t>; using u16rect4 = rect<4,std::uint16_t>;
         using u16mat2x2 = mat<2,2,std::uint16_t>; using u16mat3x2 = mat<3,2,std::uint16_t>; using u16mat4x2 = mat<4,2,std::uint16_t>;
         using u16mat2x3 = mat<2,3,std::uint16_t>; using u16mat3x3 = mat<3,3,std::uint16_t>; using u16mat4x3 = mat<4,3,std::uint16_t>;
         using u16mat2x4 = mat<2,4,std::uint16_t>; using u16mat3x4 = mat<3,4,std::uint16_t>; using u16mat4x4 = mat<4,4,std::uint16_t>;
         using u16mat2 = u16mat2x2; using u16mat3 = u16mat3x3; using u16mat4 = u16mat4x4;
 
         template <int D> using i32vec = vec<D,std::int32_t>;
+        template <int D> using i32rect = rect<D,std::int32_t>;
         template <int W, int H> using i32mat = mat<W,H,std::int32_t>;
         using i32vec2 = vec<2,std::int32_t>; using i32vec3 = vec<3,std::int32_t>; using i32vec4 = vec<4,std::int32_t>;
+        using i32rect2 = rect<2,std::int32_t>; using i32rect3 = rect<3,std::int32_t>; using i32rect4 = rect<4,std::int32_t>;
         using i32mat2x2 = mat<2,2,std::int32_t>; using i32mat3x2 = mat<3,2,std::int32_t>; using i32mat4x2 = mat<4,2,std::int32_t>;
         using i32mat2x3 = mat<2,3,std::int32_t>; using i32mat3x3 = mat<3,3,std::int32_t>; using i32mat4x3 = mat<4,3,std::int32_t>;
         using i32mat2x4 = mat<2,4,std::int32_t>; using i32mat3x4 = mat<3,4,std::int32_t>; using i32mat4x4 = mat<4,4,std::int32_t>;
         using i32mat2 = i32mat2x2; using i32mat3 = i32mat3x3; using i32mat4 = i32mat4x4;
 
         template <int D> using u32vec = vec<D,std::uint32_t>;
+        template <int D> using u32rect = rect<D,std::uint32_t>;
         template <int W, int H> using u32mat = mat<W,H,std::uint32_t>;
         using u32vec2 = vec<2,std::uint32_t>; using u32vec3 = vec<3,std::uint32_t>; using u32vec4 = vec<4,std::uint32_t>;
+        using u32rect2 = rect<2,std::uint32_t>; using u32rect3 = rect<3,std::uint32_t>; using u32rect4 = rect<4,std::uint32_t>;
         using u32mat2x2 = mat<2,2,std::uint32_t>; using u32mat3x2 = mat<3,2,std::uint32_t>; using u32mat4x2 = mat<4,2,std::uint32_t>;
         using u32mat2x3 = mat<2,3,std::uint32_t>; using u32mat3x3 = mat<3,3,std::uint32_t>; using u32mat4x3 = mat<4,3,std::uint32_t>;
         using u32mat2x4 = mat<2,4,std::uint32_t>; using u32mat3x4 = mat<3,4,std::uint32_t>; using u32mat4x4 = mat<4,4,std::uint32_t>;
         using u32mat2 = u32mat2x2; using u32mat3 = u32mat3x3; using u32mat4 = u32mat4x4;
 
         template <int D> using i64vec = vec<D,std::int64_t>;
+        template <int D> using i64rect = rect<D,std::int64_t>;
         template <int W, int H> using i64mat = mat<W,H,std::int64_t>;
         using i64vec2 = vec<2,std::int64_t>; using i64vec3 = vec<3,std::int64_t>; using i64vec4 = vec<4,std::int64_t>;
+        using i64rect2 = rect<2,std::int64_t>; using i64rect3 = rect<3,std::int64_t>; using i64rect4 = rect<4,std::int64_t>;
         using i64mat2x2 = mat<2,2,std::int64_t>; using i64mat3x2 = mat<3,2,std::int64_t>; using i64mat4x2 = mat<4,2,std::int64_t>;
         using i64mat2x3 = mat<2,3,std::int64_t>; using i64mat3x3 = mat<3,3,std::int64_t>; using i64mat4x3 = mat<4,3,std::int64_t>;
         using i64mat2x4 = mat<2,4,std::int64_t>; using i64mat3x4 = mat<3,4,std::int64_t>; using i64mat4x4 = mat<4,4,std::int64_t>;
         using i64mat2 = i64mat2x2; using i64mat3 = i64mat3x3; using i64mat4 = i64mat4x4;
 
         template <int D> using u64vec = vec<D,std::uint64_t>;
+        template <int D> using u64rect = rect<D,std::uint64_t>;
         template <int W, int H> using u64mat = mat<W,H,std::uint64_t>;
         using u64vec2 = vec<2,std::uint64_t>; using u64vec3 = vec<3,std::uint64_t>; using u64vec4 = vec<4,std::uint64_t>;
+        using u64rect2 = rect<2,std::uint64_t>; using u64rect3 = rect<3,std::uint64_t>; using u64rect4 = rect<4,std::uint64_t>;
         using u64mat2x2 = mat<2,2,std::uint64_t>; using u64mat3x2 = mat<3,2,std::uint64_t>; using u64mat4x2 = mat<4,2,std::uint64_t>;
         using u64mat2x3 = mat<2,3,std::uint64_t>; using u64mat3x3 = mat<3,3,std::uint64_t>; using u64mat4x3 = mat<4,3,std::uint64_t>;
         using u64mat2x4 = mat<2,4,std::uint64_t>; using u64mat3x4 = mat<3,4,std::uint64_t>; using u64mat4x4 = mat<4,4,std::uint64_t>;
         using u64mat2 = u64mat2x2; using u64mat3 = u64mat3x3; using u64mat4 = u64mat4x4;
 
         template <int D> using xvec = vec<D,std::ptrdiff_t>;
+        template <int D> using xrect = rect<D,std::ptrdiff_t>;
         template <int W, int H> using xmat = mat<W,H,std::ptrdiff_t>;
         using xvec2 = vec<2,std::ptrdiff_t>; using xvec3 = vec<3,std::ptrdiff_t>; using xvec4 = vec<4,std::ptrdiff_t>;
+        using xrect2 = rect<2,std::ptrdiff_t>; using xrect3 = rect<3,std::ptrdiff_t>; using xrect4 = rect<4,std::ptrdiff_t>;
         using xmat2x2 = mat<2,2,std::ptrdiff_t>; using xmat3x2 = mat<3,2,std::ptrdiff_t>; using xmat4x2 = mat<4,2,std::ptrdiff_t>;
         using xmat2x3 = mat<2,3,std::ptrdiff_t>; using xmat3x3 = mat<3,3,std::ptrdiff_t>; using xmat4x3 = mat<4,3,std::ptrdiff_t>;
         using xmat2x4 = mat<2,4,std::ptrdiff_t>; using xmat3x4 = mat<3,4,std::ptrdiff_t>; using xmat4x4 = mat<4,4,std::ptrdiff_t>;
         using xmat2 = xmat2x2; using xmat3 = xmat3x3; using xmat4 = xmat4x4;
 
         template <int D> using zvec = vec<D,std::size_t>;
+        template <int D> using zrect = rect<D,std::size_t>;
         template <int W, int H> using zmat = mat<W,H,std::size_t>;
         using zvec2 = vec<2,std::size_t>; using zvec3 = vec<3,std::size_t>; using zvec4 = vec<4,std::size_t>;
+        using zrect2 = rect<2,std::size_t>; using zrect3 = rect<3,std::size_t>; using zrect4 = rect<4,std::size_t>;
         using zmat2x2 = mat<2,2,std::size_t>; using zmat3x2 = mat<3,2,std::size_t>; using zmat4x2 = mat<4,2,std::size_t>;
         using zmat2x3 = mat<2,3,std::size_t>; using zmat3x3 = mat<3,3,std::size_t>; using zmat4x3 = mat<4,3,std::size_t>;
         using zmat2x4 = mat<2,4,std::size_t>; using zmat3x4 = mat<3,4,std::size_t>; using zmat4x4 = mat<4,4,std::size_t>;
         using zmat2 = zmat2x2; using zmat3 = zmat3x3; using zmat4 = zmat4x4;
     }
 
-    namespace Custom // Customization points.
+    namespace Custom // Customization points
     {
         // Specializing this adds corresponding constructors and conversion operators to vectors and matrices.
         // The template arguments will never be const.
@@ -364,8 +416,10 @@ namespace Math
             !vector_or_scalar<A> || !vector_or_scalar<B> ? std::partial_ordering::unordered :
             std::is_floating_point_v<vec_base_t<A>> < std::is_floating_point_v<vec_base_t<B>> ? std::partial_ordering::less    :
             std::is_floating_point_v<vec_base_t<A>> > std::is_floating_point_v<vec_base_t<B>> ? std::partial_ordering::greater :
-            sizeof(vec_base_t<A>)                   < sizeof(vec_base_t<B>)                   ? std::partial_ordering::less    :
-            sizeof(vec_base_t<A>)                   > sizeof(vec_base_t<B>)                   ? std::partial_ordering::greater : std::partial_ordering::unordered;
+            std::is_signed_v<A> != std::is_signed_v<B> ? std::partial_ordering::unordered :
+            sizeof(vec_base_t<A>) < sizeof(vec_base_t<B>) ? std::partial_ordering::less    :
+            sizeof(vec_base_t<A>) > sizeof(vec_base_t<B>) ? std::partial_ordering::greater :
+            std::partial_ordering::unordered;
 
         // Internal, see below for the public interface.
         // Given a list of scalar and vector types, determines the "larger' type among them according to `compare_types_v`.
@@ -388,6 +442,9 @@ namespace Math
 
         template <typename ...P> using larger_or_void_t = typename impl_larger_or_void<P...>::type;
 
+        // Whether the conversion of `A` to `B` is not narrowing. Doesn't fail when there's no conversion, should return false in that case.
+        template <typename A, typename B> concept safely_convertible_to = std::is_same_v<larger_or_void_t<A, B>, B>;
+
         struct uninit {}; // A constructor tag to leave a vector/matrix uninitialized.
 
         // Wrappers for different kinds of comparisons.
@@ -402,708 +459,6 @@ namespace Math
         struct compare_none_tag {template <vector_or_scalar T> [[nodiscard]] constexpr compare_none<T> operator()(const T &value) const {return compare_none(value);}};
         struct compare_not_all_tag {template <vector_or_scalar T> [[nodiscard]] constexpr compare_not_all<T> operator()(const T &value) const {return compare_not_all(value);}};
         struct compare_elemwise_tag {template <vector_or_scalar T> [[nodiscard]] constexpr compare_elemwise<T> operator()(const T &value) const {return compare_elemwise(value);}};
-    }
-
-    inline namespace Vector // Definitions
-    {
-        //{ Vectors
-        template <typename T> struct vec<2,T> // vec2
-        {
-            using type = T;
-            static constexpr int size = 2;
-            static constexpr bool is_floating_point = std::is_floating_point_v<type>;
-            type x, y;
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &r() {return x;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &r() const {return x;}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &g() {return y;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &g() const {return y;}
-            IMP_MATH_SMALL_FUNC constexpr vec() : x{}, y{} {}
-            IMP_MATH_SMALL_FUNC constexpr vec(uninit) {}
-            IMP_MATH_SMALL_FUNC constexpr vec(type x, type y) : x(x), y(y) {}
-            IMP_MATH_SMALL_FUNC explicit constexpr vec(type obj) : x(obj), y(obj) {}
-            template <typename U> IMP_MATH_SMALL_FUNC constexpr vec(vec2<U> obj) : x(obj.x), y(obj.y) {}
-            template <typename U> requires Custom::convertible<U, vec> explicit constexpr vec(const U &obj) {*this = Custom::Convert<U, vec>{}(obj);}
-            template <typename U> requires Custom::convertible<vec, U> explicit operator U() const {return Custom::Convert<vec, U>{}(*this);}
-            template <typename U> [[nodiscard]] constexpr vec2<U> to() const {return vec2<U>(U(x), U(y));}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr       type &operator[](int i)       {if (!IMP_MATH_IS_CONSTANT(i)) return *(      type *)((      char *)this + sizeof(type)*i); else if (i == 0) return x; else if (i == 1) return y; IMP_MATH_UNREACHABLE();}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const type *)((const char *)this + sizeof(type)*i); else if (i == 0) return x; else if (i == 1) return y; IMP_MATH_UNREACHABLE();}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC type *as_array() {return &x;}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC const type *as_array() const {return &x;}
-            [[nodiscard]] explicit constexpr operator bool() const requires(!std::is_same_v<type, bool>) {return any();} // Use the explicit methods below for vectors of bool.
-            [[nodiscard]] constexpr bool any() const {return x || y;}
-            [[nodiscard]] constexpr bool all() const {return x && y;}
-            [[nodiscard]] constexpr bool none() const {return !any();}
-            [[nodiscard]] constexpr bool not_all() const {return !all();}
-            [[nodiscard]] constexpr auto sum() const {return x + y;}
-            [[nodiscard]] constexpr auto diff() const {return x - y;}
-            [[nodiscard]] constexpr auto prod() const {return x * y;}
-            [[nodiscard]] constexpr auto ratio() const {return floating_point_t<type>(x) / floating_point_t<type>(y);}
-            [[nodiscard]] constexpr type min() const {return std::min({x,y});}
-            [[nodiscard]] constexpr type max() const {return std::max({x,y});}
-            [[nodiscard]] constexpr vec abs() const {return vec(std::abs(x), std::abs(y));}
-            [[nodiscard]] constexpr vec3<type> to_vec3(type nz) const {return {x, y, nz};}
-            [[nodiscard]] constexpr vec4<type> to_vec4(type nz, type nw) const {return {x, y, nz, nw};}
-            [[nodiscard]] constexpr vec3<type> to_vec3() const {return {x, y, 0};}
-            [[nodiscard]] constexpr vec4<type> to_vec4() const {return {x, y, 0, 0};}
-            [[nodiscard]] constexpr auto len_sqr() const {return x*x + y*y;}
-            [[nodiscard]] constexpr auto len() const {return std::sqrt(len_sqr());}
-            [[nodiscard]] constexpr auto norm() const -> vec2<decltype(type{}/len())> {if (auto l = len()) return *this / l; else return vec(0);}
-            [[nodiscard]] constexpr auto approx_len() const {return floating_point_t<type>(len_sqr() + 1) / 2;} // Accurate only around `len()==1`.
-            [[nodiscard]] constexpr auto approx_inv_len() const {return 2 / floating_point_t<type>(len_sqr() + 1);}
-            [[nodiscard]] constexpr auto approx_norm() const {return *this * approx_inv_len();} // Guaranteed to converge to `len()==1` eventually, when starting from any finite `len_sqr()`.
-            [[nodiscard]] static constexpr vec dir(type angle, type len = 1) {return vec(std::cos(angle) * len, std::sin(angle) * len); static_assert(is_floating_point, "The vector must be floating-point.");}
-            template <typename U = floating_point_t<type>> [[nodiscard]] constexpr U angle() const {return std::atan2(U(y), U(x));}
-            [[nodiscard]] constexpr vec rot90(int steps = 1) const {switch (steps & 3) {default: return *this; case 1: return {-y,x}; case 2: return -*this; case 3: return {y,-x};}}
-            [[nodiscard]] static constexpr vec dir4(int index, type len = 1) {return vec(len,0).rot90(index);}
-            [[nodiscard]] static constexpr vec dir4_diag(int index, type len = 1) {return vec(len,len).rot90(index);}
-            [[nodiscard]] static constexpr vec dir8(int index, type len = 1) {vec array[8]{vec(len,0),vec(len,len),vec(0,len),vec(-len,len),vec(-len,0),vec(-len,-len),vec(0,-len),vec(len,-len)}; return array[index & 7];}
-            [[nodiscard]] constexpr int angle4_round() const {type s = sum(); type d = diff(); return d<0&&s>=0?1:x<0&&d<=0?2:y<0&&s<=0?3:0;} // Non-cardinal directions round to the closest one, diagnoals round backwards, (0,0) returns zero.
-            [[nodiscard]] constexpr int angle4_floor() const {return y>0&&x<=0?1:x<0?2:y<0?3:0;}
-            [[nodiscard]] constexpr int angle8_sign() const {return y>0?(x>0?1:x==0?2:3):y<0?(x<0?5:x==0?6:7):(x<0?4:0);} // Non-cardinal directions count as diagonals, (0,0) returns zero.
-            [[nodiscard]] constexpr int angle8_floor() const {type s = sum(); type d = diff(); return y<0&&d>=0?(x<0?5:s<0?6:7):x<=0&&d<0?(y<=0?4:s<=0?3:2):y>0&&d<=0?1:0;}
-            template <typename U> [[nodiscard]] constexpr auto dot(const vec2<U> &o) const {return x * o.x + y * o.y;}
-            template <typename U> [[nodiscard]] constexpr auto cross(const vec2<U> &o) const {return x * o.y - y * o.x;}
-            [[nodiscard]] constexpr auto tie() & {return std::tie(x,y);}
-            [[nodiscard]] constexpr auto tie() const & {return std::tie(x,y);}
-            template <int I> [[nodiscard]] constexpr type &get() & {return std::get<I>(tie());}
-            template <int I> [[nodiscard]] constexpr const type &get() const & {return std::get<I>(tie());}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr compare_any<vec> operator()(compare_any_tag) const {return compare_any(*this);}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr compare_all<vec> operator()(compare_all_tag) const {return compare_all(*this);}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr compare_none<vec> operator()(compare_none_tag) const {return compare_none(*this);}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr compare_not_all<vec> operator()(compare_not_all_tag) const {return compare_not_all(*this);}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr compare_elemwise<vec> operator()(compare_elemwise_tag) const {return compare_elemwise(*this);}
-        };
-
-        template <typename T> struct vec<3,T> // vec3
-        {
-            using type = T;
-            static constexpr int size = 3;
-            static constexpr bool is_floating_point = std::is_floating_point_v<type>;
-            type x, y, z;
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &r() {return x;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &r() const {return x;}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &g() {return y;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &g() const {return y;}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &b() {return z;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &b() const {return z;}
-            IMP_MATH_SMALL_FUNC constexpr vec() : x{}, y{}, z{} {}
-            IMP_MATH_SMALL_FUNC constexpr vec(uninit) {}
-            IMP_MATH_SMALL_FUNC constexpr vec(type x, type y, type z) : x(x), y(y), z(z) {}
-            IMP_MATH_SMALL_FUNC explicit constexpr vec(type obj) : x(obj), y(obj), z(obj) {}
-            template <typename U> IMP_MATH_SMALL_FUNC constexpr vec(vec3<U> obj) : x(obj.x), y(obj.y), z(obj.z) {}
-            template <typename U> requires Custom::convertible<U, vec> explicit constexpr vec(const U &obj) {*this = Custom::Convert<U, vec>{}(obj);}
-            template <typename U> requires Custom::convertible<vec, U> explicit operator U() const {return Custom::Convert<vec, U>{}(*this);}
-            template <typename U> [[nodiscard]] constexpr vec3<U> to() const {return vec3<U>(U(x), U(y), U(z));}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr       type &operator[](int i)       {if (!IMP_MATH_IS_CONSTANT(i)) return *(      type *)((      char *)this + sizeof(type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; IMP_MATH_UNREACHABLE();}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const type *)((const char *)this + sizeof(type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; IMP_MATH_UNREACHABLE();}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC type *as_array() {return &x;}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC const type *as_array() const {return &x;}
-            [[nodiscard]] explicit constexpr operator bool() const requires(!std::is_same_v<type, bool>) {return any();} // Use the explicit methods below for vectors of bool.
-            [[nodiscard]] constexpr bool any() const {return x || y || z;}
-            [[nodiscard]] constexpr bool all() const {return x && y && z;}
-            [[nodiscard]] constexpr bool none() const {return !any();}
-            [[nodiscard]] constexpr bool not_all() const {return !all();}
-            [[nodiscard]] constexpr auto sum() const {return x + y + z;}
-            [[nodiscard]] constexpr auto prod() const {return x * y * z;}
-            [[nodiscard]] constexpr type min() const {return std::min({x,y,z});}
-            [[nodiscard]] constexpr type max() const {return std::max({x,y,z});}
-            [[nodiscard]] constexpr vec abs() const {return vec(std::abs(x), std::abs(y), std::abs(z));}
-            [[nodiscard]] constexpr vec2<type> to_vec2() const {return {x, y};}
-            [[nodiscard]] constexpr vec4<type> to_vec4(type nw) const {return {x, y, z, nw};}
-            [[nodiscard]] constexpr vec4<type> to_vec4() const {return {x, y, z, 0};}
-            [[nodiscard]] constexpr auto len_sqr() const {return x*x + y*y + z*z;}
-            [[nodiscard]] constexpr auto len() const {return std::sqrt(len_sqr());}
-            [[nodiscard]] constexpr auto norm() const -> vec3<decltype(type{}/len())> {if (auto l = len()) return *this / l; else return vec(0);}
-            [[nodiscard]] constexpr auto approx_len() const {return floating_point_t<type>(len_sqr() + 1) / 2;} // Accurate only around `len()==1`.
-            [[nodiscard]] constexpr auto approx_inv_len() const {return 2 / floating_point_t<type>(len_sqr() + 1);}
-            [[nodiscard]] constexpr auto approx_norm() const {return *this * approx_inv_len();} // Guaranteed to converge to `len()==1` eventually, when starting from any finite `len_sqr()`.
-            template <typename U> [[nodiscard]] constexpr auto dot(const vec3<U> &o) const {return x * o.x + y * o.y + z * o.z;}
-            template <typename U> [[nodiscard]] constexpr auto cross(const vec3<U> &o) const -> vec3<decltype(x * o.x - x * o.x)> {return {y * o.z - z * o.y, z * o.x - x * o.z, x * o.y - y * o.x};}
-            [[nodiscard]] constexpr auto tie() & {return std::tie(x,y,z);}
-            [[nodiscard]] constexpr auto tie() const & {return std::tie(x,y,z);}
-            template <int I> [[nodiscard]] constexpr type &get() & {return std::get<I>(tie());}
-            template <int I> [[nodiscard]] constexpr const type &get() const & {return std::get<I>(tie());}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr compare_any<vec> operator()(compare_any_tag) const {return compare_any(*this);}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr compare_all<vec> operator()(compare_all_tag) const {return compare_all(*this);}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr compare_none<vec> operator()(compare_none_tag) const {return compare_none(*this);}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr compare_not_all<vec> operator()(compare_not_all_tag) const {return compare_not_all(*this);}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr compare_elemwise<vec> operator()(compare_elemwise_tag) const {return compare_elemwise(*this);}
-        };
-
-        template <typename T> struct vec<4,T> // vec4
-        {
-            using type = T;
-            static constexpr int size = 4;
-            static constexpr bool is_floating_point = std::is_floating_point_v<type>;
-            type x, y, z, w;
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &r() {return x;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &r() const {return x;}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &g() {return y;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &g() const {return y;}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &b() {return z;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &b() const {return z;}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &a() {return w;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &a() const {return w;}
-            IMP_MATH_SMALL_FUNC constexpr vec() : x{}, y{}, z{}, w{} {}
-            IMP_MATH_SMALL_FUNC constexpr vec(uninit) {}
-            IMP_MATH_SMALL_FUNC constexpr vec(type x, type y, type z, type w) : x(x), y(y), z(z), w(w) {}
-            IMP_MATH_SMALL_FUNC explicit constexpr vec(type obj) : x(obj), y(obj), z(obj), w(obj) {}
-            template <typename U> IMP_MATH_SMALL_FUNC constexpr vec(vec4<U> obj) : x(obj.x), y(obj.y), z(obj.z), w(obj.w) {}
-            template <typename U> requires Custom::convertible<U, vec> explicit constexpr vec(const U &obj) {*this = Custom::Convert<U, vec>{}(obj);}
-            template <typename U> requires Custom::convertible<vec, U> explicit operator U() const {return Custom::Convert<vec, U>{}(*this);}
-            template <typename U> [[nodiscard]] constexpr vec4<U> to() const {return vec4<U>(U(x), U(y), U(z), U(w));}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr       type &operator[](int i)       {if (!IMP_MATH_IS_CONSTANT(i)) return *(      type *)((      char *)this + sizeof(type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; else if (i == 3) return w; IMP_MATH_UNREACHABLE();}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const type *)((const char *)this + sizeof(type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; else if (i == 3) return w; IMP_MATH_UNREACHABLE();}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC type *as_array() {return &x;}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC const type *as_array() const {return &x;}
-            [[nodiscard]] explicit constexpr operator bool() const requires(!std::is_same_v<type, bool>) {return any();} // Use the explicit methods below for vectors of bool.
-            [[nodiscard]] constexpr bool any() const {return x || y || z || w;}
-            [[nodiscard]] constexpr bool all() const {return x && y && z && w;}
-            [[nodiscard]] constexpr bool none() const {return !any();}
-            [[nodiscard]] constexpr bool not_all() const {return !all();}
-            [[nodiscard]] constexpr auto sum() const {return x + y + z + w;}
-            [[nodiscard]] constexpr auto prod() const {return x * y * z * w;}
-            [[nodiscard]] constexpr type min() const {return std::min({x,y,z,w});}
-            [[nodiscard]] constexpr type max() const {return std::max({x,y,z,w});}
-            [[nodiscard]] constexpr vec abs() const {return vec(std::abs(x), std::abs(y), std::abs(z), std::abs(w));}
-            [[nodiscard]] constexpr vec2<type> to_vec2() const {return {x, y};}
-            [[nodiscard]] constexpr vec3<type> to_vec3() const {return {x, y, z};}
-            [[nodiscard]] constexpr auto len_sqr() const {return x*x + y*y + z*z + w*w;}
-            [[nodiscard]] constexpr auto len() const {return std::sqrt(len_sqr());}
-            [[nodiscard]] constexpr auto norm() const -> vec4<decltype(type{}/len())> {if (auto l = len()) return *this / l; else return vec(0);}
-            [[nodiscard]] constexpr auto approx_len() const {return floating_point_t<type>(len_sqr() + 1) / 2;} // Accurate only around `len()==1`.
-            [[nodiscard]] constexpr auto approx_inv_len() const {return 2 / floating_point_t<type>(len_sqr() + 1);}
-            [[nodiscard]] constexpr auto approx_norm() const {return *this * approx_inv_len();} // Guaranteed to converge to `len()==1` eventually, when starting from any finite `len_sqr()`.
-            template <typename U> [[nodiscard]] constexpr auto dot(const vec4<U> &o) const {return x * o.x + y * o.y + z * o.z + w * o.w;}
-            [[nodiscard]] constexpr auto tie() & {return std::tie(x,y,z,w);}
-            [[nodiscard]] constexpr auto tie() const & {return std::tie(x,y,z,w);}
-            template <int I> [[nodiscard]] constexpr type &get() & {return std::get<I>(tie());}
-            template <int I> [[nodiscard]] constexpr const type &get() const & {return std::get<I>(tie());}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr compare_any<vec> operator()(compare_any_tag) const {return compare_any(*this);}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr compare_all<vec> operator()(compare_all_tag) const {return compare_all(*this);}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr compare_none<vec> operator()(compare_none_tag) const {return compare_none(*this);}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr compare_not_all<vec> operator()(compare_not_all_tag) const {return compare_not_all(*this);}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr compare_elemwise<vec> operator()(compare_elemwise_tag) const {return compare_elemwise(*this);}
-        };
-
-        template <typename ...P, typename = std::enable_if_t<sizeof...(P) >= 2 && sizeof...(P) <= 4>> vec(P...) -> vec<sizeof...(P), larger_t<P...>>;
-        //} Vectors
-
-        //{ Matrices
-        template <typename T> struct mat<2,2,T> // mat2x2
-        {
-            using type = T;
-            using member_type = vec2<T>;
-            static constexpr int width = 2, height = 2;
-            static constexpr int size = 2;
-            static constexpr bool is_floating_point = std::is_floating_point_v<type>;
-            member_type x, y;
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &r() {return x;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &r() const {return x;}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &g() {return y;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &g() const {return y;}
-            constexpr mat() : mat(1,0,0,1) {}
-            constexpr mat(uninit) : x(uninit{}), y(uninit{}) {}
-            constexpr mat(const member_type &x, const member_type &y) : x(x), y(y) {}
-            constexpr mat(type xx, type yx, type xy, type yy) : x(xx,xy), y(yx,yy) {}
-            template <typename U> constexpr mat(const mat2x2<U> &obj) : x(obj.x), y(obj.y) {}
-            template <typename U> requires Custom::convertible<U, mat> explicit constexpr mat(const U &obj) {*this = Custom::Convert<U, mat>{}(obj);}
-            template <typename U> requires Custom::convertible<mat, U> explicit operator U() const {return Custom::Convert<mat, U>{}(*this);}
-            template <typename U> [[nodiscard]] constexpr mat2x2<U> to() const {return mat2x2<U>(U(x.x), U(y.x), U(x.y), U(y.y));}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr       member_type &operator[](int i)       {if (!IMP_MATH_IS_CONSTANT(i)) return *(      member_type *)((      char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; IMP_MATH_UNREACHABLE();}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const member_type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const member_type *)((const char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; IMP_MATH_UNREACHABLE();}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC type *as_array() {return &x.x;}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC const type *as_array() const {return &x.x;}
-            [[nodiscard]] constexpr mat3x2<type> to_vec3(const member_type &nz) const {return {x, y, nz};}
-            [[nodiscard]] constexpr mat4x2<type> to_vec4(const member_type &nz, const member_type &nw) const {return {x, y, nz, nw};}
-            [[nodiscard]] constexpr mat3x2<type> to_vec3() const {return to_vec3({});}
-            [[nodiscard]] constexpr mat4x2<type> to_vec4() const {return to_vec4({}, {});}
-            [[nodiscard]] constexpr mat3x2<type> to_mat3x2() const {return {x.x,y.x,0,x.y,y.y,0};}
-            [[nodiscard]] constexpr mat4x2<type> to_mat4x2() const {return {x.x,y.x,0,0,x.y,y.y,0,0};}
-            [[nodiscard]] constexpr mat2x3<type> to_mat2x3() const {return {x.x,y.x,x.y,y.y,0,0};}
-            [[nodiscard]] constexpr mat3x3<type> to_mat3x3() const {return {x.x,y.x,0,x.y,y.y,0,0,0,1};}
-            [[nodiscard]] constexpr mat3x3<type> to_mat3() const {return to_mat3x3();}
-            [[nodiscard]] constexpr mat4x3<type> to_mat4x3() const {return {x.x,y.x,0,0,x.y,y.y,0,0,0,0,1,0};}
-            [[nodiscard]] constexpr mat2x4<type> to_mat2x4() const {return {x.x,y.x,x.y,y.y,0,0,0,0};}
-            [[nodiscard]] constexpr mat3x4<type> to_mat3x4() const {return {x.x,y.x,0,x.y,y.y,0,0,0,1,0,0,0};}
-            [[nodiscard]] constexpr mat4x4<type> to_mat4x4() const {return {x.x,y.x,0,0,x.y,y.y,0,0,0,0,1,0,0,0,0,1};}
-            [[nodiscard]] constexpr mat4x4<type> to_mat4() const {return to_mat4x4();}
-            [[nodiscard]] constexpr mat2x2<T> transpose() const {return {x.x,x.y,y.x,y.y};}
-            [[nodiscard]] constexpr mat inverse()
-            {
-                static_assert(is_floating_point, "This function only makes sense for floating-point matrices.");
-
-                mat ret{};
-
-                ret.x.x =  y.y;
-                ret.y.x = -y.x;
-
-                type d = x.x * ret.x.x + x.y * ret.y.x;
-                if (d == 0) return {};
-                d = 1 / d;
-                ret.x.x *= d;
-                ret.y.x *= d;
-
-                ret.x.y = (-x.y) * d;
-                ret.y.y = ( x.x) * d;
-
-                return ret;
-            }
-            [[nodiscard]] static constexpr mat scale(vec2<type> v)
-            {
-                return { v.x , 0   ,
-                         0   , v.y };
-            }
-            [[nodiscard]] static constexpr mat rotate(type angle)
-            {
-                static_assert(is_floating_point, "This function only makes sense for floating-point matrices.");
-                type c = std::cos(angle);
-                type s = std::sin(angle);
-                return { c, -s ,
-                         s, c  };
-            }
-        };
-
-        template <typename T> struct mat<2,3,T> // mat2x3
-        {
-            using type = T;
-            using member_type = vec3<T>;
-            static constexpr int width = 2, height = 3;
-            static constexpr bool is_floating_point = std::is_floating_point_v<type>;
-            member_type x, y;
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &r() {return x;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &r() const {return x;}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &g() {return y;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &g() const {return y;}
-            constexpr mat() : mat(1,0,0,1,0,0) {}
-            constexpr mat(uninit) : x(uninit{}), y(uninit{}) {}
-            constexpr mat(const member_type &x, const member_type &y) : x(x), y(y) {}
-            constexpr mat(type xx, type yx, type xy, type yy, type xz, type yz) : x(xx,xy,xz), y(yx,yy,yz) {}
-            template <typename U> constexpr mat(const mat2x3<U> &obj) : x(obj.x), y(obj.y) {}
-            template <typename U> requires Custom::convertible<U, mat> explicit constexpr mat(const U &obj) {*this = Custom::Convert<U, mat>{}(obj);}
-            template <typename U> requires Custom::convertible<mat, U> explicit operator U() const {return Custom::Convert<mat, U>{}(*this);}
-            template <typename U> [[nodiscard]] constexpr mat2x3<U> to() const {return mat2x3<U>(U(x.x), U(y.x), U(x.y), U(y.y), U(x.z), U(y.z));}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr       member_type &operator[](int i)       {if (!IMP_MATH_IS_CONSTANT(i)) return *(      member_type *)((      char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; IMP_MATH_UNREACHABLE();}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const member_type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const member_type *)((const char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; IMP_MATH_UNREACHABLE();}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC type *as_array() {return &x.x;}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC const type *as_array() const {return &x.x;}
-            [[nodiscard]] constexpr mat3x3<type> to_vec3(const member_type &nz) const {return {x, y, nz};}
-            [[nodiscard]] constexpr mat4x3<type> to_vec4(const member_type &nz, const member_type &nw) const {return {x, y, nz, nw};}
-            [[nodiscard]] constexpr mat3x3<type> to_vec3() const {return to_vec3({});}
-            [[nodiscard]] constexpr mat4x3<type> to_vec4() const {return to_vec4({}, {});}
-            [[nodiscard]] constexpr mat2x2<type> to_mat2x2() const {return {x.x,y.x,x.y,y.y};}
-            [[nodiscard]] constexpr mat2x2<type> to_mat2() const {return to_mat2x2();}
-            [[nodiscard]] constexpr mat3x2<type> to_mat3x2() const {return {x.x,y.x,0,x.y,y.y,0};}
-            [[nodiscard]] constexpr mat4x2<type> to_mat4x2() const {return {x.x,y.x,0,0,x.y,y.y,0,0};}
-            [[nodiscard]] constexpr mat3x3<type> to_mat3x3() const {return {x.x,y.x,0,x.y,y.y,0,x.z,y.z,1};}
-            [[nodiscard]] constexpr mat3x3<type> to_mat3() const {return to_mat3x3();}
-            [[nodiscard]] constexpr mat4x3<type> to_mat4x3() const {return {x.x,y.x,0,0,x.y,y.y,0,0,x.z,y.z,1,0};}
-            [[nodiscard]] constexpr mat2x4<type> to_mat2x4() const {return {x.x,y.x,x.y,y.y,x.z,y.z,0,0};}
-            [[nodiscard]] constexpr mat3x4<type> to_mat3x4() const {return {x.x,y.x,0,x.y,y.y,0,x.z,y.z,1,0,0,0};}
-            [[nodiscard]] constexpr mat4x4<type> to_mat4x4() const {return {x.x,y.x,0,0,x.y,y.y,0,0,x.z,y.z,1,0,0,0,0,1};}
-            [[nodiscard]] constexpr mat4x4<type> to_mat4() const {return to_mat4x4();}
-            [[nodiscard]] constexpr mat3x2<T> transpose() const {return {x.x,x.y,x.z,y.x,y.y,y.z};}
-        };
-
-        template <typename T> struct mat<2,4,T> // mat2x4
-        {
-            using type = T;
-            using member_type = vec4<T>;
-            static constexpr int width = 2, height = 4;
-            static constexpr bool is_floating_point = std::is_floating_point_v<type>;
-            member_type x, y;
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &r() {return x;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &r() const {return x;}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &g() {return y;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &g() const {return y;}
-            constexpr mat() : mat(1,0,0,1,0,0,0,0) {}
-            constexpr mat(uninit) : x(uninit{}), y(uninit{}) {}
-            constexpr mat(const member_type &x, const member_type &y) : x(x), y(y) {}
-            constexpr mat(type xx, type yx, type xy, type yy, type xz, type yz, type xw, type yw) : x(xx,xy,xz,xw), y(yx,yy,yz,yw) {}
-            template <typename U> constexpr mat(const mat2x4<U> &obj) : x(obj.x), y(obj.y) {}
-            template <typename U> requires Custom::convertible<U, mat> explicit constexpr mat(const U &obj) {*this = Custom::Convert<U, mat>{}(obj);}
-            template <typename U> requires Custom::convertible<mat, U> explicit operator U() const {return Custom::Convert<mat, U>{}(*this);}
-            template <typename U> [[nodiscard]] constexpr mat2x4<U> to() const {return mat2x4<U>(U(x.x), U(y.x), U(x.y), U(y.y), U(x.z), U(y.z), U(x.w), U(y.w));}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr       member_type &operator[](int i)       {if (!IMP_MATH_IS_CONSTANT(i)) return *(      member_type *)((      char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; IMP_MATH_UNREACHABLE();}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const member_type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const member_type *)((const char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; IMP_MATH_UNREACHABLE();}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC type *as_array() {return &x.x;}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC const type *as_array() const {return &x.x;}
-            [[nodiscard]] constexpr mat3x4<type> to_vec3(const member_type &nz) const {return {x, y, nz};}
-            [[nodiscard]] constexpr mat4x4<type> to_vec4(const member_type &nz, const member_type &nw) const {return {x, y, nz, nw};}
-            [[nodiscard]] constexpr mat3x4<type> to_vec3() const {return to_vec3({});}
-            [[nodiscard]] constexpr mat4x4<type> to_vec4() const {return to_vec4({}, {});}
-            [[nodiscard]] constexpr mat2x2<type> to_mat2x2() const {return {x.x,y.x,x.y,y.y};}
-            [[nodiscard]] constexpr mat2x2<type> to_mat2() const {return to_mat2x2();}
-            [[nodiscard]] constexpr mat3x2<type> to_mat3x2() const {return {x.x,y.x,0,x.y,y.y,0};}
-            [[nodiscard]] constexpr mat4x2<type> to_mat4x2() const {return {x.x,y.x,0,0,x.y,y.y,0,0};}
-            [[nodiscard]] constexpr mat2x3<type> to_mat2x3() const {return {x.x,y.x,x.y,y.y,x.z,y.z};}
-            [[nodiscard]] constexpr mat3x3<type> to_mat3x3() const {return {x.x,y.x,0,x.y,y.y,0,x.z,y.z,1};}
-            [[nodiscard]] constexpr mat3x3<type> to_mat3() const {return to_mat3x3();}
-            [[nodiscard]] constexpr mat4x3<type> to_mat4x3() const {return {x.x,y.x,0,0,x.y,y.y,0,0,x.z,y.z,1,0};}
-            [[nodiscard]] constexpr mat3x4<type> to_mat3x4() const {return {x.x,y.x,0,x.y,y.y,0,x.z,y.z,1,x.w,y.w,0};}
-            [[nodiscard]] constexpr mat4x4<type> to_mat4x4() const {return {x.x,y.x,0,0,x.y,y.y,0,0,x.z,y.z,1,0,x.w,y.w,0,1};}
-            [[nodiscard]] constexpr mat4x4<type> to_mat4() const {return to_mat4x4();}
-            [[nodiscard]] constexpr mat4x2<T> transpose() const {return {x.x,x.y,x.z,x.w,y.x,y.y,y.z,y.w};}
-        };
-
-        template <typename T> struct mat<3,2,T> // mat3x2
-        {
-            using type = T;
-            using member_type = vec2<T>;
-            static constexpr int width = 3, height = 2;
-            static constexpr bool is_floating_point = std::is_floating_point_v<type>;
-            member_type x, y, z;
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &r() {return x;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &r() const {return x;}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &g() {return y;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &g() const {return y;}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &b() {return z;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &b() const {return z;}
-            constexpr mat() : mat(1,0,0,0,1,0) {}
-            constexpr mat(uninit) : x(uninit{}), y(uninit{}), z(uninit{}) {}
-            constexpr mat(const member_type &x, const member_type &y, const member_type &z) : x(x), y(y), z(z) {}
-            constexpr mat(type xx, type yx, type zx, type xy, type yy, type zy) : x(xx,xy), y(yx,yy), z(zx,zy) {}
-            template <typename U> constexpr mat(const mat3x2<U> &obj) : x(obj.x), y(obj.y), z(obj.z) {}
-            template <typename U> requires Custom::convertible<U, mat> explicit constexpr mat(const U &obj) {*this = Custom::Convert<U, mat>{}(obj);}
-            template <typename U> requires Custom::convertible<mat, U> explicit operator U() const {return Custom::Convert<mat, U>{}(*this);}
-            template <typename U> [[nodiscard]] constexpr mat3x2<U> to() const {return mat3x2<U>(U(x.x), U(y.x), U(z.x), U(x.y), U(y.y), U(z.y));}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr       member_type &operator[](int i)       {if (!IMP_MATH_IS_CONSTANT(i)) return *(      member_type *)((      char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; IMP_MATH_UNREACHABLE();}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const member_type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const member_type *)((const char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; IMP_MATH_UNREACHABLE();}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC type *as_array() {return &x.x;}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC const type *as_array() const {return &x.x;}
-            [[nodiscard]] constexpr mat2x2<type> to_vec2() const {return {x, y};}
-            [[nodiscard]] constexpr mat4x2<type> to_vec4(const member_type &nw) const {return {x, y, z, nw};}
-            [[nodiscard]] constexpr mat4x2<type> to_vec4() const {return to_vec4({});}
-            [[nodiscard]] constexpr mat2x2<type> to_mat2x2() const {return {x.x,y.x,x.y,y.y};}
-            [[nodiscard]] constexpr mat2x2<type> to_mat2() const {return to_mat2x2();}
-            [[nodiscard]] constexpr mat4x2<type> to_mat4x2() const {return {x.x,y.x,z.x,0,x.y,y.y,z.y,0};}
-            [[nodiscard]] constexpr mat2x3<type> to_mat2x3() const {return {x.x,y.x,x.y,y.y,0,0};}
-            [[nodiscard]] constexpr mat3x3<type> to_mat3x3() const {return {x.x,y.x,z.x,x.y,y.y,z.y,0,0,1};}
-            [[nodiscard]] constexpr mat3x3<type> to_mat3() const {return to_mat3x3();}
-            [[nodiscard]] constexpr mat4x3<type> to_mat4x3() const {return {x.x,y.x,z.x,0,x.y,y.y,z.y,0,0,0,1,0};}
-            [[nodiscard]] constexpr mat2x4<type> to_mat2x4() const {return {x.x,y.x,x.y,y.y,0,0,0,0};}
-            [[nodiscard]] constexpr mat3x4<type> to_mat3x4() const {return {x.x,y.x,z.x,x.y,y.y,z.y,0,0,1,0,0,0};}
-            [[nodiscard]] constexpr mat4x4<type> to_mat4x4() const {return {x.x,y.x,z.x,0,x.y,y.y,z.y,0,0,0,1,0,0,0,0,1};}
-            [[nodiscard]] constexpr mat4x4<type> to_mat4() const {return to_mat4x4();}
-            [[nodiscard]] constexpr mat2x3<T> transpose() const {return {x.x,x.y,y.x,y.y,z.x,z.y};}
-        };
-
-        template <typename T> struct mat<3,3,T> // mat3x3
-        {
-            using type = T;
-            using member_type = vec3<T>;
-            static constexpr int width = 3, height = 3;
-            static constexpr int size = 3;
-            static constexpr bool is_floating_point = std::is_floating_point_v<type>;
-            member_type x, y, z;
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &r() {return x;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &r() const {return x;}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &g() {return y;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &g() const {return y;}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &b() {return z;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &b() const {return z;}
-            constexpr mat() : mat(1,0,0,0,1,0,0,0,1) {}
-            constexpr mat(uninit) : x(uninit{}), y(uninit{}), z(uninit{}) {}
-            constexpr mat(const member_type &x, const member_type &y, const member_type &z) : x(x), y(y), z(z) {}
-            constexpr mat(type xx, type yx, type zx, type xy, type yy, type zy, type xz, type yz, type zz) : x(xx,xy,xz), y(yx,yy,yz), z(zx,zy,zz) {}
-            template <typename U> constexpr mat(const mat3x3<U> &obj) : x(obj.x), y(obj.y), z(obj.z) {}
-            template <typename U> requires Custom::convertible<U, mat> explicit constexpr mat(const U &obj) {*this = Custom::Convert<U, mat>{}(obj);}
-            template <typename U> requires Custom::convertible<mat, U> explicit operator U() const {return Custom::Convert<mat, U>{}(*this);}
-            template <typename U> [[nodiscard]] constexpr mat3x3<U> to() const {return mat3x3<U>(U(x.x), U(y.x), U(z.x), U(x.y), U(y.y), U(z.y), U(x.z), U(y.z), U(z.z));}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr       member_type &operator[](int i)       {if (!IMP_MATH_IS_CONSTANT(i)) return *(      member_type *)((      char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; IMP_MATH_UNREACHABLE();}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const member_type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const member_type *)((const char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; IMP_MATH_UNREACHABLE();}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC type *as_array() {return &x.x;}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC const type *as_array() const {return &x.x;}
-            [[nodiscard]] constexpr mat2x3<type> to_vec2() const {return {x, y};}
-            [[nodiscard]] constexpr mat4x3<type> to_vec4(const member_type &nw) const {return {x, y, z, nw};}
-            [[nodiscard]] constexpr mat4x3<type> to_vec4() const {return to_vec4({});}
-            [[nodiscard]] constexpr mat2x2<type> to_mat2x2() const {return {x.x,y.x,x.y,y.y};}
-            [[nodiscard]] constexpr mat2x2<type> to_mat2() const {return to_mat2x2();}
-            [[nodiscard]] constexpr mat3x2<type> to_mat3x2() const {return {x.x,y.x,z.x,x.y,y.y,z.y};}
-            [[nodiscard]] constexpr mat4x2<type> to_mat4x2() const {return {x.x,y.x,z.x,0,x.y,y.y,z.y,0};}
-            [[nodiscard]] constexpr mat2x3<type> to_mat2x3() const {return {x.x,y.x,x.y,y.y,x.z,y.z};}
-            [[nodiscard]] constexpr mat4x3<type> to_mat4x3() const {return {x.x,y.x,z.x,0,x.y,y.y,z.y,0,x.z,y.z,z.z,0};}
-            [[nodiscard]] constexpr mat2x4<type> to_mat2x4() const {return {x.x,y.x,x.y,y.y,x.z,y.z,0,0};}
-            [[nodiscard]] constexpr mat3x4<type> to_mat3x4() const {return {x.x,y.x,z.x,x.y,y.y,z.y,x.z,y.z,z.z,0,0,0};}
-            [[nodiscard]] constexpr mat4x4<type> to_mat4x4() const {return {x.x,y.x,z.x,0,x.y,y.y,z.y,0,x.z,y.z,z.z,0,0,0,0,1};}
-            [[nodiscard]] constexpr mat4x4<type> to_mat4() const {return to_mat4x4();}
-            [[nodiscard]] constexpr mat3x3<T> transpose() const {return {x.x,x.y,x.z,y.x,y.y,y.z,z.x,z.y,z.z};}
-            [[nodiscard]] constexpr mat inverse() const
-            {
-                static_assert(is_floating_point, "This function only makes sense for floating-point matrices.");
-
-                mat ret{};
-
-                ret.x.x =  y.y * z.z - z.y * y.z;
-                ret.y.x = -y.x * z.z + z.x * y.z;
-                ret.z.x =  y.x * z.y - z.x * y.y;
-
-                type d = x.x * ret.x.x + x.y * ret.y.x + x.z * ret.z.x;
-                if (d == 0) return {};
-                d = 1 / d;
-                ret.x.x *= d;
-                ret.y.x *= d;
-                ret.z.x *= d;
-
-                ret.x.y = (-x.y * z.z + z.y * x.z) * d;
-                ret.y.y = ( x.x * z.z - z.x * x.z) * d;
-                ret.z.y = (-x.x * z.y + z.x * x.y) * d;
-                ret.x.z = ( x.y * y.z - y.y * x.z) * d;
-                ret.y.z = (-x.x * y.z + y.x * x.z) * d;
-                ret.z.z = ( x.x * y.y - y.x * x.y) * d;
-
-                return ret;
-            }
-            [[nodiscard]] static constexpr mat scale(vec2<type> v) {return mat2<T>::scale(v).to_mat3();}
-            [[nodiscard]] static constexpr mat scale(vec3<type> v)
-            {
-                return { v.x , 0   , 0   ,
-                         0   , v.y , 0   ,
-                         0   , 0   , v.z };
-            }
-            [[nodiscard]] static constexpr mat ortho(vec2<type> min, vec2<type> max)
-            {
-                static_assert(is_floating_point, "This function only makes sense for floating-point matrices.");
-                return { 2 / (max.x - min.x) , 0                   , (min.x + max.x) / (min.x - max.x) ,
-                         0                   , 2 / (max.y - min.y) , (min.y + max.y) / (min.y - max.y) ,
-                         0                   , 0                   , 1                                 };
-            }
-            [[nodiscard]] static constexpr mat translate(vec2<type> v)
-            {
-                return { 1, 0, v.x ,
-                         0, 1, v.y ,
-                         0, 0, 1   };
-            }
-            [[nodiscard]] static constexpr mat rotate(type angle) {return mat2<T>::rotate(angle).to_mat3();}
-            [[nodiscard]] static constexpr mat rotate_with_normalized_axis(vec3<type> axis, type angle)
-            {
-                type c = std::cos(angle);
-                type s = std::sin(angle);
-                return { axis.x * axis.x * (1 - c) + c          , axis.x * axis.y * (1 - c) - axis.z * s , axis.x * axis.z * (1 - c) + axis.y * s,
-                         axis.y * axis.x * (1 - c) + axis.z * s , axis.y * axis.y * (1 - c) + c          , axis.y * axis.z * (1 - c) - axis.x * s,
-                         axis.x * axis.z * (1 - c) - axis.y * s , axis.y * axis.z * (1 - c) + axis.x * s , axis.z * axis.z * (1 - c) + c         };
-            }
-            [[nodiscard]] static constexpr mat rotate(vec3<type> axis, type angle)
-            {
-                static_assert(is_floating_point, "This function only makes sense for floating-point matrices.");
-                return rotate_with_normalized_axis(axis.norm(), angle);
-            }
-        };
-
-        template <typename T> struct mat<3,4,T> // mat3x4
-        {
-            using type = T;
-            using member_type = vec4<T>;
-            static constexpr int width = 3, height = 4;
-            static constexpr bool is_floating_point = std::is_floating_point_v<type>;
-            member_type x, y, z;
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &r() {return x;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &r() const {return x;}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &g() {return y;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &g() const {return y;}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &b() {return z;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &b() const {return z;}
-            constexpr mat() : mat(1,0,0,0,1,0,0,0,1,0,0,0) {}
-            constexpr mat(uninit) : x(uninit{}), y(uninit{}), z(uninit{}) {}
-            constexpr mat(const member_type &x, const member_type &y, const member_type &z) : x(x), y(y), z(z) {}
-            constexpr mat(type xx, type yx, type zx, type xy, type yy, type zy, type xz, type yz, type zz, type xw, type yw, type zw) : x(xx,xy,xz,xw), y(yx,yy,yz,yw), z(zx,zy,zz,zw) {}
-            template <typename U> constexpr mat(const mat3x4<U> &obj) : x(obj.x), y(obj.y), z(obj.z) {}
-            template <typename U> requires Custom::convertible<U, mat> explicit constexpr mat(const U &obj) {*this = Custom::Convert<U, mat>{}(obj);}
-            template <typename U> requires Custom::convertible<mat, U> explicit operator U() const {return Custom::Convert<mat, U>{}(*this);}
-            template <typename U> [[nodiscard]] constexpr mat3x4<U> to() const {return mat3x4<U>(U(x.x), U(y.x), U(z.x), U(x.y), U(y.y), U(z.y), U(x.z), U(y.z), U(z.z), U(x.w), U(y.w), U(z.w));}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr       member_type &operator[](int i)       {if (!IMP_MATH_IS_CONSTANT(i)) return *(      member_type *)((      char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; IMP_MATH_UNREACHABLE();}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const member_type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const member_type *)((const char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; IMP_MATH_UNREACHABLE();}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC type *as_array() {return &x.x;}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC const type *as_array() const {return &x.x;}
-            [[nodiscard]] constexpr mat2x4<type> to_vec2() const {return {x, y};}
-            [[nodiscard]] constexpr mat4x4<type> to_vec4(const member_type &nw) const {return {x, y, z, nw};}
-            [[nodiscard]] constexpr mat4x4<type> to_vec4() const {return to_vec4({});}
-            [[nodiscard]] constexpr mat2x2<type> to_mat2x2() const {return {x.x,y.x,x.y,y.y};}
-            [[nodiscard]] constexpr mat2x2<type> to_mat2() const {return to_mat2x2();}
-            [[nodiscard]] constexpr mat3x2<type> to_mat3x2() const {return {x.x,y.x,z.x,x.y,y.y,z.y};}
-            [[nodiscard]] constexpr mat4x2<type> to_mat4x2() const {return {x.x,y.x,z.x,0,x.y,y.y,z.y,0};}
-            [[nodiscard]] constexpr mat2x3<type> to_mat2x3() const {return {x.x,y.x,x.y,y.y,x.z,y.z};}
-            [[nodiscard]] constexpr mat3x3<type> to_mat3x3() const {return {x.x,y.x,z.x,x.y,y.y,z.y,x.z,y.z,z.z};}
-            [[nodiscard]] constexpr mat3x3<type> to_mat3() const {return to_mat3x3();}
-            [[nodiscard]] constexpr mat4x3<type> to_mat4x3() const {return {x.x,y.x,z.x,0,x.y,y.y,z.y,0,x.z,y.z,z.z,0};}
-            [[nodiscard]] constexpr mat2x4<type> to_mat2x4() const {return {x.x,y.x,x.y,y.y,x.z,y.z,x.w,y.w};}
-            [[nodiscard]] constexpr mat4x4<type> to_mat4x4() const {return {x.x,y.x,z.x,0,x.y,y.y,z.y,0,x.z,y.z,z.z,0,x.w,y.w,z.w,1};}
-            [[nodiscard]] constexpr mat4x4<type> to_mat4() const {return to_mat4x4();}
-            [[nodiscard]] constexpr mat4x3<T> transpose() const {return {x.x,x.y,x.z,x.w,y.x,y.y,y.z,y.w,z.x,z.y,z.z,z.w};}
-        };
-
-        template <typename T> struct mat<4,2,T> // mat4x2
-        {
-            using type = T;
-            using member_type = vec2<T>;
-            static constexpr int width = 4, height = 2;
-            static constexpr bool is_floating_point = std::is_floating_point_v<type>;
-            member_type x, y, z, w;
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &r() {return x;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &r() const {return x;}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &g() {return y;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &g() const {return y;}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &b() {return z;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &b() const {return z;}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &a() {return w;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &a() const {return w;}
-            constexpr mat() : mat(1,0,0,0,0,1,0,0) {}
-            constexpr mat(uninit) : x(uninit{}), y(uninit{}), z(uninit{}), w(uninit{}) {}
-            constexpr mat(const member_type &x, const member_type &y, const member_type &z, const member_type &w) : x(x), y(y), z(z), w(w) {}
-            constexpr mat(type xx, type yx, type zx, type wx, type xy, type yy, type zy, type wy) : x(xx,xy), y(yx,yy), z(zx,zy), w(wx,wy) {}
-            template <typename U> constexpr mat(const mat4x2<U> &obj) : x(obj.x), y(obj.y), z(obj.z), w(obj.w) {}
-            template <typename U> requires Custom::convertible<U, mat> explicit constexpr mat(const U &obj) {*this = Custom::Convert<U, mat>{}(obj);}
-            template <typename U> requires Custom::convertible<mat, U> explicit operator U() const {return Custom::Convert<mat, U>{}(*this);}
-            template <typename U> [[nodiscard]] constexpr mat4x2<U> to() const {return mat4x2<U>(U(x.x), U(y.x), U(z.x), U(w.x), U(x.y), U(y.y), U(z.y), U(w.y));}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr       member_type &operator[](int i)       {if (!IMP_MATH_IS_CONSTANT(i)) return *(      member_type *)((      char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; else if (i == 3) return w; IMP_MATH_UNREACHABLE();}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const member_type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const member_type *)((const char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; else if (i == 3) return w; IMP_MATH_UNREACHABLE();}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC type *as_array() {return &x.x;}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC const type *as_array() const {return &x.x;}
-            [[nodiscard]] constexpr mat2x2<type> to_vec2() const {return {x, y};}
-            [[nodiscard]] constexpr mat3x2<type> to_vec3() const {return {x, y, z};}
-            [[nodiscard]] constexpr mat2x2<type> to_mat2x2() const {return {x.x,y.x,x.y,y.y};}
-            [[nodiscard]] constexpr mat2x2<type> to_mat2() const {return to_mat2x2();}
-            [[nodiscard]] constexpr mat3x2<type> to_mat3x2() const {return {x.x,y.x,z.x,x.y,y.y,z.y};}
-            [[nodiscard]] constexpr mat2x3<type> to_mat2x3() const {return {x.x,y.x,x.y,y.y,0,0};}
-            [[nodiscard]] constexpr mat3x3<type> to_mat3x3() const {return {x.x,y.x,z.x,x.y,y.y,z.y,0,0,1};}
-            [[nodiscard]] constexpr mat3x3<type> to_mat3() const {return to_mat3x3();}
-            [[nodiscard]] constexpr mat4x3<type> to_mat4x3() const {return {x.x,y.x,z.x,w.x,x.y,y.y,z.y,w.y,0,0,1,0};}
-            [[nodiscard]] constexpr mat2x4<type> to_mat2x4() const {return {x.x,y.x,x.y,y.y,0,0,0,0};}
-            [[nodiscard]] constexpr mat3x4<type> to_mat3x4() const {return {x.x,y.x,z.x,x.y,y.y,z.y,0,0,1,0,0,0};}
-            [[nodiscard]] constexpr mat4x4<type> to_mat4x4() const {return {x.x,y.x,z.x,w.x,x.y,y.y,z.y,w.y,0,0,1,0,0,0,0,1};}
-            [[nodiscard]] constexpr mat4x4<type> to_mat4() const {return to_mat4x4();}
-            [[nodiscard]] constexpr mat2x4<T> transpose() const {return {x.x,x.y,y.x,y.y,z.x,z.y,w.x,w.y};}
-        };
-
-        template <typename T> struct mat<4,3,T> // mat4x3
-        {
-            using type = T;
-            using member_type = vec3<T>;
-            static constexpr int width = 4, height = 3;
-            static constexpr bool is_floating_point = std::is_floating_point_v<type>;
-            member_type x, y, z, w;
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &r() {return x;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &r() const {return x;}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &g() {return y;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &g() const {return y;}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &b() {return z;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &b() const {return z;}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &a() {return w;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &a() const {return w;}
-            constexpr mat() : mat(1,0,0,0,0,1,0,0,0,0,1,0) {}
-            constexpr mat(uninit) : x(uninit{}), y(uninit{}), z(uninit{}), w(uninit{}) {}
-            constexpr mat(const member_type &x, const member_type &y, const member_type &z, const member_type &w) : x(x), y(y), z(z), w(w) {}
-            constexpr mat(type xx, type yx, type zx, type wx, type xy, type yy, type zy, type wy, type xz, type yz, type zz, type wz) : x(xx,xy,xz), y(yx,yy,yz), z(zx,zy,zz), w(wx,wy,wz) {}
-            template <typename U> constexpr mat(const mat4x3<U> &obj) : x(obj.x), y(obj.y), z(obj.z), w(obj.w) {}
-            template <typename U> requires Custom::convertible<U, mat> explicit constexpr mat(const U &obj) {*this = Custom::Convert<U, mat>{}(obj);}
-            template <typename U> requires Custom::convertible<mat, U> explicit operator U() const {return Custom::Convert<mat, U>{}(*this);}
-            template <typename U> [[nodiscard]] constexpr mat4x3<U> to() const {return mat4x3<U>(U(x.x), U(y.x), U(z.x), U(w.x), U(x.y), U(y.y), U(z.y), U(w.y), U(x.z), U(y.z), U(z.z), U(w.z));}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr       member_type &operator[](int i)       {if (!IMP_MATH_IS_CONSTANT(i)) return *(      member_type *)((      char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; else if (i == 3) return w; IMP_MATH_UNREACHABLE();}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const member_type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const member_type *)((const char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; else if (i == 3) return w; IMP_MATH_UNREACHABLE();}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC type *as_array() {return &x.x;}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC const type *as_array() const {return &x.x;}
-            [[nodiscard]] constexpr mat2x3<type> to_vec2() const {return {x, y};}
-            [[nodiscard]] constexpr mat3x3<type> to_vec3() const {return {x, y, z};}
-            [[nodiscard]] constexpr mat2x2<type> to_mat2x2() const {return {x.x,y.x,x.y,y.y};}
-            [[nodiscard]] constexpr mat2x2<type> to_mat2() const {return to_mat2x2();}
-            [[nodiscard]] constexpr mat3x2<type> to_mat3x2() const {return {x.x,y.x,z.x,x.y,y.y,z.y};}
-            [[nodiscard]] constexpr mat4x2<type> to_mat4x2() const {return {x.x,y.x,z.x,w.x,x.y,y.y,z.y,w.y};}
-            [[nodiscard]] constexpr mat2x3<type> to_mat2x3() const {return {x.x,y.x,x.y,y.y,x.z,y.z};}
-            [[nodiscard]] constexpr mat3x3<type> to_mat3x3() const {return {x.x,y.x,z.x,x.y,y.y,z.y,x.z,y.z,z.z};}
-            [[nodiscard]] constexpr mat3x3<type> to_mat3() const {return to_mat3x3();}
-            [[nodiscard]] constexpr mat2x4<type> to_mat2x4() const {return {x.x,y.x,x.y,y.y,x.z,y.z,0,0};}
-            [[nodiscard]] constexpr mat3x4<type> to_mat3x4() const {return {x.x,y.x,z.x,x.y,y.y,z.y,x.z,y.z,z.z,0,0,0};}
-            [[nodiscard]] constexpr mat4x4<type> to_mat4x4() const {return {x.x,y.x,z.x,w.x,x.y,y.y,z.y,w.y,x.z,y.z,z.z,w.z,0,0,0,1};}
-            [[nodiscard]] constexpr mat4x4<type> to_mat4() const {return to_mat4x4();}
-            [[nodiscard]] constexpr mat3x4<T> transpose() const {return {x.x,x.y,x.z,y.x,y.y,y.z,z.x,z.y,z.z,w.x,w.y,w.z};}
-        };
-
-        template <typename T> struct mat<4,4,T> // mat4x4
-        {
-            using type = T;
-            using member_type = vec4<T>;
-            static constexpr int width = 4, height = 4;
-            static constexpr int size = 4;
-            static constexpr bool is_floating_point = std::is_floating_point_v<type>;
-            member_type x, y, z, w;
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &r() {return x;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &r() const {return x;}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &g() {return y;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &g() const {return y;}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &b() {return z;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &b() const {return z;}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &a() {return w;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &a() const {return w;}
-            constexpr mat() : mat(1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1) {}
-            constexpr mat(uninit) : x(uninit{}), y(uninit{}), z(uninit{}), w(uninit{}) {}
-            constexpr mat(const member_type &x, const member_type &y, const member_type &z, const member_type &w) : x(x), y(y), z(z), w(w) {}
-            constexpr mat(type xx, type yx, type zx, type wx, type xy, type yy, type zy, type wy, type xz, type yz, type zz, type wz, type xw, type yw, type zw, type ww) : x(xx,xy,xz,xw), y(yx,yy,yz,yw), z(zx,zy,zz,zw), w(wx,wy,wz,ww) {}
-            template <typename U> constexpr mat(const mat4x4<U> &obj) : x(obj.x), y(obj.y), z(obj.z), w(obj.w) {}
-            template <typename U> requires Custom::convertible<U, mat> explicit constexpr mat(const U &obj) {*this = Custom::Convert<U, mat>{}(obj);}
-            template <typename U> requires Custom::convertible<mat, U> explicit operator U() const {return Custom::Convert<mat, U>{}(*this);}
-            template <typename U> [[nodiscard]] constexpr mat4x4<U> to() const {return mat4x4<U>(U(x.x), U(y.x), U(z.x), U(w.x), U(x.y), U(y.y), U(z.y), U(w.y), U(x.z), U(y.z), U(z.z), U(w.z), U(x.w), U(y.w), U(z.w), U(w.w));}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr       member_type &operator[](int i)       {if (!IMP_MATH_IS_CONSTANT(i)) return *(      member_type *)((      char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; else if (i == 3) return w; IMP_MATH_UNREACHABLE();}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const member_type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const member_type *)((const char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; else if (i == 3) return w; IMP_MATH_UNREACHABLE();}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC type *as_array() {return &x.x;}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC const type *as_array() const {return &x.x;}
-            [[nodiscard]] constexpr mat2x4<type> to_vec2() const {return {x, y};}
-            [[nodiscard]] constexpr mat3x4<type> to_vec3() const {return {x, y, z};}
-            [[nodiscard]] constexpr mat2x2<type> to_mat2x2() const {return {x.x,y.x,x.y,y.y};}
-            [[nodiscard]] constexpr mat2x2<type> to_mat2() const {return to_mat2x2();}
-            [[nodiscard]] constexpr mat3x2<type> to_mat3x2() const {return {x.x,y.x,z.x,x.y,y.y,z.y};}
-            [[nodiscard]] constexpr mat4x2<type> to_mat4x2() const {return {x.x,y.x,z.x,w.x,x.y,y.y,z.y,w.y};}
-            [[nodiscard]] constexpr mat2x3<type> to_mat2x3() const {return {x.x,y.x,x.y,y.y,x.z,y.z};}
-            [[nodiscard]] constexpr mat3x3<type> to_mat3x3() const {return {x.x,y.x,z.x,x.y,y.y,z.y,x.z,y.z,z.z};}
-            [[nodiscard]] constexpr mat3x3<type> to_mat3() const {return to_mat3x3();}
-            [[nodiscard]] constexpr mat4x3<type> to_mat4x3() const {return {x.x,y.x,z.x,w.x,x.y,y.y,z.y,w.y,x.z,y.z,z.z,w.z};}
-            [[nodiscard]] constexpr mat2x4<type> to_mat2x4() const {return {x.x,y.x,x.y,y.y,x.z,y.z,x.w,y.w};}
-            [[nodiscard]] constexpr mat3x4<type> to_mat3x4() const {return {x.x,y.x,z.x,x.y,y.y,z.y,x.z,y.z,z.z,x.w,y.w,z.w};}
-            [[nodiscard]] constexpr mat4x4<T> transpose() const {return {x.x,x.y,x.z,x.w,y.x,y.y,y.z,y.w,z.x,z.y,z.z,z.w,w.x,w.y,w.z,w.w};}
-            [[nodiscard]] constexpr mat inverse() const
-            {
-                static_assert(is_floating_point, "This function only makes sense for floating-point matrices.");
-
-                mat ret;
-
-                ret.x.x =  y.y * z.z * w.w - y.y * z.w * w.z - z.y * y.z * w.w + z.y * y.w * w.z + w.y * y.z * z.w - w.y * y.w * z.z;
-                ret.y.x = -y.x * z.z * w.w + y.x * z.w * w.z + z.x * y.z * w.w - z.x * y.w * w.z - w.x * y.z * z.w + w.x * y.w * z.z;
-                ret.z.x =  y.x * z.y * w.w - y.x * z.w * w.y - z.x * y.y * w.w + z.x * y.w * w.y + w.x * y.y * z.w - w.x * y.w * z.y;
-                ret.w.x = -y.x * z.y * w.z + y.x * z.z * w.y + z.x * y.y * w.z - z.x * y.z * w.y - w.x * y.y * z.z + w.x * y.z * z.y;
-
-                type d = x.x * ret.x.x + x.y * ret.y.x + x.z * ret.z.x + x.w * ret.w.x;
-                if (d == 0) return {};
-                d = 1 / d;
-                ret.x.x *= d;
-                ret.y.x *= d;
-                ret.z.x *= d;
-                ret.w.x *= d;
-
-                ret.x.y = (-x.y * z.z * w.w + x.y * z.w * w.z + z.y * x.z * w.w - z.y * x.w * w.z - w.y * x.z * z.w + w.y * x.w * z.z) * d;
-                ret.y.y = ( x.x * z.z * w.w - x.x * z.w * w.z - z.x * x.z * w.w + z.x * x.w * w.z + w.x * x.z * z.w - w.x * x.w * z.z) * d;
-                ret.z.y = (-x.x * z.y * w.w + x.x * z.w * w.y + z.x * x.y * w.w - z.x * x.w * w.y - w.x * x.y * z.w + w.x * x.w * z.y) * d;
-                ret.w.y = ( x.x * z.y * w.z - x.x * z.z * w.y - z.x * x.y * w.z + z.x * x.z * w.y + w.x * x.y * z.z - w.x * x.z * z.y) * d;
-                ret.x.z = ( x.y * y.z * w.w - x.y * y.w * w.z - y.y * x.z * w.w + y.y * x.w * w.z + w.y * x.z * y.w - w.y * x.w * y.z) * d;
-                ret.y.z = (-x.x * y.z * w.w + x.x * y.w * w.z + y.x * x.z * w.w - y.x * x.w * w.z - w.x * x.z * y.w + w.x * x.w * y.z) * d;
-                ret.z.z = ( x.x * y.y * w.w - x.x * y.w * w.y - y.x * x.y * w.w + y.x * x.w * w.y + w.x * x.y * y.w - w.x * x.w * y.y) * d;
-                ret.w.z = (-x.x * y.y * w.z + x.x * y.z * w.y + y.x * x.y * w.z - y.x * x.z * w.y - w.x * x.y * y.z + w.x * x.z * y.y) * d;
-                ret.x.w = (-x.y * y.z * z.w + x.y * y.w * z.z + y.y * x.z * z.w - y.y * x.w * z.z - z.y * x.z * y.w + z.y * x.w * y.z) * d;
-                ret.y.w = ( x.x * y.z * z.w - x.x * y.w * z.z - y.x * x.z * z.w + y.x * x.w * z.z + z.x * x.z * y.w - z.x * x.w * y.z) * d;
-                ret.z.w = (-x.x * y.y * z.w + x.x * y.w * z.y + y.x * x.y * z.w - y.x * x.w * z.y - z.x * x.y * y.w + z.x * x.w * y.y) * d;
-                ret.w.w = ( x.x * y.y * z.z - x.x * y.z * z.y - y.x * x.y * z.z + y.x * x.z * z.y + z.x * x.y * y.z - z.x * x.z * y.y) * d;
-
-                return ret;
-            }
-            [[nodiscard]] static constexpr mat scale(vec3<type> v) {return mat3<T>::scale(v).to_mat4();}
-            [[nodiscard]] static constexpr mat ortho(vec2<type> min, vec2<type> max, type near, type far)
-            {
-                static_assert(is_floating_point, "This function only makes sense for floating-point matrices.");
-                return { 2 / (max.x - min.x) , 0                   , 0                , (min.x + max.x) / (min.x - max.x) ,
-                         0                   , 2 / (max.y - min.y) , 0                , (min.y + max.y) / (min.y - max.y) ,
-                         0                   , 0                   , 2 / (near - far) , (near + far) / (near - far)       ,
-                         0                   , 0                   , 0                , 1                                 };
-            }
-            [[nodiscard]] static constexpr mat look_at(vec3<type> src, vec3<type> dst, vec3<type> local_up)
-            {
-                static_assert(is_floating_point, "This function only makes sense for floating-point matrices.");
-                vec3<type> v3 = (src-dst).norm();
-                vec3<type> v1 = local_up.cross(v3).norm();
-                vec3<type> v2 = v3.cross(v1);
-                return { v1.x , v1.y , v1.z , -src.x*v1.x-src.y*v1.y-src.z*v1.z ,
-                         v2.x , v2.y , v2.z , -src.x*v2.x-src.y*v2.y-src.z*v2.z ,
-                         v3.x , v3.y , v3.z , -src.x*v3.x-src.y*v3.y-src.z*v3.z ,
-                         0    , 0    , 0    , 1                                 };
-            }
-            [[nodiscard]] static constexpr mat translate(vec3<type> v)
-            {
-                return { 1 , 0 , 0 , v.x ,
-                         0 , 1 , 0 , v.y ,
-                         0 , 0 , 1 , v.z ,
-                         0 , 0 , 0 , 1   };
-            }
-            [[nodiscard]] static constexpr mat rotate_with_normalized_axis(vec3<type> axis, type angle) {return mat3<T>::rotate_with_normalized_axis(axis, angle).to_mat4();}
-            [[nodiscard]] static constexpr mat rotate(vec3<type> axis, type angle) {return mat3<T>::rotate(axis, angle).to_mat4();}
-            [[nodiscard]] static constexpr mat perspective(type wh_aspect, type y_fov, type near, type far)
-            {
-                static_assert(is_floating_point, "This function only makes sense for floating-point matrices.");
-                y_fov = type(1) / std::tan(y_fov / 2);
-                return { y_fov / wh_aspect , 0     , 0                           , 0                             ,
-                         0                 , y_fov , 0                           , 0                             ,
-                         0                 , 0     , (near + far) / (near - far) , 2 * near * far / (near - far) ,
-                         0                 , 0     , -1                          , 0                             };
-            }
-        };
-
-        template <scalar ...P> requires (sizeof...(P) == 4) mat(P...) -> mat<2, 2, larger_t<P...>>;
-        template <scalar ...P> requires (sizeof...(P) == 9) mat(P...) -> mat<3, 3, larger_t<P...>>;
-        template <scalar ...P> requires (sizeof...(P) == 16) mat(P...) -> mat<4, 4, larger_t<P...>>;
-        template <typename ...P> requires (sizeof...(P) >= 2 && sizeof...(P) <= 4 && ((vec_size_v<P> == 2) && ...)) mat(P...) -> mat<sizeof...(P), 2, larger_t<typename P::type...>>;
-        template <typename ...P> requires (sizeof...(P) >= 2 && sizeof...(P) <= 4 && ((vec_size_v<P> == 3) && ...)) mat(P...) -> mat<sizeof...(P), 3, larger_t<typename P::type...>>;
-        template <typename ...P> requires (sizeof...(P) >= 2 && sizeof...(P) <= 4 && ((vec_size_v<P> == 4) && ...)) mat(P...) -> mat<sizeof...(P), 4, larger_t<typename P::type...>>;
-        //} Matrices
     }
 
     inline namespace Utility // Helpers for operators
@@ -1202,16 +557,16 @@ namespace Math
         template <vector V> IMP_MATH_SMALL_FUNC constexpr V operator++(V &v, int) {V ret = v; apply_elementwise([](vec_base_t<V> &v) IMP_MATH_SMALL_LAMBDA {++v;}, v); return ret;}
         template <vector V> IMP_MATH_SMALL_FUNC constexpr V &operator--(V &v) {apply_elementwise([](vec_base_t<V> &v) IMP_MATH_SMALL_LAMBDA {--v;}, v); return v;}
         template <vector V> IMP_MATH_SMALL_FUNC constexpr V operator--(V &v, int) {V ret = v; apply_elementwise([](vec_base_t<V> &v) IMP_MATH_SMALL_LAMBDA {--v;}, v); return ret;}
-        template <vector A, vector_or_scalar B> IMP_MATH_SMALL_FUNC constexpr auto operator+=(A &a, const B &b) -> std::enable_if_t<have_common_vec_size<vec_size_strong_v<A>, vec_size_strong_v<B>> && (std::is_floating_point_v<vec_base_t<B>> <= std::is_floating_point_v<vec_base_t<A>>), decltype(void(std::declval<vec_base_t<A> &>() += std::declval<vec_base_t<B>>()), std::declval<A &>())> {apply_elementwise([](vec_base_t<A> &a, vec_base_t<B> b) IMP_MATH_SMALL_LAMBDA {a += b;}, a, b); return a;}
-        template <vector A, vector_or_scalar B> IMP_MATH_SMALL_FUNC constexpr auto operator-=(A &a, const B &b) -> std::enable_if_t<have_common_vec_size<vec_size_strong_v<A>, vec_size_strong_v<B>> && (std::is_floating_point_v<vec_base_t<B>> <= std::is_floating_point_v<vec_base_t<A>>), decltype(void(std::declval<vec_base_t<A> &>() -= std::declval<vec_base_t<B>>()), std::declval<A &>())> {apply_elementwise([](vec_base_t<A> &a, vec_base_t<B> b) IMP_MATH_SMALL_LAMBDA {a -= b;}, a, b); return a;}
-        template <vector A, vector_or_scalar B> IMP_MATH_SMALL_FUNC constexpr auto operator*=(A &a, const B &b) -> std::enable_if_t<have_common_vec_size<vec_size_strong_v<A>, vec_size_strong_v<B>> && (std::is_floating_point_v<vec_base_t<B>> <= std::is_floating_point_v<vec_base_t<A>>), decltype(void(std::declval<vec_base_t<A> &>() *= std::declval<vec_base_t<B>>()), std::declval<A &>())> {apply_elementwise([](vec_base_t<A> &a, vec_base_t<B> b) IMP_MATH_SMALL_LAMBDA {a *= b;}, a, b); return a;}
-        template <vector A, vector_or_scalar B> IMP_MATH_SMALL_FUNC constexpr auto operator/=(A &a, const B &b) -> std::enable_if_t<have_common_vec_size<vec_size_strong_v<A>, vec_size_strong_v<B>> && (std::is_floating_point_v<vec_base_t<B>> <= std::is_floating_point_v<vec_base_t<A>>), decltype(void(std::declval<vec_base_t<A> &>() /= std::declval<vec_base_t<B>>()), std::declval<A &>())> {apply_elementwise([](vec_base_t<A> &a, vec_base_t<B> b) IMP_MATH_SMALL_LAMBDA {a /= b;}, a, b); return a;}
-        template <vector A, vector_or_scalar B> IMP_MATH_SMALL_FUNC constexpr auto operator%=(A &a, const B &b) -> std::enable_if_t<have_common_vec_size<vec_size_strong_v<A>, vec_size_strong_v<B>> && (std::is_floating_point_v<vec_base_t<B>> <= std::is_floating_point_v<vec_base_t<A>>), decltype(void(std::declval<vec_base_t<A> &>() %= std::declval<vec_base_t<B>>()), std::declval<A &>())> {apply_elementwise([](vec_base_t<A> &a, vec_base_t<B> b) IMP_MATH_SMALL_LAMBDA {a %= b;}, a, b); return a;}
-        template <vector A, vector_or_scalar B> IMP_MATH_SMALL_FUNC constexpr auto operator^=(A &a, const B &b) -> std::enable_if_t<have_common_vec_size<vec_size_strong_v<A>, vec_size_strong_v<B>> && (std::is_floating_point_v<vec_base_t<B>> <= std::is_floating_point_v<vec_base_t<A>>), decltype(void(std::declval<vec_base_t<A> &>() ^= std::declval<vec_base_t<B>>()), std::declval<A &>())> {apply_elementwise([](vec_base_t<A> &a, vec_base_t<B> b) IMP_MATH_SMALL_LAMBDA {a ^= b;}, a, b); return a;}
-        template <vector A, vector_or_scalar B> IMP_MATH_SMALL_FUNC constexpr auto operator&=(A &a, const B &b) -> std::enable_if_t<have_common_vec_size<vec_size_strong_v<A>, vec_size_strong_v<B>> && (std::is_floating_point_v<vec_base_t<B>> <= std::is_floating_point_v<vec_base_t<A>>), decltype(void(std::declval<vec_base_t<A> &>() &= std::declval<vec_base_t<B>>()), std::declval<A &>())> {apply_elementwise([](vec_base_t<A> &a, vec_base_t<B> b) IMP_MATH_SMALL_LAMBDA {a &= b;}, a, b); return a;}
-        template <vector A, vector_or_scalar B> IMP_MATH_SMALL_FUNC constexpr auto operator|=(A &a, const B &b) -> std::enable_if_t<have_common_vec_size<vec_size_strong_v<A>, vec_size_strong_v<B>> && (std::is_floating_point_v<vec_base_t<B>> <= std::is_floating_point_v<vec_base_t<A>>), decltype(void(std::declval<vec_base_t<A> &>() |= std::declval<vec_base_t<B>>()), std::declval<A &>())> {apply_elementwise([](vec_base_t<A> &a, vec_base_t<B> b) IMP_MATH_SMALL_LAMBDA {a |= b;}, a, b); return a;}
-        template <vector A, vector_or_scalar B> IMP_MATH_SMALL_FUNC constexpr auto operator<<=(A &a, const B &b) -> std::enable_if_t<have_common_vec_size<vec_size_strong_v<A>, vec_size_strong_v<B>> && (std::is_floating_point_v<vec_base_t<B>> <= std::is_floating_point_v<vec_base_t<A>>), decltype(void(std::declval<vec_base_t<A> &>() <<= std::declval<vec_base_t<B>>()), std::declval<A &>())> {apply_elementwise([](vec_base_t<A> &a, vec_base_t<B> b) IMP_MATH_SMALL_LAMBDA {a <<= b;}, a, b); return a;}
-        template <vector A, vector_or_scalar B> IMP_MATH_SMALL_FUNC constexpr auto operator>>=(A &a, const B &b) -> std::enable_if_t<have_common_vec_size<vec_size_strong_v<A>, vec_size_strong_v<B>> && (std::is_floating_point_v<vec_base_t<B>> <= std::is_floating_point_v<vec_base_t<A>>), decltype(void(std::declval<vec_base_t<A> &>() >>= std::declval<vec_base_t<B>>()), std::declval<A &>())> {apply_elementwise([](vec_base_t<A> &a, vec_base_t<B> b) IMP_MATH_SMALL_LAMBDA {a >>= b;}, a, b); return a;}
+        template <vector A, safely_convertible_to<A> B> IMP_MATH_SMALL_FUNC constexpr auto operator+=(A &a, const B &b) -> decltype(std::enable_if_t<vector<A> && vector_or_scalar<B>>(), void(std::declval<vec_base_t<A> &>() += std::declval<vec_base_t<B>>()), std::declval<A &>()) {apply_elementwise([](vec_base_t<A> &a, vec_base_t<B> b) IMP_MATH_SMALL_LAMBDA {a += b;}, a, b); return a;}
+        template <vector A, safely_convertible_to<A> B> IMP_MATH_SMALL_FUNC constexpr auto operator-=(A &a, const B &b) -> decltype(std::enable_if_t<vector<A> && vector_or_scalar<B>>(), void(std::declval<vec_base_t<A> &>() -= std::declval<vec_base_t<B>>()), std::declval<A &>()) {apply_elementwise([](vec_base_t<A> &a, vec_base_t<B> b) IMP_MATH_SMALL_LAMBDA {a -= b;}, a, b); return a;}
+        template <vector A, safely_convertible_to<A> B> IMP_MATH_SMALL_FUNC constexpr auto operator*=(A &a, const B &b) -> decltype(std::enable_if_t<vector<A> && vector_or_scalar<B>>(), void(std::declval<vec_base_t<A> &>() *= std::declval<vec_base_t<B>>()), std::declval<A &>()) {apply_elementwise([](vec_base_t<A> &a, vec_base_t<B> b) IMP_MATH_SMALL_LAMBDA {a *= b;}, a, b); return a;}
+        template <vector A, safely_convertible_to<A> B> IMP_MATH_SMALL_FUNC constexpr auto operator/=(A &a, const B &b) -> decltype(std::enable_if_t<vector<A> && vector_or_scalar<B>>(), void(std::declval<vec_base_t<A> &>() /= std::declval<vec_base_t<B>>()), std::declval<A &>()) {apply_elementwise([](vec_base_t<A> &a, vec_base_t<B> b) IMP_MATH_SMALL_LAMBDA {a /= b;}, a, b); return a;}
+        template <vector A, safely_convertible_to<A> B> IMP_MATH_SMALL_FUNC constexpr auto operator%=(A &a, const B &b) -> decltype(std::enable_if_t<vector<A> && vector_or_scalar<B>>(), void(std::declval<vec_base_t<A> &>() %= std::declval<vec_base_t<B>>()), std::declval<A &>()) {apply_elementwise([](vec_base_t<A> &a, vec_base_t<B> b) IMP_MATH_SMALL_LAMBDA {a %= b;}, a, b); return a;}
+        template <vector A, safely_convertible_to<A> B> IMP_MATH_SMALL_FUNC constexpr auto operator^=(A &a, const B &b) -> decltype(std::enable_if_t<vector<A> && vector_or_scalar<B>>(), void(std::declval<vec_base_t<A> &>() ^= std::declval<vec_base_t<B>>()), std::declval<A &>()) {apply_elementwise([](vec_base_t<A> &a, vec_base_t<B> b) IMP_MATH_SMALL_LAMBDA {a ^= b;}, a, b); return a;}
+        template <vector A, safely_convertible_to<A> B> IMP_MATH_SMALL_FUNC constexpr auto operator&=(A &a, const B &b) -> decltype(std::enable_if_t<vector<A> && vector_or_scalar<B>>(), void(std::declval<vec_base_t<A> &>() &= std::declval<vec_base_t<B>>()), std::declval<A &>()) {apply_elementwise([](vec_base_t<A> &a, vec_base_t<B> b) IMP_MATH_SMALL_LAMBDA {a &= b;}, a, b); return a;}
+        template <vector A, safely_convertible_to<A> B> IMP_MATH_SMALL_FUNC constexpr auto operator|=(A &a, const B &b) -> decltype(std::enable_if_t<vector<A> && vector_or_scalar<B>>(), void(std::declval<vec_base_t<A> &>() |= std::declval<vec_base_t<B>>()), std::declval<A &>()) {apply_elementwise([](vec_base_t<A> &a, vec_base_t<B> b) IMP_MATH_SMALL_LAMBDA {a |= b;}, a, b); return a;}
+        template <vector A, safely_convertible_to<A> B> IMP_MATH_SMALL_FUNC constexpr auto operator<<=(A &a, const B &b) -> decltype(std::enable_if_t<vector<A> && vector_or_scalar<B>>(), void(std::declval<vec_base_t<A> &>() <<= std::declval<vec_base_t<B>>()), std::declval<A &>()) {apply_elementwise([](vec_base_t<A> &a, vec_base_t<B> b) IMP_MATH_SMALL_LAMBDA {a <<= b;}, a, b); return a;}
+        template <vector A, safely_convertible_to<A> B> IMP_MATH_SMALL_FUNC constexpr auto operator>>=(A &a, const B &b) -> decltype(std::enable_if_t<vector<A> && vector_or_scalar<B>>(), void(std::declval<vec_base_t<A> &>() >>= std::declval<vec_base_t<B>>()), std::declval<A &>()) {apply_elementwise([](vec_base_t<A> &a, vec_base_t<B> b) IMP_MATH_SMALL_LAMBDA {a >>= b;}, a, b); return a;}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator<(const A &a, const B &b) {if constexpr (vector<A>) return compare_elemwise(a) < b; else return a < compare_elemwise(b);}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator<(compare_any<A> &&a, const B &b) {return any_nonzero_elements(apply_elementwise(std::less{}, a.value, b));}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator<(const A &a, compare_any<B> &&b) {return any_nonzero_elements(apply_elementwise(std::less{}, a, b.value));}
@@ -1594,10 +949,19 @@ namespace Math
         }
 
         // Returns the sign of the argument as `int` or `ivecN`.
-        template <typename T> [[nodiscard]] constexpr change_vec_base_t<T,int> sign(T val)
+        template <vector_or_scalar T> [[nodiscard]] constexpr change_vec_base_t<T,int> sign(T val)
         {
             // Works on scalars and vectors.
             return (val > 0) - (val < 0);
+        }
+        // Returns the sign of `a - b`. Unlike `sign(a - b)`, not affected by overflow.
+        // Refuses to work if one of the arguments is a signed integer, and the other is unsigned.
+        template <vector_or_scalar A, vector_or_scalar B>
+        requires((std::is_unsigned_v<vec_base_t<A>> != std::is_unsigned_v<vec_base_t<B>>) <= (std::is_floating_point_v<vec_base_t<A>> || std::is_floating_point_v<vec_base_t<B>>))
+        [[nodiscard]] constexpr vec<common_vec_size_v<vec_size_v<A>, vec_size_v<B>>,int> diffsign(A a, B b)
+        {
+            // Works on scalars and vectors.
+            return (a > b) - (a < b);
         }
 
         // `clamp[_var][_min|_max|_abs] (value, min, max)`.
@@ -1608,12 +972,8 @@ namespace Math
         // If both `min` and `max` are omitted, 0 and 1 are assumed.
         // If bounds contradict each other, only the `max` bound is used.
 
-        template <typename A, typename B> constexpr void clamp_var_min(A &var, B min)
+        template <vector_or_scalar A, safely_convertible_to<A> B> constexpr void clamp_var_min(A &var, B min)
         {
-            static_assert(vector<B> <= vector<A>, "If `min` is a vector, `var` has to be a vector as well.");
-            static_assert(std::is_floating_point_v<vec_base_t<B>> <= std::is_floating_point_v<vec_base_t<A>>, "If `min` is a floating-point, `var` has to be floating-point as well.");
-            static_assert(std::is_floating_point_v<vec_base_t<A>> || std::is_signed_v<vec_base_t<A>> == std::is_signed_v<vec_base_t<B>>, "If both arguments are integral, they must have the same signedness.");
-
             if constexpr (no_vectors_v<A,B>)
             {
                 if (!(var >= min)) // The condition is written like this to catch NaNs, they always compare to false.
@@ -1625,12 +985,8 @@ namespace Math
             }
         }
 
-        template <typename A, typename B> constexpr void clamp_var_max(A &var, B max)
+        template <vector_or_scalar A, safely_convertible_to<A> B> constexpr void clamp_var_max(A &var, B max)
         {
-            static_assert(vector<B> <= vector<A>, "If `max` is a vector, `var` has to be a vector as well.");
-            static_assert(std::is_floating_point_v<vec_base_t<B>> <= std::is_floating_point_v<vec_base_t<A>>, "If `max` is a floating-point, `var` has to be floating-point as well.");
-            static_assert(std::is_floating_point_v<vec_base_t<A>> || std::is_signed_v<vec_base_t<A>> == std::is_signed_v<vec_base_t<B>>, "If both arguments are integral, they must have the same signedness.");
-
             if constexpr (no_vectors_v<A,B>)
             {
                 if (!(var <= max)) // The condition is written like this to catch NaNs, they always compare to false.
@@ -1642,50 +998,50 @@ namespace Math
             }
         }
 
-        template <typename A, typename B, typename C> constexpr void clamp_var(A &var, B min, C max)
+        template <vector_or_scalar A, safely_convertible_to<A> B, safely_convertible_to<A> C> constexpr void clamp_var(A &var, B min, C max)
         {
             clamp_var_min(var, min);
             clamp_var_max(var, max);
         }
 
-        template <typename A, typename B> constexpr void clamp_var_abs(A &var, B abs_max)
+        template <vector_or_scalar A, safely_convertible_to<A> B> constexpr void clamp_var_abs(A &var, B abs_max)
         {
             static_assert(std::is_signed_v<vec_base_t<B>>, "`abs_max` must be signed."); // This allows floating-point types too.
             clamp_var(var, -abs_max, abs_max);
         }
 
-        template <typename A, typename B> [[nodiscard]] constexpr A clamp_min(A val, B min)
+        template <vector_or_scalar A, safely_convertible_to<A> B> [[nodiscard]] constexpr A clamp_min(A val, B min)
         {
             clamp_var_min(val, min);
             return val;
         }
 
-        template <typename A, typename B> [[nodiscard]] constexpr A clamp_max(A val, B max)
+        template <vector_or_scalar A, safely_convertible_to<A> B> [[nodiscard]] constexpr A clamp_max(A val, B max)
         {
             clamp_var_max(val, max);
             return val;
         }
 
-        template <typename A, typename B, typename C> [[nodiscard]] constexpr A clamp(A val, B min, C max)
+        template <vector_or_scalar A, safely_convertible_to<A> B, safely_convertible_to<A> C> [[nodiscard]] constexpr A clamp(A val, B min, C max)
         {
             clamp_var(val, min, max);
             return val;
         }
 
-        template <typename A, typename B> [[nodiscard]] constexpr A clamp_abs(A val, B abs_max)
+        template <vector_or_scalar A, safely_convertible_to<A> B> [[nodiscard]] constexpr A clamp_abs(A val, B abs_max)
         {
             clamp_var_abs(val, abs_max);
             return val;
         }
 
-        template <typename A> [[nodiscard]] constexpr A clamp(A val) {return clamp(val, 0, 1);}
-        template <typename A> [[nodiscard]] constexpr A clamp_min(A val) {return clamp_min(val, 0);}
-        template <typename A> [[nodiscard]] constexpr A clamp_max(A val) {return clamp_max(val, 1);}
-        template <typename A> [[nodiscard]] constexpr A clamp_abs(A val) {return clamp_abs(val, 1);}
-        template <typename A> constexpr void clamp_var(A &var) {clamp_var(var, 0, 1);}
-        template <typename A> constexpr void clamp_var_min(A &var) {clamp_var_min(var, 0);}
-        template <typename A> constexpr void clamp_var_max(A &var) {clamp_var_max(var, 1);}
-        template <typename A> constexpr void clamp_var_abs(A &var) {clamp_var_abs(var, 1);}
+        template <vector_or_scalar A> [[nodiscard]] constexpr A clamp(A val) {return clamp(val, 0, 1);}
+        template <vector_or_scalar A> [[nodiscard]] constexpr A clamp_min(A val) {return clamp_min(val, 0);}
+        template <vector_or_scalar A> [[nodiscard]] constexpr A clamp_max(A val) {return clamp_max(val, 1);}
+        template <vector_or_scalar A> [[nodiscard]] constexpr A clamp_abs(A val) {return clamp_abs(val, 1);}
+        template <vector_or_scalar A> constexpr void clamp_var(A &var) {clamp_var(var, 0, 1);}
+        template <vector_or_scalar A> constexpr void clamp_var_min(A &var) {clamp_var_min(var, 0);}
+        template <vector_or_scalar A> constexpr void clamp_var_max(A &var) {clamp_var_max(var, 1);}
+        template <vector_or_scalar A> constexpr void clamp_var_abs(A &var) {clamp_var_abs(var, 1);}
 
         // Rounds a floating-point scalar or vector.
         // Returns an integral type (`int` by default).
@@ -1962,19 +1318,41 @@ namespace Math
             }
         };
 
+        // Like `nextafter()`, but works with integers as well.
+        template <vector_or_scalar A, vector_or_scalar B>
+        [[nodiscard]] larger_t<A, B> next_value_towards(A value, B target)
+        {
+            using type = larger_t<A, B>;
+            if constexpr (std::is_floating_point_v<vec_base_t<type>>)
+                return nextafter(type(value), type(target));
+            else
+                return type(value) + diffsign(type(target), type(value)); // The plain `sign()` could overflow here.
+        }
+        // Returns the next or previous representable value.
+        // Refuses to increment the largest representable value, and returns it unchanged.
+        // If asked to increment infinity in either direction, returns the closest representable value.
+        // If given NaN, returns NaN.
+        template <bool Prev, vector_or_scalar T>
+        [[nodiscard]] T next_or_prev_value(T value)
+        {
+            return next_value_towards(value, Prev ? std::numeric_limits<vec_base_t<T>>::lowest() : std::numeric_limits<vec_base_t<T>>::max());
+        }
+        template <vector_or_scalar T> [[nodiscard]] T next_value(T value) {return next_or_prev_value<false>(value);}
+        template <vector_or_scalar T> [[nodiscard]] T prev_value(T value) {return next_or_prev_value<true >(value);}
+
         // Shrinks a vector as little as possible to give it specific proportions.
         // Always returns a floating-point type.
-        template <typename A, typename B> [[nodiscard]] constexpr auto shrink_to_proportions(A value, B proportions)
+        template <vector A, vector B> [[nodiscard]] constexpr auto shrink_to_proportions(A value, B proportions)
         {
-            static_assert(vector<A> && vector<B> && vec_size_v<A> == vec_size_v<B>, "Arguments must be vectors of same size.");
+            static_assert(vec_size_v<A> == vec_size_v<B>, "Arguments must be vectors of same size.");
             using type = larger_t<floating_point_t<A>,floating_point_t<B>>;
             return (type(value) / type(proportions)).min() * type(proportions);
         }
         // Expands a vector as little as possible to give it specific proportions.
         // Always returns a floating-point type.
-        template <typename A, typename B> [[nodiscard]] constexpr auto expand_to_proportions(A value, B proportions)
+        template <vector A, vector B> [[nodiscard]] constexpr auto expand_to_proportions(A value, B proportions)
         {
-            static_assert(vector<A> && vector<B> && vec_size_v<A> == vec_size_v<B>, "Arguments must be vectors of same size.");
+            static_assert(vec_size_v<A> == vec_size_v<B>, "Arguments must be vectors of same size.");
             using type = larger_t<floating_point_t<A>,floating_point_t<B>>;
             return (type(value) / type(proportions)).max() * type(proportions);
         }
@@ -2039,7 +1417,7 @@ namespace Math
         // Same, but angle 0 is mapped to `dir` instead of +X.
         template <typename T> [[nodiscard]] constexpr bool less_positively_rotated(vec2<T> dir, vec2<T> a, vec2<T> b)
         {
-            imat2 mat = imat2(dir, dir.rot90());
+            mat2<T> mat(dir, dir.rot90());
             return less_positively_rotated(a * mat, b * mat);
         }
 
@@ -2176,6 +1554,790 @@ namespace Math
             make_cuboid(a, b, step, std::back_inserter(ret));
             return ret;
         }
+    }
+
+    inline namespace Vector // Definitions
+    {
+        //{ Vectors
+        template <typename T> struct vec<2,T> // vec2
+        {
+            using type = T;
+            static constexpr int size = 2;
+            static constexpr bool is_floating_point = std::is_floating_point_v<type>;
+            type x, y;
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &r() {return x;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &r() const {return x;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &g() {return y;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &g() const {return y;}
+            IMP_MATH_SMALL_FUNC constexpr vec() : x{}, y{} {}
+            IMP_MATH_SMALL_FUNC constexpr vec(uninit) {}
+            IMP_MATH_SMALL_FUNC constexpr vec(type x, type y) : x(x), y(y) {}
+            IMP_MATH_SMALL_FUNC explicit constexpr vec(type obj) : x(obj), y(obj) {}
+            template <typename U> IMP_MATH_SMALL_FUNC explicit(!safely_convertible_to<U,T>) constexpr vec(vec2<U> obj) : x(obj.x), y(obj.y) {}
+            template <typename U> requires Custom::convertible<U, vec> explicit constexpr vec(const U &obj) {*this = Custom::Convert<U, vec>{}(obj);}
+            template <typename U> requires Custom::convertible<vec, U> explicit operator U() const {return Custom::Convert<vec, U>{}(*this);}
+            template <typename U> [[nodiscard]] constexpr vec2<U> to() const {return vec2<U>(U(x), U(y));}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr       type &operator[](int i)       {if (!IMP_MATH_IS_CONSTANT(i)) return *(      type *)((      char *)this + sizeof(type)*i); else if (i == 0) return x; else if (i == 1) return y; IMP_MATH_UNREACHABLE();}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const type *)((const char *)this + sizeof(type)*i); else if (i == 0) return x; else if (i == 1) return y; IMP_MATH_UNREACHABLE();}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC type *as_array() {return &x;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC const type *as_array() const {return &x;}
+            [[nodiscard]] explicit constexpr operator bool() const requires(!std::is_same_v<type, bool>) {return any();} // Use the explicit methods below for vectors of bool.
+            [[nodiscard]] constexpr bool any() const {return x || y;}
+            [[nodiscard]] constexpr bool all() const {return x && y;}
+            [[nodiscard]] constexpr bool none() const {return !any();}
+            [[nodiscard]] constexpr bool not_all() const {return !all();}
+            [[nodiscard]] constexpr auto sum() const {return x + y;}
+            [[nodiscard]] constexpr auto diff() const {return x - y;}
+            [[nodiscard]] constexpr auto prod() const {return x * y;}
+            [[nodiscard]] constexpr auto ratio() const {return floating_point_t<type>(x) / floating_point_t<type>(y);}
+            [[nodiscard]] constexpr type min() const {return std::min({x,y});}
+            [[nodiscard]] constexpr type max() const {return std::max({x,y});}
+            [[nodiscard]] constexpr vec abs() const {return vec(std::abs(x), std::abs(y));}
+            [[nodiscard]] constexpr vec3<type> to_vec3(type nz) const {return {x, y, nz};}
+            [[nodiscard]] constexpr vec4<type> to_vec4(type nz, type nw) const {return {x, y, nz, nw};}
+            [[nodiscard]] constexpr vec3<type> to_vec3() const {return {x, y, 0};}
+            [[nodiscard]] constexpr vec4<type> to_vec4() const {return {x, y, 0, 0};}
+            [[nodiscard]] constexpr auto len_sqr() const {return x*x + y*y;}
+            [[nodiscard]] constexpr auto len() const {return std::sqrt(len_sqr());}
+            [[nodiscard]] constexpr auto norm() const -> vec2<decltype(type{}/len())> {if (auto l = len()) return *this / l; else return vec(0);}
+            [[nodiscard]] constexpr auto approx_len() const {return floating_point_t<type>(len_sqr() + 1) / 2;} // Accurate only around `len()==1`.
+            [[nodiscard]] constexpr auto approx_inv_len() const {return 2 / floating_point_t<type>(len_sqr() + 1);}
+            [[nodiscard]] constexpr auto approx_norm() const {return *this * approx_inv_len();} // Guaranteed to converge to `len()==1` eventually, when starting from any finite `len_sqr()`.
+            [[nodiscard]] static constexpr vec dir(type angle, type len = 1) {return vec(std::cos(angle) * len, std::sin(angle) * len); static_assert(is_floating_point, "The vector must be floating-point.");}
+            template <typename U = floating_point_t<type>> [[nodiscard]] constexpr U angle() const {return std::atan2(U(y), U(x));}
+            [[nodiscard]] constexpr vec rot90(int steps = 1) const {switch (steps & 3) {default: return *this; case 1: return {-y,x}; case 2: return -*this; case 3: return {y,-x};}}
+            [[nodiscard]] static constexpr vec dir4(int index, type len = 1) {return vec(len,0).rot90(index);}
+            [[nodiscard]] static constexpr vec dir4_diag(int index, type len = 1) {return vec(len,len).rot90(index);}
+            [[nodiscard]] static constexpr vec dir8(int index, type len = 1) {vec array[8]{vec(len,0),vec(len,len),vec(0,len),vec(-len,len),vec(-len,0),vec(-len,-len),vec(0,-len),vec(len,-len)}; return array[index & 7];}
+            [[nodiscard]] constexpr int angle4_round() const {type s = sum(); type d = diff(); return d<0&&s>=0?1:x<0&&d<=0?2:y<0&&s<=0?3:0;} // Non-cardinal directions round to the closest one, diagnoals round backwards, (0,0) returns zero.
+            [[nodiscard]] constexpr int angle4_floor() const {return y>0&&x<=0?1:x<0?2:y<0?3:0;}
+            [[nodiscard]] constexpr int angle8_sign() const {return y>0?(x>0?1:x==0?2:3):y<0?(x<0?5:x==0?6:7):(x<0?4:0);} // Non-cardinal directions count as diagonals, (0,0) returns zero.
+            [[nodiscard]] constexpr int angle8_floor() const {type s = sum(); type d = diff(); return y<0&&d>=0?(x<0?5:s<0?6:7):x<=0&&d<0?(y<=0?4:s<=0?3:2):y>0&&d<=0?1:0;}
+            template <typename U> [[nodiscard]] constexpr auto dot(const vec2<U> &o) const {return x * o.x + y * o.y;}
+            template <typename U> [[nodiscard]] constexpr auto cross(const vec2<U> &o) const {return x * o.y - y * o.x;}
+            [[nodiscard]] constexpr auto tie() & {return std::tie(x,y);}
+            [[nodiscard]] constexpr auto tie() const & {return std::tie(x,y);}
+            template <int I> [[nodiscard]] constexpr type &get() & {return std::get<I>(tie());}
+            template <int I> [[nodiscard]] constexpr const type &get() const & {return std::get<I>(tie());}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr compare_any<vec> operator()(compare_any_tag) const {return compare_any(*this);}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr compare_all<vec> operator()(compare_all_tag) const {return compare_all(*this);}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr compare_none<vec> operator()(compare_none_tag) const {return compare_none(*this);}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr compare_not_all<vec> operator()(compare_not_all_tag) const {return compare_not_all(*this);}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr compare_elemwise<vec> operator()(compare_elemwise_tag) const {return compare_elemwise(*this);}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect2<T> tiny_rect() const {return rect_to(next_value(*this));}
+            template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect2<larger_t<T,U>> rect_to(vec2<U> b) const {rect2<larger_t<T,U>> ret; ret.a = *this; ret.b = b; return ret;}
+            template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect2<larger_t<T,U>> rect_size(vec2<U> b) const {return rect_to(*this + b);}
+            template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect2<larger_t<T,U>> rect_size(U b) const {return rect_size(vec2<U>(b));}
+            template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect2<larger_t<T,U>> centered_rect_size(vec2<U> b) const {return (*this - b/2).rect_size(b);}
+            template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect2<larger_t<T,U>> centered_rect_size(U b) const {return centered_rect_size(vec2<U>(b));}
+            template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect2<larger_t<T,U>> centered_rect_halfsize(vec2<U> b) const {return (*this - b).rect_to(*this + b);}
+            template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect2<larger_t<T,U>> centered_rect_halfsize(U b) const {return centered_rect_halfsize(vec2<U>(b));}
+        };
+
+        template <typename T> struct vec<3,T> // vec3
+        {
+            using type = T;
+            static constexpr int size = 3;
+            static constexpr bool is_floating_point = std::is_floating_point_v<type>;
+            type x, y, z;
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &r() {return x;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &r() const {return x;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &g() {return y;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &g() const {return y;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &b() {return z;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &b() const {return z;}
+            IMP_MATH_SMALL_FUNC constexpr vec() : x{}, y{}, z{} {}
+            IMP_MATH_SMALL_FUNC constexpr vec(uninit) {}
+            IMP_MATH_SMALL_FUNC constexpr vec(type x, type y, type z) : x(x), y(y), z(z) {}
+            IMP_MATH_SMALL_FUNC explicit constexpr vec(type obj) : x(obj), y(obj), z(obj) {}
+            template <typename U> IMP_MATH_SMALL_FUNC explicit(!safely_convertible_to<U,T>) constexpr vec(vec3<U> obj) : x(obj.x), y(obj.y), z(obj.z) {}
+            template <typename U> requires Custom::convertible<U, vec> explicit constexpr vec(const U &obj) {*this = Custom::Convert<U, vec>{}(obj);}
+            template <typename U> requires Custom::convertible<vec, U> explicit operator U() const {return Custom::Convert<vec, U>{}(*this);}
+            template <typename U> [[nodiscard]] constexpr vec3<U> to() const {return vec3<U>(U(x), U(y), U(z));}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr       type &operator[](int i)       {if (!IMP_MATH_IS_CONSTANT(i)) return *(      type *)((      char *)this + sizeof(type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; IMP_MATH_UNREACHABLE();}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const type *)((const char *)this + sizeof(type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; IMP_MATH_UNREACHABLE();}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC type *as_array() {return &x;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC const type *as_array() const {return &x;}
+            [[nodiscard]] explicit constexpr operator bool() const requires(!std::is_same_v<type, bool>) {return any();} // Use the explicit methods below for vectors of bool.
+            [[nodiscard]] constexpr bool any() const {return x || y || z;}
+            [[nodiscard]] constexpr bool all() const {return x && y && z;}
+            [[nodiscard]] constexpr bool none() const {return !any();}
+            [[nodiscard]] constexpr bool not_all() const {return !all();}
+            [[nodiscard]] constexpr auto sum() const {return x + y + z;}
+            [[nodiscard]] constexpr auto prod() const {return x * y * z;}
+            [[nodiscard]] constexpr type min() const {return std::min({x,y,z});}
+            [[nodiscard]] constexpr type max() const {return std::max({x,y,z});}
+            [[nodiscard]] constexpr vec abs() const {return vec(std::abs(x), std::abs(y), std::abs(z));}
+            [[nodiscard]] constexpr vec2<type> to_vec2() const {return {x, y};}
+            [[nodiscard]] constexpr vec4<type> to_vec4(type nw) const {return {x, y, z, nw};}
+            [[nodiscard]] constexpr vec4<type> to_vec4() const {return {x, y, z, 0};}
+            [[nodiscard]] constexpr auto len_sqr() const {return x*x + y*y + z*z;}
+            [[nodiscard]] constexpr auto len() const {return std::sqrt(len_sqr());}
+            [[nodiscard]] constexpr auto norm() const -> vec3<decltype(type{}/len())> {if (auto l = len()) return *this / l; else return vec(0);}
+            [[nodiscard]] constexpr auto approx_len() const {return floating_point_t<type>(len_sqr() + 1) / 2;} // Accurate only around `len()==1`.
+            [[nodiscard]] constexpr auto approx_inv_len() const {return 2 / floating_point_t<type>(len_sqr() + 1);}
+            [[nodiscard]] constexpr auto approx_norm() const {return *this * approx_inv_len();} // Guaranteed to converge to `len()==1` eventually, when starting from any finite `len_sqr()`.
+            template <typename U> [[nodiscard]] constexpr auto dot(const vec3<U> &o) const {return x * o.x + y * o.y + z * o.z;}
+            template <typename U> [[nodiscard]] constexpr auto cross(const vec3<U> &o) const -> vec3<decltype(x * o.x - x * o.x)> {return {y * o.z - z * o.y, z * o.x - x * o.z, x * o.y - y * o.x};}
+            [[nodiscard]] constexpr auto tie() & {return std::tie(x,y,z);}
+            [[nodiscard]] constexpr auto tie() const & {return std::tie(x,y,z);}
+            template <int I> [[nodiscard]] constexpr type &get() & {return std::get<I>(tie());}
+            template <int I> [[nodiscard]] constexpr const type &get() const & {return std::get<I>(tie());}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr compare_any<vec> operator()(compare_any_tag) const {return compare_any(*this);}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr compare_all<vec> operator()(compare_all_tag) const {return compare_all(*this);}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr compare_none<vec> operator()(compare_none_tag) const {return compare_none(*this);}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr compare_not_all<vec> operator()(compare_not_all_tag) const {return compare_not_all(*this);}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr compare_elemwise<vec> operator()(compare_elemwise_tag) const {return compare_elemwise(*this);}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect3<T> tiny_rect() const {return rect_to(next_value(*this));}
+            template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect3<larger_t<T,U>> rect_to(vec3<U> b) const {rect3<larger_t<T,U>> ret; ret.a = *this; ret.b = b; return ret;}
+            template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect3<larger_t<T,U>> rect_size(vec3<U> b) const {return rect_to(*this + b);}
+            template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect3<larger_t<T,U>> rect_size(U b) const {return rect_size(vec3<U>(b));}
+            template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect3<larger_t<T,U>> centered_rect_size(vec3<U> b) const {return (*this - b/2).rect_size(b);}
+            template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect3<larger_t<T,U>> centered_rect_size(U b) const {return centered_rect_size(vec3<U>(b));}
+            template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect3<larger_t<T,U>> centered_rect_halfsize(vec3<U> b) const {return (*this - b).rect_to(*this + b);}
+            template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect3<larger_t<T,U>> centered_rect_halfsize(U b) const {return centered_rect_halfsize(vec3<U>(b));}
+        };
+
+        template <typename T> struct vec<4,T> // vec4
+        {
+            using type = T;
+            static constexpr int size = 4;
+            static constexpr bool is_floating_point = std::is_floating_point_v<type>;
+            type x, y, z, w;
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &r() {return x;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &r() const {return x;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &g() {return y;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &g() const {return y;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &b() {return z;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &b() const {return z;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &a() {return w;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &a() const {return w;}
+            IMP_MATH_SMALL_FUNC constexpr vec() : x{}, y{}, z{}, w{} {}
+            IMP_MATH_SMALL_FUNC constexpr vec(uninit) {}
+            IMP_MATH_SMALL_FUNC constexpr vec(type x, type y, type z, type w) : x(x), y(y), z(z), w(w) {}
+            IMP_MATH_SMALL_FUNC explicit constexpr vec(type obj) : x(obj), y(obj), z(obj), w(obj) {}
+            template <typename U> IMP_MATH_SMALL_FUNC explicit(!safely_convertible_to<U,T>) constexpr vec(vec4<U> obj) : x(obj.x), y(obj.y), z(obj.z), w(obj.w) {}
+            template <typename U> requires Custom::convertible<U, vec> explicit constexpr vec(const U &obj) {*this = Custom::Convert<U, vec>{}(obj);}
+            template <typename U> requires Custom::convertible<vec, U> explicit operator U() const {return Custom::Convert<vec, U>{}(*this);}
+            template <typename U> [[nodiscard]] constexpr vec4<U> to() const {return vec4<U>(U(x), U(y), U(z), U(w));}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr       type &operator[](int i)       {if (!IMP_MATH_IS_CONSTANT(i)) return *(      type *)((      char *)this + sizeof(type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; else if (i == 3) return w; IMP_MATH_UNREACHABLE();}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const type *)((const char *)this + sizeof(type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; else if (i == 3) return w; IMP_MATH_UNREACHABLE();}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC type *as_array() {return &x;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC const type *as_array() const {return &x;}
+            [[nodiscard]] explicit constexpr operator bool() const requires(!std::is_same_v<type, bool>) {return any();} // Use the explicit methods below for vectors of bool.
+            [[nodiscard]] constexpr bool any() const {return x || y || z || w;}
+            [[nodiscard]] constexpr bool all() const {return x && y && z && w;}
+            [[nodiscard]] constexpr bool none() const {return !any();}
+            [[nodiscard]] constexpr bool not_all() const {return !all();}
+            [[nodiscard]] constexpr auto sum() const {return x + y + z + w;}
+            [[nodiscard]] constexpr auto prod() const {return x * y * z * w;}
+            [[nodiscard]] constexpr type min() const {return std::min({x,y,z,w});}
+            [[nodiscard]] constexpr type max() const {return std::max({x,y,z,w});}
+            [[nodiscard]] constexpr vec abs() const {return vec(std::abs(x), std::abs(y), std::abs(z), std::abs(w));}
+            [[nodiscard]] constexpr vec2<type> to_vec2() const {return {x, y};}
+            [[nodiscard]] constexpr vec3<type> to_vec3() const {return {x, y, z};}
+            [[nodiscard]] constexpr auto len_sqr() const {return x*x + y*y + z*z + w*w;}
+            [[nodiscard]] constexpr auto len() const {return std::sqrt(len_sqr());}
+            [[nodiscard]] constexpr auto norm() const -> vec4<decltype(type{}/len())> {if (auto l = len()) return *this / l; else return vec(0);}
+            [[nodiscard]] constexpr auto approx_len() const {return floating_point_t<type>(len_sqr() + 1) / 2;} // Accurate only around `len()==1`.
+            [[nodiscard]] constexpr auto approx_inv_len() const {return 2 / floating_point_t<type>(len_sqr() + 1);}
+            [[nodiscard]] constexpr auto approx_norm() const {return *this * approx_inv_len();} // Guaranteed to converge to `len()==1` eventually, when starting from any finite `len_sqr()`.
+            template <typename U> [[nodiscard]] constexpr auto dot(const vec4<U> &o) const {return x * o.x + y * o.y + z * o.z + w * o.w;}
+            [[nodiscard]] constexpr auto tie() & {return std::tie(x,y,z,w);}
+            [[nodiscard]] constexpr auto tie() const & {return std::tie(x,y,z,w);}
+            template <int I> [[nodiscard]] constexpr type &get() & {return std::get<I>(tie());}
+            template <int I> [[nodiscard]] constexpr const type &get() const & {return std::get<I>(tie());}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr compare_any<vec> operator()(compare_any_tag) const {return compare_any(*this);}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr compare_all<vec> operator()(compare_all_tag) const {return compare_all(*this);}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr compare_none<vec> operator()(compare_none_tag) const {return compare_none(*this);}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr compare_not_all<vec> operator()(compare_not_all_tag) const {return compare_not_all(*this);}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr compare_elemwise<vec> operator()(compare_elemwise_tag) const {return compare_elemwise(*this);}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect4<T> tiny_rect() const {return rect_to(next_value(*this));}
+            template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect4<larger_t<T,U>> rect_to(vec4<U> b) const {rect4<larger_t<T,U>> ret; ret.a = *this; ret.b = b; return ret;}
+            template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect4<larger_t<T,U>> rect_size(vec4<U> b) const {return rect_to(*this + b);}
+            template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect4<larger_t<T,U>> rect_size(U b) const {return rect_size(vec4<U>(b));}
+            template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect4<larger_t<T,U>> centered_rect_size(vec4<U> b) const {return (*this - b/2).rect_size(b);}
+            template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect4<larger_t<T,U>> centered_rect_size(U b) const {return centered_rect_size(vec4<U>(b));}
+            template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect4<larger_t<T,U>> centered_rect_halfsize(vec4<U> b) const {return (*this - b).rect_to(*this + b);}
+            template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect4<larger_t<T,U>> centered_rect_halfsize(U b) const {return centered_rect_halfsize(vec4<U>(b));}
+        };
+
+        template <typename ...P, typename = std::enable_if_t<sizeof...(P) >= 2 && sizeof...(P) <= 4>> vec(P...) -> vec<sizeof...(P), larger_t<P...>>;
+        //} Vectors
+
+        //{ Matrices
+        template <typename T> struct mat<2,2,T> // mat2x2
+        {
+            using type = T;
+            using member_type = vec2<T>;
+            static constexpr int width = 2, height = 2;
+            static constexpr int size = 2;
+            static constexpr bool is_floating_point = std::is_floating_point_v<type>;
+            member_type x, y;
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &r() {return x;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &r() const {return x;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &g() {return y;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &g() const {return y;}
+            constexpr mat() : mat(1,0,0,1) {}
+            constexpr mat(uninit) : x(uninit{}), y(uninit{}) {}
+            constexpr mat(const member_type &x, const member_type &y) : x(x), y(y) {}
+            constexpr mat(type xx, type yx, type xy, type yy) : x(xx,xy), y(yx,yy) {}
+            template <typename U> explicit(!safely_convertible_to<U,T>) constexpr mat(const mat2x2<U> &obj) : x(obj.x), y(obj.y) {}
+            template <typename U> requires Custom::convertible<U, mat> explicit constexpr mat(const U &obj) {*this = Custom::Convert<U, mat>{}(obj);}
+            template <typename U> requires Custom::convertible<mat, U> explicit operator U() const {return Custom::Convert<mat, U>{}(*this);}
+            template <typename U> [[nodiscard]] constexpr mat2x2<U> to() const {return mat2x2<U>(U(x.x), U(y.x), U(x.y), U(y.y));}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr       member_type &operator[](int i)       {if (!IMP_MATH_IS_CONSTANT(i)) return *(      member_type *)((      char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; IMP_MATH_UNREACHABLE();}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const member_type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const member_type *)((const char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; IMP_MATH_UNREACHABLE();}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC type *as_array() {return &x.x;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC const type *as_array() const {return &x.x;}
+            [[nodiscard]] constexpr mat3x2<type> to_vec3(const member_type &nz) const {return {x, y, nz};}
+            [[nodiscard]] constexpr mat4x2<type> to_vec4(const member_type &nz, const member_type &nw) const {return {x, y, nz, nw};}
+            [[nodiscard]] constexpr mat3x2<type> to_vec3() const {return to_vec3({});}
+            [[nodiscard]] constexpr mat4x2<type> to_vec4() const {return to_vec4({}, {});}
+            [[nodiscard]] constexpr mat3x2<type> to_mat3x2() const {return {x.x,y.x,0,x.y,y.y,0};}
+            [[nodiscard]] constexpr mat4x2<type> to_mat4x2() const {return {x.x,y.x,0,0,x.y,y.y,0,0};}
+            [[nodiscard]] constexpr mat2x3<type> to_mat2x3() const {return {x.x,y.x,x.y,y.y,0,0};}
+            [[nodiscard]] constexpr mat3x3<type> to_mat3x3() const {return {x.x,y.x,0,x.y,y.y,0,0,0,1};}
+            [[nodiscard]] constexpr mat3x3<type> to_mat3() const {return to_mat3x3();}
+            [[nodiscard]] constexpr mat4x3<type> to_mat4x3() const {return {x.x,y.x,0,0,x.y,y.y,0,0,0,0,1,0};}
+            [[nodiscard]] constexpr mat2x4<type> to_mat2x4() const {return {x.x,y.x,x.y,y.y,0,0,0,0};}
+            [[nodiscard]] constexpr mat3x4<type> to_mat3x4() const {return {x.x,y.x,0,x.y,y.y,0,0,0,1,0,0,0};}
+            [[nodiscard]] constexpr mat4x4<type> to_mat4x4() const {return {x.x,y.x,0,0,x.y,y.y,0,0,0,0,1,0,0,0,0,1};}
+            [[nodiscard]] constexpr mat4x4<type> to_mat4() const {return to_mat4x4();}
+            [[nodiscard]] constexpr mat2x2<T> transpose() const {return {x.x,x.y,y.x,y.y};}
+            [[nodiscard]] constexpr mat inverse()
+            {
+                static_assert(is_floating_point, "This function only makes sense for floating-point matrices.");
+
+                mat ret{};
+
+                ret.x.x =  y.y;
+                ret.y.x = -y.x;
+
+                type d = x.x * ret.x.x + x.y * ret.y.x;
+                if (d == 0) return {};
+                d = 1 / d;
+                ret.x.x *= d;
+                ret.y.x *= d;
+
+                ret.x.y = (-x.y) * d;
+                ret.y.y = ( x.x) * d;
+
+                return ret;
+            }
+            [[nodiscard]] static constexpr mat scale(vec2<type> v)
+            {
+                return { v.x , 0   ,
+                         0   , v.y };
+            }
+            [[nodiscard]] static constexpr mat rotate(type angle)
+            {
+                static_assert(is_floating_point, "This function only makes sense for floating-point matrices.");
+                type c = std::cos(angle);
+                type s = std::sin(angle);
+                return { c, -s ,
+                         s, c  };
+            }
+        };
+
+        template <typename T> struct mat<2,3,T> // mat2x3
+        {
+            using type = T;
+            using member_type = vec3<T>;
+            static constexpr int width = 2, height = 3;
+            static constexpr bool is_floating_point = std::is_floating_point_v<type>;
+            member_type x, y;
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &r() {return x;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &r() const {return x;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &g() {return y;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &g() const {return y;}
+            constexpr mat() : mat(1,0,0,1,0,0) {}
+            constexpr mat(uninit) : x(uninit{}), y(uninit{}) {}
+            constexpr mat(const member_type &x, const member_type &y) : x(x), y(y) {}
+            constexpr mat(type xx, type yx, type xy, type yy, type xz, type yz) : x(xx,xy,xz), y(yx,yy,yz) {}
+            template <typename U> explicit(!safely_convertible_to<U,T>) constexpr mat(const mat2x3<U> &obj) : x(obj.x), y(obj.y) {}
+            template <typename U> requires Custom::convertible<U, mat> explicit constexpr mat(const U &obj) {*this = Custom::Convert<U, mat>{}(obj);}
+            template <typename U> requires Custom::convertible<mat, U> explicit operator U() const {return Custom::Convert<mat, U>{}(*this);}
+            template <typename U> [[nodiscard]] constexpr mat2x3<U> to() const {return mat2x3<U>(U(x.x), U(y.x), U(x.y), U(y.y), U(x.z), U(y.z));}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr       member_type &operator[](int i)       {if (!IMP_MATH_IS_CONSTANT(i)) return *(      member_type *)((      char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; IMP_MATH_UNREACHABLE();}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const member_type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const member_type *)((const char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; IMP_MATH_UNREACHABLE();}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC type *as_array() {return &x.x;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC const type *as_array() const {return &x.x;}
+            [[nodiscard]] constexpr mat3x3<type> to_vec3(const member_type &nz) const {return {x, y, nz};}
+            [[nodiscard]] constexpr mat4x3<type> to_vec4(const member_type &nz, const member_type &nw) const {return {x, y, nz, nw};}
+            [[nodiscard]] constexpr mat3x3<type> to_vec3() const {return to_vec3({});}
+            [[nodiscard]] constexpr mat4x3<type> to_vec4() const {return to_vec4({}, {});}
+            [[nodiscard]] constexpr mat2x2<type> to_mat2x2() const {return {x.x,y.x,x.y,y.y};}
+            [[nodiscard]] constexpr mat2x2<type> to_mat2() const {return to_mat2x2();}
+            [[nodiscard]] constexpr mat3x2<type> to_mat3x2() const {return {x.x,y.x,0,x.y,y.y,0};}
+            [[nodiscard]] constexpr mat4x2<type> to_mat4x2() const {return {x.x,y.x,0,0,x.y,y.y,0,0};}
+            [[nodiscard]] constexpr mat3x3<type> to_mat3x3() const {return {x.x,y.x,0,x.y,y.y,0,x.z,y.z,1};}
+            [[nodiscard]] constexpr mat3x3<type> to_mat3() const {return to_mat3x3();}
+            [[nodiscard]] constexpr mat4x3<type> to_mat4x3() const {return {x.x,y.x,0,0,x.y,y.y,0,0,x.z,y.z,1,0};}
+            [[nodiscard]] constexpr mat2x4<type> to_mat2x4() const {return {x.x,y.x,x.y,y.y,x.z,y.z,0,0};}
+            [[nodiscard]] constexpr mat3x4<type> to_mat3x4() const {return {x.x,y.x,0,x.y,y.y,0,x.z,y.z,1,0,0,0};}
+            [[nodiscard]] constexpr mat4x4<type> to_mat4x4() const {return {x.x,y.x,0,0,x.y,y.y,0,0,x.z,y.z,1,0,0,0,0,1};}
+            [[nodiscard]] constexpr mat4x4<type> to_mat4() const {return to_mat4x4();}
+            [[nodiscard]] constexpr mat3x2<T> transpose() const {return {x.x,x.y,x.z,y.x,y.y,y.z};}
+        };
+
+        template <typename T> struct mat<2,4,T> // mat2x4
+        {
+            using type = T;
+            using member_type = vec4<T>;
+            static constexpr int width = 2, height = 4;
+            static constexpr bool is_floating_point = std::is_floating_point_v<type>;
+            member_type x, y;
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &r() {return x;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &r() const {return x;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &g() {return y;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &g() const {return y;}
+            constexpr mat() : mat(1,0,0,1,0,0,0,0) {}
+            constexpr mat(uninit) : x(uninit{}), y(uninit{}) {}
+            constexpr mat(const member_type &x, const member_type &y) : x(x), y(y) {}
+            constexpr mat(type xx, type yx, type xy, type yy, type xz, type yz, type xw, type yw) : x(xx,xy,xz,xw), y(yx,yy,yz,yw) {}
+            template <typename U> explicit(!safely_convertible_to<U,T>) constexpr mat(const mat2x4<U> &obj) : x(obj.x), y(obj.y) {}
+            template <typename U> requires Custom::convertible<U, mat> explicit constexpr mat(const U &obj) {*this = Custom::Convert<U, mat>{}(obj);}
+            template <typename U> requires Custom::convertible<mat, U> explicit operator U() const {return Custom::Convert<mat, U>{}(*this);}
+            template <typename U> [[nodiscard]] constexpr mat2x4<U> to() const {return mat2x4<U>(U(x.x), U(y.x), U(x.y), U(y.y), U(x.z), U(y.z), U(x.w), U(y.w));}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr       member_type &operator[](int i)       {if (!IMP_MATH_IS_CONSTANT(i)) return *(      member_type *)((      char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; IMP_MATH_UNREACHABLE();}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const member_type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const member_type *)((const char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; IMP_MATH_UNREACHABLE();}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC type *as_array() {return &x.x;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC const type *as_array() const {return &x.x;}
+            [[nodiscard]] constexpr mat3x4<type> to_vec3(const member_type &nz) const {return {x, y, nz};}
+            [[nodiscard]] constexpr mat4x4<type> to_vec4(const member_type &nz, const member_type &nw) const {return {x, y, nz, nw};}
+            [[nodiscard]] constexpr mat3x4<type> to_vec3() const {return to_vec3({});}
+            [[nodiscard]] constexpr mat4x4<type> to_vec4() const {return to_vec4({}, {});}
+            [[nodiscard]] constexpr mat2x2<type> to_mat2x2() const {return {x.x,y.x,x.y,y.y};}
+            [[nodiscard]] constexpr mat2x2<type> to_mat2() const {return to_mat2x2();}
+            [[nodiscard]] constexpr mat3x2<type> to_mat3x2() const {return {x.x,y.x,0,x.y,y.y,0};}
+            [[nodiscard]] constexpr mat4x2<type> to_mat4x2() const {return {x.x,y.x,0,0,x.y,y.y,0,0};}
+            [[nodiscard]] constexpr mat2x3<type> to_mat2x3() const {return {x.x,y.x,x.y,y.y,x.z,y.z};}
+            [[nodiscard]] constexpr mat3x3<type> to_mat3x3() const {return {x.x,y.x,0,x.y,y.y,0,x.z,y.z,1};}
+            [[nodiscard]] constexpr mat3x3<type> to_mat3() const {return to_mat3x3();}
+            [[nodiscard]] constexpr mat4x3<type> to_mat4x3() const {return {x.x,y.x,0,0,x.y,y.y,0,0,x.z,y.z,1,0};}
+            [[nodiscard]] constexpr mat3x4<type> to_mat3x4() const {return {x.x,y.x,0,x.y,y.y,0,x.z,y.z,1,x.w,y.w,0};}
+            [[nodiscard]] constexpr mat4x4<type> to_mat4x4() const {return {x.x,y.x,0,0,x.y,y.y,0,0,x.z,y.z,1,0,x.w,y.w,0,1};}
+            [[nodiscard]] constexpr mat4x4<type> to_mat4() const {return to_mat4x4();}
+            [[nodiscard]] constexpr mat4x2<T> transpose() const {return {x.x,x.y,x.z,x.w,y.x,y.y,y.z,y.w};}
+        };
+
+        template <typename T> struct mat<3,2,T> // mat3x2
+        {
+            using type = T;
+            using member_type = vec2<T>;
+            static constexpr int width = 3, height = 2;
+            static constexpr bool is_floating_point = std::is_floating_point_v<type>;
+            member_type x, y, z;
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &r() {return x;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &r() const {return x;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &g() {return y;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &g() const {return y;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &b() {return z;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &b() const {return z;}
+            constexpr mat() : mat(1,0,0,0,1,0) {}
+            constexpr mat(uninit) : x(uninit{}), y(uninit{}), z(uninit{}) {}
+            constexpr mat(const member_type &x, const member_type &y, const member_type &z) : x(x), y(y), z(z) {}
+            constexpr mat(type xx, type yx, type zx, type xy, type yy, type zy) : x(xx,xy), y(yx,yy), z(zx,zy) {}
+            template <typename U> explicit(!safely_convertible_to<U,T>) constexpr mat(const mat3x2<U> &obj) : x(obj.x), y(obj.y), z(obj.z) {}
+            template <typename U> requires Custom::convertible<U, mat> explicit constexpr mat(const U &obj) {*this = Custom::Convert<U, mat>{}(obj);}
+            template <typename U> requires Custom::convertible<mat, U> explicit operator U() const {return Custom::Convert<mat, U>{}(*this);}
+            template <typename U> [[nodiscard]] constexpr mat3x2<U> to() const {return mat3x2<U>(U(x.x), U(y.x), U(z.x), U(x.y), U(y.y), U(z.y));}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr       member_type &operator[](int i)       {if (!IMP_MATH_IS_CONSTANT(i)) return *(      member_type *)((      char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; IMP_MATH_UNREACHABLE();}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const member_type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const member_type *)((const char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; IMP_MATH_UNREACHABLE();}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC type *as_array() {return &x.x;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC const type *as_array() const {return &x.x;}
+            [[nodiscard]] constexpr mat2x2<type> to_vec2() const {return {x, y};}
+            [[nodiscard]] constexpr mat4x2<type> to_vec4(const member_type &nw) const {return {x, y, z, nw};}
+            [[nodiscard]] constexpr mat4x2<type> to_vec4() const {return to_vec4({});}
+            [[nodiscard]] constexpr mat2x2<type> to_mat2x2() const {return {x.x,y.x,x.y,y.y};}
+            [[nodiscard]] constexpr mat2x2<type> to_mat2() const {return to_mat2x2();}
+            [[nodiscard]] constexpr mat4x2<type> to_mat4x2() const {return {x.x,y.x,z.x,0,x.y,y.y,z.y,0};}
+            [[nodiscard]] constexpr mat2x3<type> to_mat2x3() const {return {x.x,y.x,x.y,y.y,0,0};}
+            [[nodiscard]] constexpr mat3x3<type> to_mat3x3() const {return {x.x,y.x,z.x,x.y,y.y,z.y,0,0,1};}
+            [[nodiscard]] constexpr mat3x3<type> to_mat3() const {return to_mat3x3();}
+            [[nodiscard]] constexpr mat4x3<type> to_mat4x3() const {return {x.x,y.x,z.x,0,x.y,y.y,z.y,0,0,0,1,0};}
+            [[nodiscard]] constexpr mat2x4<type> to_mat2x4() const {return {x.x,y.x,x.y,y.y,0,0,0,0};}
+            [[nodiscard]] constexpr mat3x4<type> to_mat3x4() const {return {x.x,y.x,z.x,x.y,y.y,z.y,0,0,1,0,0,0};}
+            [[nodiscard]] constexpr mat4x4<type> to_mat4x4() const {return {x.x,y.x,z.x,0,x.y,y.y,z.y,0,0,0,1,0,0,0,0,1};}
+            [[nodiscard]] constexpr mat4x4<type> to_mat4() const {return to_mat4x4();}
+            [[nodiscard]] constexpr mat2x3<T> transpose() const {return {x.x,x.y,y.x,y.y,z.x,z.y};}
+        };
+
+        template <typename T> struct mat<3,3,T> // mat3x3
+        {
+            using type = T;
+            using member_type = vec3<T>;
+            static constexpr int width = 3, height = 3;
+            static constexpr int size = 3;
+            static constexpr bool is_floating_point = std::is_floating_point_v<type>;
+            member_type x, y, z;
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &r() {return x;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &r() const {return x;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &g() {return y;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &g() const {return y;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &b() {return z;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &b() const {return z;}
+            constexpr mat() : mat(1,0,0,0,1,0,0,0,1) {}
+            constexpr mat(uninit) : x(uninit{}), y(uninit{}), z(uninit{}) {}
+            constexpr mat(const member_type &x, const member_type &y, const member_type &z) : x(x), y(y), z(z) {}
+            constexpr mat(type xx, type yx, type zx, type xy, type yy, type zy, type xz, type yz, type zz) : x(xx,xy,xz), y(yx,yy,yz), z(zx,zy,zz) {}
+            template <typename U> explicit(!safely_convertible_to<U,T>) constexpr mat(const mat3x3<U> &obj) : x(obj.x), y(obj.y), z(obj.z) {}
+            template <typename U> requires Custom::convertible<U, mat> explicit constexpr mat(const U &obj) {*this = Custom::Convert<U, mat>{}(obj);}
+            template <typename U> requires Custom::convertible<mat, U> explicit operator U() const {return Custom::Convert<mat, U>{}(*this);}
+            template <typename U> [[nodiscard]] constexpr mat3x3<U> to() const {return mat3x3<U>(U(x.x), U(y.x), U(z.x), U(x.y), U(y.y), U(z.y), U(x.z), U(y.z), U(z.z));}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr       member_type &operator[](int i)       {if (!IMP_MATH_IS_CONSTANT(i)) return *(      member_type *)((      char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; IMP_MATH_UNREACHABLE();}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const member_type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const member_type *)((const char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; IMP_MATH_UNREACHABLE();}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC type *as_array() {return &x.x;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC const type *as_array() const {return &x.x;}
+            [[nodiscard]] constexpr mat2x3<type> to_vec2() const {return {x, y};}
+            [[nodiscard]] constexpr mat4x3<type> to_vec4(const member_type &nw) const {return {x, y, z, nw};}
+            [[nodiscard]] constexpr mat4x3<type> to_vec4() const {return to_vec4({});}
+            [[nodiscard]] constexpr mat2x2<type> to_mat2x2() const {return {x.x,y.x,x.y,y.y};}
+            [[nodiscard]] constexpr mat2x2<type> to_mat2() const {return to_mat2x2();}
+            [[nodiscard]] constexpr mat3x2<type> to_mat3x2() const {return {x.x,y.x,z.x,x.y,y.y,z.y};}
+            [[nodiscard]] constexpr mat4x2<type> to_mat4x2() const {return {x.x,y.x,z.x,0,x.y,y.y,z.y,0};}
+            [[nodiscard]] constexpr mat2x3<type> to_mat2x3() const {return {x.x,y.x,x.y,y.y,x.z,y.z};}
+            [[nodiscard]] constexpr mat4x3<type> to_mat4x3() const {return {x.x,y.x,z.x,0,x.y,y.y,z.y,0,x.z,y.z,z.z,0};}
+            [[nodiscard]] constexpr mat2x4<type> to_mat2x4() const {return {x.x,y.x,x.y,y.y,x.z,y.z,0,0};}
+            [[nodiscard]] constexpr mat3x4<type> to_mat3x4() const {return {x.x,y.x,z.x,x.y,y.y,z.y,x.z,y.z,z.z,0,0,0};}
+            [[nodiscard]] constexpr mat4x4<type> to_mat4x4() const {return {x.x,y.x,z.x,0,x.y,y.y,z.y,0,x.z,y.z,z.z,0,0,0,0,1};}
+            [[nodiscard]] constexpr mat4x4<type> to_mat4() const {return to_mat4x4();}
+            [[nodiscard]] constexpr mat3x3<T> transpose() const {return {x.x,x.y,x.z,y.x,y.y,y.z,z.x,z.y,z.z};}
+            [[nodiscard]] constexpr mat inverse() const
+            {
+                static_assert(is_floating_point, "This function only makes sense for floating-point matrices.");
+
+                mat ret{};
+
+                ret.x.x =  y.y * z.z - z.y * y.z;
+                ret.y.x = -y.x * z.z + z.x * y.z;
+                ret.z.x =  y.x * z.y - z.x * y.y;
+
+                type d = x.x * ret.x.x + x.y * ret.y.x + x.z * ret.z.x;
+                if (d == 0) return {};
+                d = 1 / d;
+                ret.x.x *= d;
+                ret.y.x *= d;
+                ret.z.x *= d;
+
+                ret.x.y = (-x.y * z.z + z.y * x.z) * d;
+                ret.y.y = ( x.x * z.z - z.x * x.z) * d;
+                ret.z.y = (-x.x * z.y + z.x * x.y) * d;
+                ret.x.z = ( x.y * y.z - y.y * x.z) * d;
+                ret.y.z = (-x.x * y.z + y.x * x.z) * d;
+                ret.z.z = ( x.x * y.y - y.x * x.y) * d;
+
+                return ret;
+            }
+            [[nodiscard]] static constexpr mat scale(vec2<type> v) {return mat2<T>::scale(v).to_mat3();}
+            [[nodiscard]] static constexpr mat scale(vec3<type> v)
+            {
+                return { v.x , 0   , 0   ,
+                         0   , v.y , 0   ,
+                         0   , 0   , v.z };
+            }
+            [[nodiscard]] static constexpr mat ortho(vec2<type> min, vec2<type> max)
+            {
+                static_assert(is_floating_point, "This function only makes sense for floating-point matrices.");
+                return { 2 / (max.x - min.x) , 0                   , (min.x + max.x) / (min.x - max.x) ,
+                         0                   , 2 / (max.y - min.y) , (min.y + max.y) / (min.y - max.y) ,
+                         0                   , 0                   , 1                                 };
+            }
+            [[nodiscard]] static constexpr mat translate(vec2<type> v)
+            {
+                return { 1, 0, v.x ,
+                         0, 1, v.y ,
+                         0, 0, 1   };
+            }
+            [[nodiscard]] static constexpr mat rotate(type angle) {return mat2<T>::rotate(angle).to_mat3();}
+            [[nodiscard]] static constexpr mat rotate_with_normalized_axis(vec3<type> axis, type angle)
+            {
+                type c = std::cos(angle);
+                type s = std::sin(angle);
+                return { axis.x * axis.x * (1 - c) + c          , axis.x * axis.y * (1 - c) - axis.z * s , axis.x * axis.z * (1 - c) + axis.y * s,
+                         axis.y * axis.x * (1 - c) + axis.z * s , axis.y * axis.y * (1 - c) + c          , axis.y * axis.z * (1 - c) - axis.x * s,
+                         axis.x * axis.z * (1 - c) - axis.y * s , axis.y * axis.z * (1 - c) + axis.x * s , axis.z * axis.z * (1 - c) + c         };
+            }
+            [[nodiscard]] static constexpr mat rotate(vec3<type> axis, type angle)
+            {
+                static_assert(is_floating_point, "This function only makes sense for floating-point matrices.");
+                return rotate_with_normalized_axis(axis.norm(), angle);
+            }
+        };
+
+        template <typename T> struct mat<3,4,T> // mat3x4
+        {
+            using type = T;
+            using member_type = vec4<T>;
+            static constexpr int width = 3, height = 4;
+            static constexpr bool is_floating_point = std::is_floating_point_v<type>;
+            member_type x, y, z;
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &r() {return x;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &r() const {return x;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &g() {return y;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &g() const {return y;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &b() {return z;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &b() const {return z;}
+            constexpr mat() : mat(1,0,0,0,1,0,0,0,1,0,0,0) {}
+            constexpr mat(uninit) : x(uninit{}), y(uninit{}), z(uninit{}) {}
+            constexpr mat(const member_type &x, const member_type &y, const member_type &z) : x(x), y(y), z(z) {}
+            constexpr mat(type xx, type yx, type zx, type xy, type yy, type zy, type xz, type yz, type zz, type xw, type yw, type zw) : x(xx,xy,xz,xw), y(yx,yy,yz,yw), z(zx,zy,zz,zw) {}
+            template <typename U> explicit(!safely_convertible_to<U,T>) constexpr mat(const mat3x4<U> &obj) : x(obj.x), y(obj.y), z(obj.z) {}
+            template <typename U> requires Custom::convertible<U, mat> explicit constexpr mat(const U &obj) {*this = Custom::Convert<U, mat>{}(obj);}
+            template <typename U> requires Custom::convertible<mat, U> explicit operator U() const {return Custom::Convert<mat, U>{}(*this);}
+            template <typename U> [[nodiscard]] constexpr mat3x4<U> to() const {return mat3x4<U>(U(x.x), U(y.x), U(z.x), U(x.y), U(y.y), U(z.y), U(x.z), U(y.z), U(z.z), U(x.w), U(y.w), U(z.w));}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr       member_type &operator[](int i)       {if (!IMP_MATH_IS_CONSTANT(i)) return *(      member_type *)((      char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; IMP_MATH_UNREACHABLE();}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const member_type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const member_type *)((const char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; IMP_MATH_UNREACHABLE();}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC type *as_array() {return &x.x;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC const type *as_array() const {return &x.x;}
+            [[nodiscard]] constexpr mat2x4<type> to_vec2() const {return {x, y};}
+            [[nodiscard]] constexpr mat4x4<type> to_vec4(const member_type &nw) const {return {x, y, z, nw};}
+            [[nodiscard]] constexpr mat4x4<type> to_vec4() const {return to_vec4({});}
+            [[nodiscard]] constexpr mat2x2<type> to_mat2x2() const {return {x.x,y.x,x.y,y.y};}
+            [[nodiscard]] constexpr mat2x2<type> to_mat2() const {return to_mat2x2();}
+            [[nodiscard]] constexpr mat3x2<type> to_mat3x2() const {return {x.x,y.x,z.x,x.y,y.y,z.y};}
+            [[nodiscard]] constexpr mat4x2<type> to_mat4x2() const {return {x.x,y.x,z.x,0,x.y,y.y,z.y,0};}
+            [[nodiscard]] constexpr mat2x3<type> to_mat2x3() const {return {x.x,y.x,x.y,y.y,x.z,y.z};}
+            [[nodiscard]] constexpr mat3x3<type> to_mat3x3() const {return {x.x,y.x,z.x,x.y,y.y,z.y,x.z,y.z,z.z};}
+            [[nodiscard]] constexpr mat3x3<type> to_mat3() const {return to_mat3x3();}
+            [[nodiscard]] constexpr mat4x3<type> to_mat4x3() const {return {x.x,y.x,z.x,0,x.y,y.y,z.y,0,x.z,y.z,z.z,0};}
+            [[nodiscard]] constexpr mat2x4<type> to_mat2x4() const {return {x.x,y.x,x.y,y.y,x.z,y.z,x.w,y.w};}
+            [[nodiscard]] constexpr mat4x4<type> to_mat4x4() const {return {x.x,y.x,z.x,0,x.y,y.y,z.y,0,x.z,y.z,z.z,0,x.w,y.w,z.w,1};}
+            [[nodiscard]] constexpr mat4x4<type> to_mat4() const {return to_mat4x4();}
+            [[nodiscard]] constexpr mat4x3<T> transpose() const {return {x.x,x.y,x.z,x.w,y.x,y.y,y.z,y.w,z.x,z.y,z.z,z.w};}
+        };
+
+        template <typename T> struct mat<4,2,T> // mat4x2
+        {
+            using type = T;
+            using member_type = vec2<T>;
+            static constexpr int width = 4, height = 2;
+            static constexpr bool is_floating_point = std::is_floating_point_v<type>;
+            member_type x, y, z, w;
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &r() {return x;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &r() const {return x;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &g() {return y;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &g() const {return y;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &b() {return z;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &b() const {return z;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &a() {return w;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &a() const {return w;}
+            constexpr mat() : mat(1,0,0,0,0,1,0,0) {}
+            constexpr mat(uninit) : x(uninit{}), y(uninit{}), z(uninit{}), w(uninit{}) {}
+            constexpr mat(const member_type &x, const member_type &y, const member_type &z, const member_type &w) : x(x), y(y), z(z), w(w) {}
+            constexpr mat(type xx, type yx, type zx, type wx, type xy, type yy, type zy, type wy) : x(xx,xy), y(yx,yy), z(zx,zy), w(wx,wy) {}
+            template <typename U> explicit(!safely_convertible_to<U,T>) constexpr mat(const mat4x2<U> &obj) : x(obj.x), y(obj.y), z(obj.z), w(obj.w) {}
+            template <typename U> requires Custom::convertible<U, mat> explicit constexpr mat(const U &obj) {*this = Custom::Convert<U, mat>{}(obj);}
+            template <typename U> requires Custom::convertible<mat, U> explicit operator U() const {return Custom::Convert<mat, U>{}(*this);}
+            template <typename U> [[nodiscard]] constexpr mat4x2<U> to() const {return mat4x2<U>(U(x.x), U(y.x), U(z.x), U(w.x), U(x.y), U(y.y), U(z.y), U(w.y));}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr       member_type &operator[](int i)       {if (!IMP_MATH_IS_CONSTANT(i)) return *(      member_type *)((      char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; else if (i == 3) return w; IMP_MATH_UNREACHABLE();}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const member_type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const member_type *)((const char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; else if (i == 3) return w; IMP_MATH_UNREACHABLE();}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC type *as_array() {return &x.x;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC const type *as_array() const {return &x.x;}
+            [[nodiscard]] constexpr mat2x2<type> to_vec2() const {return {x, y};}
+            [[nodiscard]] constexpr mat3x2<type> to_vec3() const {return {x, y, z};}
+            [[nodiscard]] constexpr mat2x2<type> to_mat2x2() const {return {x.x,y.x,x.y,y.y};}
+            [[nodiscard]] constexpr mat2x2<type> to_mat2() const {return to_mat2x2();}
+            [[nodiscard]] constexpr mat3x2<type> to_mat3x2() const {return {x.x,y.x,z.x,x.y,y.y,z.y};}
+            [[nodiscard]] constexpr mat2x3<type> to_mat2x3() const {return {x.x,y.x,x.y,y.y,0,0};}
+            [[nodiscard]] constexpr mat3x3<type> to_mat3x3() const {return {x.x,y.x,z.x,x.y,y.y,z.y,0,0,1};}
+            [[nodiscard]] constexpr mat3x3<type> to_mat3() const {return to_mat3x3();}
+            [[nodiscard]] constexpr mat4x3<type> to_mat4x3() const {return {x.x,y.x,z.x,w.x,x.y,y.y,z.y,w.y,0,0,1,0};}
+            [[nodiscard]] constexpr mat2x4<type> to_mat2x4() const {return {x.x,y.x,x.y,y.y,0,0,0,0};}
+            [[nodiscard]] constexpr mat3x4<type> to_mat3x4() const {return {x.x,y.x,z.x,x.y,y.y,z.y,0,0,1,0,0,0};}
+            [[nodiscard]] constexpr mat4x4<type> to_mat4x4() const {return {x.x,y.x,z.x,w.x,x.y,y.y,z.y,w.y,0,0,1,0,0,0,0,1};}
+            [[nodiscard]] constexpr mat4x4<type> to_mat4() const {return to_mat4x4();}
+            [[nodiscard]] constexpr mat2x4<T> transpose() const {return {x.x,x.y,y.x,y.y,z.x,z.y,w.x,w.y};}
+        };
+
+        template <typename T> struct mat<4,3,T> // mat4x3
+        {
+            using type = T;
+            using member_type = vec3<T>;
+            static constexpr int width = 4, height = 3;
+            static constexpr bool is_floating_point = std::is_floating_point_v<type>;
+            member_type x, y, z, w;
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &r() {return x;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &r() const {return x;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &g() {return y;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &g() const {return y;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &b() {return z;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &b() const {return z;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &a() {return w;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &a() const {return w;}
+            constexpr mat() : mat(1,0,0,0,0,1,0,0,0,0,1,0) {}
+            constexpr mat(uninit) : x(uninit{}), y(uninit{}), z(uninit{}), w(uninit{}) {}
+            constexpr mat(const member_type &x, const member_type &y, const member_type &z, const member_type &w) : x(x), y(y), z(z), w(w) {}
+            constexpr mat(type xx, type yx, type zx, type wx, type xy, type yy, type zy, type wy, type xz, type yz, type zz, type wz) : x(xx,xy,xz), y(yx,yy,yz), z(zx,zy,zz), w(wx,wy,wz) {}
+            template <typename U> explicit(!safely_convertible_to<U,T>) constexpr mat(const mat4x3<U> &obj) : x(obj.x), y(obj.y), z(obj.z), w(obj.w) {}
+            template <typename U> requires Custom::convertible<U, mat> explicit constexpr mat(const U &obj) {*this = Custom::Convert<U, mat>{}(obj);}
+            template <typename U> requires Custom::convertible<mat, U> explicit operator U() const {return Custom::Convert<mat, U>{}(*this);}
+            template <typename U> [[nodiscard]] constexpr mat4x3<U> to() const {return mat4x3<U>(U(x.x), U(y.x), U(z.x), U(w.x), U(x.y), U(y.y), U(z.y), U(w.y), U(x.z), U(y.z), U(z.z), U(w.z));}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr       member_type &operator[](int i)       {if (!IMP_MATH_IS_CONSTANT(i)) return *(      member_type *)((      char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; else if (i == 3) return w; IMP_MATH_UNREACHABLE();}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const member_type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const member_type *)((const char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; else if (i == 3) return w; IMP_MATH_UNREACHABLE();}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC type *as_array() {return &x.x;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC const type *as_array() const {return &x.x;}
+            [[nodiscard]] constexpr mat2x3<type> to_vec2() const {return {x, y};}
+            [[nodiscard]] constexpr mat3x3<type> to_vec3() const {return {x, y, z};}
+            [[nodiscard]] constexpr mat2x2<type> to_mat2x2() const {return {x.x,y.x,x.y,y.y};}
+            [[nodiscard]] constexpr mat2x2<type> to_mat2() const {return to_mat2x2();}
+            [[nodiscard]] constexpr mat3x2<type> to_mat3x2() const {return {x.x,y.x,z.x,x.y,y.y,z.y};}
+            [[nodiscard]] constexpr mat4x2<type> to_mat4x2() const {return {x.x,y.x,z.x,w.x,x.y,y.y,z.y,w.y};}
+            [[nodiscard]] constexpr mat2x3<type> to_mat2x3() const {return {x.x,y.x,x.y,y.y,x.z,y.z};}
+            [[nodiscard]] constexpr mat3x3<type> to_mat3x3() const {return {x.x,y.x,z.x,x.y,y.y,z.y,x.z,y.z,z.z};}
+            [[nodiscard]] constexpr mat3x3<type> to_mat3() const {return to_mat3x3();}
+            [[nodiscard]] constexpr mat2x4<type> to_mat2x4() const {return {x.x,y.x,x.y,y.y,x.z,y.z,0,0};}
+            [[nodiscard]] constexpr mat3x4<type> to_mat3x4() const {return {x.x,y.x,z.x,x.y,y.y,z.y,x.z,y.z,z.z,0,0,0};}
+            [[nodiscard]] constexpr mat4x4<type> to_mat4x4() const {return {x.x,y.x,z.x,w.x,x.y,y.y,z.y,w.y,x.z,y.z,z.z,w.z,0,0,0,1};}
+            [[nodiscard]] constexpr mat4x4<type> to_mat4() const {return to_mat4x4();}
+            [[nodiscard]] constexpr mat3x4<T> transpose() const {return {x.x,x.y,x.z,y.x,y.y,y.z,z.x,z.y,z.z,w.x,w.y,w.z};}
+        };
+
+        template <typename T> struct mat<4,4,T> // mat4x4
+        {
+            using type = T;
+            using member_type = vec4<T>;
+            static constexpr int width = 4, height = 4;
+            static constexpr int size = 4;
+            static constexpr bool is_floating_point = std::is_floating_point_v<type>;
+            member_type x, y, z, w;
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &r() {return x;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &r() const {return x;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &g() {return y;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &g() const {return y;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &b() {return z;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &b() const {return z;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr type &a() {return w;} [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const type &a() const {return w;}
+            constexpr mat() : mat(1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1) {}
+            constexpr mat(uninit) : x(uninit{}), y(uninit{}), z(uninit{}), w(uninit{}) {}
+            constexpr mat(const member_type &x, const member_type &y, const member_type &z, const member_type &w) : x(x), y(y), z(z), w(w) {}
+            constexpr mat(type xx, type yx, type zx, type wx, type xy, type yy, type zy, type wy, type xz, type yz, type zz, type wz, type xw, type yw, type zw, type ww) : x(xx,xy,xz,xw), y(yx,yy,yz,yw), z(zx,zy,zz,zw), w(wx,wy,wz,ww) {}
+            template <typename U> explicit(!safely_convertible_to<U,T>) constexpr mat(const mat4x4<U> &obj) : x(obj.x), y(obj.y), z(obj.z), w(obj.w) {}
+            template <typename U> requires Custom::convertible<U, mat> explicit constexpr mat(const U &obj) {*this = Custom::Convert<U, mat>{}(obj);}
+            template <typename U> requires Custom::convertible<mat, U> explicit operator U() const {return Custom::Convert<mat, U>{}(*this);}
+            template <typename U> [[nodiscard]] constexpr mat4x4<U> to() const {return mat4x4<U>(U(x.x), U(y.x), U(z.x), U(w.x), U(x.y), U(y.y), U(z.y), U(w.y), U(x.z), U(y.z), U(z.z), U(w.z), U(x.w), U(y.w), U(z.w), U(w.w));}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr       member_type &operator[](int i)       {if (!IMP_MATH_IS_CONSTANT(i)) return *(      member_type *)((      char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; else if (i == 3) return w; IMP_MATH_UNREACHABLE();}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const member_type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const member_type *)((const char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; else if (i == 3) return w; IMP_MATH_UNREACHABLE();}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC type *as_array() {return &x.x;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC const type *as_array() const {return &x.x;}
+            [[nodiscard]] constexpr mat2x4<type> to_vec2() const {return {x, y};}
+            [[nodiscard]] constexpr mat3x4<type> to_vec3() const {return {x, y, z};}
+            [[nodiscard]] constexpr mat2x2<type> to_mat2x2() const {return {x.x,y.x,x.y,y.y};}
+            [[nodiscard]] constexpr mat2x2<type> to_mat2() const {return to_mat2x2();}
+            [[nodiscard]] constexpr mat3x2<type> to_mat3x2() const {return {x.x,y.x,z.x,x.y,y.y,z.y};}
+            [[nodiscard]] constexpr mat4x2<type> to_mat4x2() const {return {x.x,y.x,z.x,w.x,x.y,y.y,z.y,w.y};}
+            [[nodiscard]] constexpr mat2x3<type> to_mat2x3() const {return {x.x,y.x,x.y,y.y,x.z,y.z};}
+            [[nodiscard]] constexpr mat3x3<type> to_mat3x3() const {return {x.x,y.x,z.x,x.y,y.y,z.y,x.z,y.z,z.z};}
+            [[nodiscard]] constexpr mat3x3<type> to_mat3() const {return to_mat3x3();}
+            [[nodiscard]] constexpr mat4x3<type> to_mat4x3() const {return {x.x,y.x,z.x,w.x,x.y,y.y,z.y,w.y,x.z,y.z,z.z,w.z};}
+            [[nodiscard]] constexpr mat2x4<type> to_mat2x4() const {return {x.x,y.x,x.y,y.y,x.z,y.z,x.w,y.w};}
+            [[nodiscard]] constexpr mat3x4<type> to_mat3x4() const {return {x.x,y.x,z.x,x.y,y.y,z.y,x.z,y.z,z.z,x.w,y.w,z.w};}
+            [[nodiscard]] constexpr mat4x4<T> transpose() const {return {x.x,x.y,x.z,x.w,y.x,y.y,y.z,y.w,z.x,z.y,z.z,z.w,w.x,w.y,w.z,w.w};}
+            [[nodiscard]] constexpr mat inverse() const
+            {
+                static_assert(is_floating_point, "This function only makes sense for floating-point matrices.");
+
+                mat ret;
+
+                ret.x.x =  y.y * z.z * w.w - y.y * z.w * w.z - z.y * y.z * w.w + z.y * y.w * w.z + w.y * y.z * z.w - w.y * y.w * z.z;
+                ret.y.x = -y.x * z.z * w.w + y.x * z.w * w.z + z.x * y.z * w.w - z.x * y.w * w.z - w.x * y.z * z.w + w.x * y.w * z.z;
+                ret.z.x =  y.x * z.y * w.w - y.x * z.w * w.y - z.x * y.y * w.w + z.x * y.w * w.y + w.x * y.y * z.w - w.x * y.w * z.y;
+                ret.w.x = -y.x * z.y * w.z + y.x * z.z * w.y + z.x * y.y * w.z - z.x * y.z * w.y - w.x * y.y * z.z + w.x * y.z * z.y;
+
+                type d = x.x * ret.x.x + x.y * ret.y.x + x.z * ret.z.x + x.w * ret.w.x;
+                if (d == 0) return {};
+                d = 1 / d;
+                ret.x.x *= d;
+                ret.y.x *= d;
+                ret.z.x *= d;
+                ret.w.x *= d;
+
+                ret.x.y = (-x.y * z.z * w.w + x.y * z.w * w.z + z.y * x.z * w.w - z.y * x.w * w.z - w.y * x.z * z.w + w.y * x.w * z.z) * d;
+                ret.y.y = ( x.x * z.z * w.w - x.x * z.w * w.z - z.x * x.z * w.w + z.x * x.w * w.z + w.x * x.z * z.w - w.x * x.w * z.z) * d;
+                ret.z.y = (-x.x * z.y * w.w + x.x * z.w * w.y + z.x * x.y * w.w - z.x * x.w * w.y - w.x * x.y * z.w + w.x * x.w * z.y) * d;
+                ret.w.y = ( x.x * z.y * w.z - x.x * z.z * w.y - z.x * x.y * w.z + z.x * x.z * w.y + w.x * x.y * z.z - w.x * x.z * z.y) * d;
+                ret.x.z = ( x.y * y.z * w.w - x.y * y.w * w.z - y.y * x.z * w.w + y.y * x.w * w.z + w.y * x.z * y.w - w.y * x.w * y.z) * d;
+                ret.y.z = (-x.x * y.z * w.w + x.x * y.w * w.z + y.x * x.z * w.w - y.x * x.w * w.z - w.x * x.z * y.w + w.x * x.w * y.z) * d;
+                ret.z.z = ( x.x * y.y * w.w - x.x * y.w * w.y - y.x * x.y * w.w + y.x * x.w * w.y + w.x * x.y * y.w - w.x * x.w * y.y) * d;
+                ret.w.z = (-x.x * y.y * w.z + x.x * y.z * w.y + y.x * x.y * w.z - y.x * x.z * w.y - w.x * x.y * y.z + w.x * x.z * y.y) * d;
+                ret.x.w = (-x.y * y.z * z.w + x.y * y.w * z.z + y.y * x.z * z.w - y.y * x.w * z.z - z.y * x.z * y.w + z.y * x.w * y.z) * d;
+                ret.y.w = ( x.x * y.z * z.w - x.x * y.w * z.z - y.x * x.z * z.w + y.x * x.w * z.z + z.x * x.z * y.w - z.x * x.w * y.z) * d;
+                ret.z.w = (-x.x * y.y * z.w + x.x * y.w * z.y + y.x * x.y * z.w - y.x * x.w * z.y - z.x * x.y * y.w + z.x * x.w * y.y) * d;
+                ret.w.w = ( x.x * y.y * z.z - x.x * y.z * z.y - y.x * x.y * z.z + y.x * x.z * z.y + z.x * x.y * y.z - z.x * x.z * y.y) * d;
+
+                return ret;
+            }
+            [[nodiscard]] static constexpr mat scale(vec3<type> v) {return mat3<T>::scale(v).to_mat4();}
+            [[nodiscard]] static constexpr mat ortho(vec2<type> min, vec2<type> max, type near, type far)
+            {
+                static_assert(is_floating_point, "This function only makes sense for floating-point matrices.");
+                return { 2 / (max.x - min.x) , 0                   , 0                , (min.x + max.x) / (min.x - max.x) ,
+                         0                   , 2 / (max.y - min.y) , 0                , (min.y + max.y) / (min.y - max.y) ,
+                         0                   , 0                   , 2 / (near - far) , (near + far) / (near - far)       ,
+                         0                   , 0                   , 0                , 1                                 };
+            }
+            [[nodiscard]] static constexpr mat look_at(vec3<type> src, vec3<type> dst, vec3<type> local_up)
+            {
+                static_assert(is_floating_point, "This function only makes sense for floating-point matrices.");
+                vec3<type> v3 = (src-dst).norm();
+                vec3<type> v1 = local_up.cross(v3).norm();
+                vec3<type> v2 = v3.cross(v1);
+                return { v1.x , v1.y , v1.z , -src.x*v1.x-src.y*v1.y-src.z*v1.z ,
+                         v2.x , v2.y , v2.z , -src.x*v2.x-src.y*v2.y-src.z*v2.z ,
+                         v3.x , v3.y , v3.z , -src.x*v3.x-src.y*v3.y-src.z*v3.z ,
+                         0    , 0    , 0    , 1                                 };
+            }
+            [[nodiscard]] static constexpr mat translate(vec3<type> v)
+            {
+                return { 1 , 0 , 0 , v.x ,
+                         0 , 1 , 0 , v.y ,
+                         0 , 0 , 1 , v.z ,
+                         0 , 0 , 0 , 1   };
+            }
+            [[nodiscard]] static constexpr mat rotate_with_normalized_axis(vec3<type> axis, type angle) {return mat3<T>::rotate_with_normalized_axis(axis, angle).to_mat4();}
+            [[nodiscard]] static constexpr mat rotate(vec3<type> axis, type angle) {return mat3<T>::rotate(axis, angle).to_mat4();}
+            [[nodiscard]] static constexpr mat perspective(type wh_aspect, type y_fov, type near, type far)
+            {
+                static_assert(is_floating_point, "This function only makes sense for floating-point matrices.");
+                y_fov = type(1) / std::tan(y_fov / 2);
+                return { y_fov / wh_aspect , 0     , 0                           , 0                             ,
+                         0                 , y_fov , 0                           , 0                             ,
+                         0                 , 0     , (near + far) / (near - far) , 2 * near * far / (near - far) ,
+                         0                 , 0     , -1                          , 0                             };
+            }
+        };
+
+        template <scalar ...P> requires (sizeof...(P) == 4) mat(P...) -> mat<2, 2, larger_t<P...>>;
+        template <scalar ...P> requires (sizeof...(P) == 9) mat(P...) -> mat<3, 3, larger_t<P...>>;
+        template <scalar ...P> requires (sizeof...(P) == 16) mat(P...) -> mat<4, 4, larger_t<P...>>;
+        template <typename ...P> requires (sizeof...(P) >= 2 && sizeof...(P) <= 4 && ((vec_size_v<P> == 2) && ...)) mat(P...) -> mat<sizeof...(P), 2, larger_t<typename P::type...>>;
+        template <typename ...P> requires (sizeof...(P) >= 2 && sizeof...(P) <= 4 && ((vec_size_v<P> == 3) && ...)) mat(P...) -> mat<sizeof...(P), 3, larger_t<typename P::type...>>;
+        template <typename ...P> requires (sizeof...(P) >= 2 && sizeof...(P) <= 4 && ((vec_size_v<P> == 4) && ...)) mat(P...) -> mat<sizeof...(P), 4, larger_t<typename P::type...>>;
+        //} Matrices
+
+        //{ Rects
+        template <int D, cv_unqualified_scalar T> struct rect
+        {
+            using type = T;
+            using vec_type = vec<D, T>;
+            static constexpr int dim = 2; // `size` is already used as a function name.
+            static constexpr bool is_floating_point = std::is_floating_point_v<type>;
+            vec_type a, b; // `a` is inclusive, `b` is exclusive.
+            IMP_MATH_SMALL_FUNC constexpr rect() {} // No fancy constructors, use helpers in `vec`.
+            IMP_MATH_SMALL_FUNC constexpr rect(uninit) : a(uninit{}), b(uninit{}) {}
+            template <typename U> IMP_MATH_SMALL_FUNC explicit(!safely_convertible_to<U,T>) constexpr rect(rect<D,U> r) : a(r.a), b(r.b) {}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr vec_type size() const {return b - a;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool has_length() const {return (b > a).any();}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool has_area() const {return (b > a).all();}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect fix() const {rect ret = *this; sort_two_var(ret.a, ret.b); return ret;} // Swap components of `a` and `b` to order them correctly.
+            template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect<D,larger_t<T,U>> offset_a(vec<D,U> x) const {rect<D,larger_t<T,U>> ret = *this; ret.a += x; return ret;}
+            template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect<D,larger_t<T,U>> offset_a(U        x) const {rect<D,larger_t<T,U>> ret = *this; ret.a += x; return ret;}
+            template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect<D,larger_t<T,U>> offset_b(vec<D,U> x) const {rect<D,larger_t<T,U>> ret = *this; ret.b += x; return ret;}
+            template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect<D,larger_t<T,U>> offset_b(U        x) const {rect<D,larger_t<T,U>> ret = *this; ret.b += x; return ret;}
+            template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect<D,larger_t<T,U>> offset  (vec<D,U> x) const {return offset_a(x).offset_b(x);}
+            template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect<D,larger_t<T,U>> offset  (U        x) const {return offset_a(x).offset_b(x);}
+            // Operators `+` and `-` call `.offset()`.
+            template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC friend constexpr rect<D,larger_t<T,U>> operator+(rect r, vec<D,U> x) {return r.offset(x);}
+            template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC friend constexpr rect<D,larger_t<T,U>> operator+(rect r, U        x) {return r.offset(x);}
+            template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC friend constexpr rect<D,larger_t<T,U>> operator+(vec<D,U> x, rect r) {return r + x;}
+            template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC friend constexpr rect<D,larger_t<T,U>> operator+(U        x, rect r) {return r + x;}
+            template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC friend constexpr rect<D,larger_t<T,U>> operator-(rect r, vec<D,U> x) {return r + -x;}
+            template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC friend constexpr rect<D,larger_t<T,U>> operator-(rect r, U        x) {return r + -x;}
+            template <safely_convertible_to<T> U = T> IMP_MATH_SMALL_FUNC friend constexpr rect<D,larger_t<T,U>> operator+=(rect &r, vec<D,U> x) {r = r + x; return r;}
+            template <safely_convertible_to<T> U = T> IMP_MATH_SMALL_FUNC friend constexpr rect<D,larger_t<T,U>> operator+=(rect &r, U        x) {r = r + x; return r;}
+            template <safely_convertible_to<T> U = T> IMP_MATH_SMALL_FUNC friend constexpr rect<D,larger_t<T,U>> operator-=(rect &r, vec<D,U> x) {r = r - x; return r;}
+            template <safely_convertible_to<T> U = T> IMP_MATH_SMALL_FUNC friend constexpr rect<D,larger_t<T,U>> operator-=(rect &r, U        x) {r = r - x; return r;}
+            // There's no `scalar - rect`.
+            template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect<D,larger_t<T,U>> expand(vec<D,U> x) const {return offset_a(-x).offset_b(x);}
+            template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect<D,larger_t<T,U>> expand(U        x) const {return offset_a(-x).offset_b(x);}
+            template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect<D,larger_t<T,U>> shrink(vec<D,U> x) const {return offset_a(x).offset_b(-x);}
+            template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect<D,larger_t<T,U>> shrink(U        x) const {return offset_a(x).offset_b(-x);}
+            template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool includes(vec<D,U> p) const {return (p >= a).all() && (p </*sic*/ b).all();}
+            template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool includes(rect<D,U> r) const {return (r.a >= a).all() && (r.b <= b).all();}
+            template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool touches(rect r) const {return (r.a < b).all() && (r.b > a).all();}
+            template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect<D,larger_t<T,U>> add(vec<D,U>  p) const {return add(p.tiny_rect());}
+            template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect<D,larger_t<T,U>> add(rect<D,U> r) const {return min(a, r.a).rect_to(max(b, r.b));}
+            template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect<D,larger_t<T,U>> intersect(rect<D,U> r) const {return max(a, r.a).rect_to(min(b, r.b));}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr vec_type corner(int i) const requires(dim==2) {return vec_type((i+1)&2?b.x:a.x, i&2?b.y:a.y);}
+            [[nodiscard]] constexpr std::array<vec_type, 4> to_contour() const requires(dim==2) {std::array<vec_type, 4> ret; for (int i=0;i<4;i++) ret[i]=corner(i); return ret;}
+        };
+
+        // input/output
+        template <typename A, typename B, int D, typename T> constexpr std::basic_ostream<A,B> &operator<<(std::basic_ostream<A, B> &s, const rect<D, T> &r)
+        {
+            return s << r.a << ".." << r.b;
+        }
+        template <typename A, typename B, int D, typename T> constexpr std::basic_istream<A,B> &operator>>(std::basic_istream<A, B> &s, rect<D, T> &r)
+        {
+            return s >> r.a >> r.b;
+        }
+        //} Rects
     }
 
     namespace Export
@@ -2323,7 +2485,7 @@ namespace Math
         using dquat = quat<double>;
         using ldquat = quat<long double>;
 
-        template <typename A, typename B, typename T> std::basic_ostream<A,B> &operator<<(std::basic_ostream<A,B> &s, const quat<T> &q)
+        template <typename A, typename B, typename T> constexpr std::basic_ostream<A,B> &operator<<(std::basic_ostream<A,B> &s, const quat<T> &q)
         {
             s.width(0);
             if (q.axis_denorm() == vec3<T>(0))
@@ -2333,7 +2495,7 @@ namespace Math
             return s << " len=" << q.as_vec().len() << ']';
         }
 
-        template <typename A, typename B, typename T> std::basic_istream<A,B> &operator>>(std::basic_istream<A,B> &s, quat<T> &q)
+        template <typename A, typename B, typename T> constexpr std::basic_istream<A,B> &operator>>(std::basic_istream<A,B> &s, quat<T> &q)
         {
             vec4<T> vec;
             s >> vec;

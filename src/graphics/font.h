@@ -13,9 +13,9 @@ namespace Graphics
       public:
         struct Glyph
         {
-            ivec2 texture_pos = ivec2(0);
-            ivec2 size = ivec2(0);
-            ivec2 offset = ivec2(0);
+            svec2 texture_pos = svec2(0);
+            svec2 size = svec2(0);
+            svec2 offset = svec2(0);
             int advance = 0;
         };
 

@@ -16,9 +16,9 @@ namespace Graphics
         struct Symbol
         {
             uint32_t ch = 0;
-            svec2 texture_pos = ivec2(0);
-            svec2 offset = ivec2(0);
-            svec2 size = ivec2(0);
+            svec2 texture_pos = svec2(0);
+            svec2 offset = svec2(0);
+            svec2 size = svec2(0);
             short advance = 0;
             short kerning = 0;
 

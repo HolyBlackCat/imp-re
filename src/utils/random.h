@@ -117,21 +117,6 @@ namespace Random
         template <SupportedScalar T> T ToPrintableNumber(T value) {return value;}
         inline int ToPrintableNumber(char value) {return int(value);}
 
-
-        // Returns the next or previous representable value.
-        // Refuses to increment the largest representable value, and returns it unchanged.
-        // If asked to increment infinity in either direction, returns the closest representable value.
-        // If given NaN, returns NaN.
-        template <bool Decrease, Meta::deduce..., SupportedScalar T>
-        [[nodiscard]] T NextRepresentable(T value)
-        {
-            constexpr auto limit = Decrease ? std::numeric_limits<T>::lowest() : std::numeric_limits<T>::max();
-            if constexpr (std::is_floating_point_v<T>)
-                return std::nextafter(value, limit);
-            else
-                return value == limit ? limit : value + (Decrease ? -1 : 1);
-        }
-
         enum BoundType {upper, lower};
 
         // Converts the `value` to a suitable upper/lower inclusive bound for a scalar type `T`.
@@ -216,10 +201,10 @@ namespace Random
 
                 // This seems to work.
                 if (is_exclusive && std::is_floating_point_v<SourceT>)
-                    source = (NextRepresentable<Bound == upper>)(source);
+                    source = (Math::next_or_prev_value<Bound == upper>)(source);
                 TargetT ret = (MakeInclusiveScalarBound<TargetT, Bound>)(source);
                 if (is_exclusive && !std::is_floating_point_v<SourceT>)
-                    ret = (NextRepresentable<Bound == upper>)(ret);
+                    ret = (Math::next_or_prev_value<Bound == upper>)(ret);
 
                 return ret;
             }

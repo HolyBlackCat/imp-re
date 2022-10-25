@@ -174,7 +174,7 @@ namespace GameUtils::TilesToEdges
             arr = Array2D<bits_t>(params.tiles.size());
 
         // Fill the edge bit array, and remove the conflicting edges.
-        for (xvec2 tile_pos : vector_range(params.tiles.size()))
+        for (ivec2 tile_pos : vector_range(ivec2(params.tiles.size())))
         {
             std::size_t tile = params.tiles.unsafe_at(tile_pos);
             if (tile >= tileset.tile_vertices.size())
@@ -219,7 +219,7 @@ namespace GameUtils::TilesToEdges
         }
 
         // Generate loops from the edges.
-        for (const xvec2 starting_tile_pos : vector_range(params.tiles.size()))
+        for (const ivec2 starting_tile_pos : vector_range(ivec2(params.tiles.size())))
         {
             const std::size_t starting_tile = params.tiles.unsafe_at(starting_tile_pos);
 
