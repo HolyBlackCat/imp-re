@@ -43,7 +43,6 @@ namespace Audio::GlobalData
         {
             [[maybe_unused]] inline static const Buffer &ref = []() -> Buffer &
             {
-                auto it = GetAutoLoadedBuffers().find(Name.str);
                 auto [data, ok] = GetAutoLoadedBuffers().try_emplace(Name.str);
                 ASSERT(ok, "Attempt to register a duplicate auto-loaded sound file. This shouldn't be possible.");
                 if constexpr (!std::is_null_pointer_v<decltype(ChannelCount)>)
