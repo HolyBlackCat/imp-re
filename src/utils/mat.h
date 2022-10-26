@@ -1,6 +1,6 @@
 // mat.h
 // Vector and matrix math
-// Version 3.5.0
+// Version 3.6.0
 // Generated, don't touch.
 
 #pragma once
@@ -2285,13 +2285,14 @@ namespace Math
         template <int D, cv_unqualified_scalar T> struct rect
         {
             using type = T;
-            using vec_type = vec<D, T>;
+            using vec_type = vec<D,T>;
             static constexpr int dim = D; // `size` is already used as a function name.
             static constexpr bool is_floating_point = std::is_floating_point_v<type>;
             vec_type a, b; // `a` is inclusive, `b` is exclusive.
             IMP_MATH_SMALL_FUNC constexpr rect() {} // No fancy constructors, use helpers in `vec`.
             IMP_MATH_SMALL_FUNC constexpr rect(uninit) : a(uninit{}), b(uninit{}) {}
             template <typename U> IMP_MATH_SMALL_FUNC explicit(!safely_convertible_to<U,T>) constexpr rect(rect<D,U> r) : a(r.a), b(r.b) {}
+            template <cv_unqualified_scalar U> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect<D,U> to() const {return vec<D,U>(a).rect_to(vec<D,U>(b));}
             [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr vec_type size() const {return b - a;}
             [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool has_length() const {return (b > a).any();}
             [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool has_area() const {return (b > a).all();}
