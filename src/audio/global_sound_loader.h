@@ -57,20 +57,20 @@ namespace Audio::GlobalData
     // Returns a reference to a buffer, loaded from the filename passed as the parameter.
     // The load doesn't happen at the call point, and is done by `LoadFiles()`, which magically knows all files that it needs to load in this manner.
     template <Meta::ConstString Name, ChannelsOrNullptr auto ChannelCount = nullptr, FormatOrNullptr auto FileFormat = nullptr>
-    [[nodiscard]] const Buffer &File()
+    [[nodiscard]] const Buffer &Sound()
     {
         return impl::RegisterAutoLoadedBuffer<Name, ChannelCount, FileFormat>::ref;
     }
 
-    // Same as `File()`, but without the optional parameters.
+    // Same as `Sound()`, but without the optional parameters.
     template <Meta::ConstString Name>
     [[nodiscard]] const Buffer &operator""_sound()
     {
-        return File<Name>();
+        return Sound<Name>();
     }
 
-    // Loads (or reloads) all files requested with `Audio::GlobalData::File()`. Consider using the simplified overload, defined below.
-    // The number of channels and the file format can be overridden by the `File()` calls.
+    // Loads (or reloads) all files requested with `Audio::GlobalData::Sound()`. Consider using the simplified overload, defined below.
+    // The number of channels and the file format can be overridden by the `Sound()` calls.
     // `get_stream` is called repeatedly for all needed files.
     inline void Load(std::optional<Channels> channels, Format format, std::function<Stream::Input(const std::string &name, std::optional<Channels> channels, Format format)> get_stream)
     {
@@ -83,7 +83,7 @@ namespace Audio::GlobalData
     }
 
     // Same, but the sounds are loaded from files named `prefix + name + ext`,
-    // where `name` comes from the `File()` call, and `ext` is determined from the format (`.wav` or `.ogg`).
+    // where `name` comes from the `Sound()` call, and `ext` is determined from the format (`.wav` or `.ogg`).
     inline void Load(std::optional<Channels> channels, Format format, const std::string &prefix)
     {
         Load(channels, format, [&prefix](const std::string &name, std::optional<Channels> channels, Format format) -> Stream::Input

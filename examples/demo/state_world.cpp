@@ -26,7 +26,7 @@ namespace States
             ImGui::ShowDemoWindow();
 
             if (mouse.right.pressed())
-                audio.Play("test_sound"_sound, mouse.pos()); // Use `Audio::GlobalData::File()` instead of `_sound` for more customization.
+                audio.Play("test_sound"_sound, mouse.pos()); // Use `Audio::GlobalData::Sound()` instead of `_sound` for more customization.
         }
 
         void Render() const override
