@@ -2312,7 +2312,7 @@ int main(int argc, char **argv)
                     {
                         using type = T;
                         using vec_type = vec<D, T>;
-                        static constexpr int dim = 2; // `size` is already used as a function name.
+                        static constexpr int dim = D; // `size` is already used as a function name.
                         static constexpr bool is_floating_point = std::is_floating_point_v<type>;
                         vec_type a, b; // `a` is inclusive, `b` is exclusive.
                         IMP_MATH_SMALL_FUNC constexpr rect() {} // No fancy constructors, use helpers in `vec`.
