@@ -22,6 +22,9 @@ class Render
 
     void *GetRenderQueuePtr();
 
+    // Throws if we're not using a global texture atlas named `name`.
+    void ExpectAtlas(std::string_view name);
+
   public:
     Render();
     Render(std::size_t queue_size, const Graphics::ShaderConfig &config);
@@ -546,11 +549,13 @@ class Render
 
     Quad_t fquad(fvec2 pos, const Graphics::Region &image)
     {
+        ExpectAtlas(image.atlas);
         return fquad(pos.rect_size(image.size())).tex(image);
     }
 
     Quad_t iquad(ivec2 pos, const Graphics::Region &image)
     {
+        ExpectAtlas(image.atlas);
         return fquad(pos, image);
     }
 

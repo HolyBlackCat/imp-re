@@ -53,12 +53,20 @@ void main()
     Graphics::Shader shader;
     Graphics::TexUnit tex_unit; // This is used when working with textures without their own units.
 
+    std::optional<std::string> current_atlas;
+
     Data(std::size_t queue_size, const Graphics::ShaderConfig &config) : queue(queue_size), shader("Main", config, Graphics::ShaderPreferences{}, Meta::tag<Attribs>{}, uni, vertex_source, fragment_source) {}
 };
 
 void *Render::GetRenderQueuePtr()
 {
     return &data->queue;
+}
+
+void Render::ExpectAtlas(std::string_view name)
+{
+    if (data->current_atlas != name)
+        throw std::runtime_error(FMT("2D poly renderer: Trying to draw an image from the atlas `{}`, but {}.", name, data->current_atlas ? FMT("the current atlas is `{}`", *data->current_atlas) : "no atlas is attached"));
 }
 
 Render::Render() {}
@@ -93,7 +101,7 @@ void Render::SetAtlas(std::string_view name)
 {
     auto it = Graphics::GlobalData::GetAtlases().find(name);
     if (it == Graphics::GlobalData::GetAtlases().end())
-        throw std::runtime_error(FMT("No such texture atlas: `{}`.", name));
+        throw std::runtime_error(FMT("2D poly renderer: No such texture atlas: `{}`.", name));
 
     Finish(); // Since we're planning to clobber `data->tex_unit`.
 
@@ -102,12 +110,14 @@ void Render::SetAtlas(std::string_view name)
     data->tex_unit.Attach(it->second.texture);
     SetTextureUnit(data->tex_unit);
     SetTextureSize(it->second.size);
+    data->current_atlas = std::move(name);
 }
 
 void Render::SetTextureUnit(const Graphics::TexUnit &unit)
 {
     Finish();
     data->uni.texture = unit;
+    data->current_atlas.reset();
 }
 
 void Render::SetTextureSize(ivec2 size)
