@@ -21,10 +21,6 @@ namespace Fonts
     extern Graphics::Font main;
 }
 
-extern Graphics::TextureAtlas texture_atlas;
-
-extern Graphics::Texture texture_main;
-
 extern GameUtils::AdaptiveViewport adaptive_viewport;
 extern Render r;
 

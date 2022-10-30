@@ -3,8 +3,8 @@
 #include <memory>
 #include <utility>
 
+#include "graphics/global_image_loader.h"
 #include "graphics/text.h"
-#include "graphics/texture_atlas.h"
 #include "program/errors.h"
 #include "utils/mat.h"
 
@@ -36,11 +36,18 @@ class Render
 
     void Finish();
 
+    // Enables a global texture atlas (see `graphics/global_image_loader.h`).
+    // Calls `SetTexture??` internally.
+    void SetAtlas(std::string_view name);
+
+    // The unit doesn't know the texture size, so you need to call `SetTextureSize` manually.
     void SetTextureUnit(const Graphics::TexUnit &unit);
     void SetTextureUnit(Graphics::TexUnit &&) = delete;
 
+    // Tells the renderer about the texture size.
     void SetTextureSize(ivec2 size);
 
+    // Calls `SetTextureUnit()` and `SetTextureSize()` with the texture.
     void SetTexture(const Graphics::Texture &tex);
     void SetTexture(Graphics::Texture &&) = delete;
 
@@ -60,36 +67,33 @@ class Render
         {
             fvec2 pos, size; // The constructor sets these.
 
-            bool has_texture = 0;
+            bool has_texture = false;
             fvec2 tex_pos = fvec2(0), tex_size = fvec2(0);
 
-            bool has_center = 0;
+            bool has_center = false;
             fvec2 center = fvec2(0);
-            bool center_pos_tex = 0;
+            bool center_pos_tex = false;
 
-            bool has_matrix = 0;
+            bool has_matrix = false;
             fmat3 matrix = fmat3();
 
-            bool has_color = 0;
+            bool has_color = false;
             fvec3 colors[4] {};
 
-            bool has_tex_color_fac = 0;
+            bool has_tex_color_fac = false;
             float tex_color_factors[4] = {1,1,1,1};
 
             float alpha[4] = {1,1,1,1};
             float beta[4] = {1,1,1,1};
 
-            bool abs_pos = 0;
-            bool abs_tex_pos = 0;
-
-            bool flip_x = 0, flip_y = 0;
+            bool flip_x = false, flip_y = false;
         };
         Data data;
 
-        Quad_t(void *queue, fvec2 pos, fvec2 size) : queue(queue)
+        Quad_t(void *queue, frect2 rect) : queue(queue)
         {
-            data.pos = pos;
-            data.size = size;
+            data.pos = rect.a;
+            data.size = rect.size();
         }
       public:
         Quad_t(Quad_t &&other) noexcept : queue(std::exchange(other.queue, {})), data(std::move(other.data)) {}
@@ -102,18 +106,18 @@ class Render
 
         ~Quad_t();
 
-        ref tex(fvec2 pos, fvec2 size)
+        ref tex(frect2 rect)
         {
             ASSERT(!data.has_texture, "2D poly renderer: Quad_t texture specified twice.");
             data.has_texture = 1;
 
-            data.tex_pos = pos;
-            data.tex_size = size;
+            data.tex_pos = rect.a;
+            data.tex_size = rect.size();
             return (ref)*this;
         }
         ref tex(fvec2 pos)
         {
-            tex(pos, data.size);
+            tex(pos.rect_size(data.size));
             return (ref)*this;
         }
         ref center(fvec2 c)
@@ -243,16 +247,6 @@ class Render
             data.beta[1] = b;
             data.beta[2] = c;
             data.beta[3] = d;
-            return (ref)*this;
-        }
-        ref absolute(bool x = 1) // Interpret size as a position of the second corner
-        {
-            data.abs_pos = x;
-            return (ref)*this;
-        }
-        ref absolute_tex(bool x = 1) // Interpret texture size as a position of the second corner
-        {
-            data.abs_tex_pos = x;
             return (ref)*this;
         }
         ref flip_x(bool f = 1) // Flips texture horizontally if it was specified. Updates the center accordingly if it was specified.
@@ -540,24 +534,22 @@ class Render
         ~Text_t();
     };
 
-    Quad_t fquad(fvec2 pos, fvec2 size)
+    Quad_t fquad(frect2 rect)
     {
-        return Quad_t(GetRenderQueuePtr(), pos, size);
+        return Quad_t(GetRenderQueuePtr(), rect);
     }
 
-    Quad_t iquad(fvec2 pos, fvec2 size) = delete;
-    Quad_t iquad(ivec2 pos, ivec2 size)
+    Quad_t iquad(irect2 rect)
     {
-        return Quad_t(GetRenderQueuePtr(), pos, size);
+        return Quad_t(GetRenderQueuePtr(), rect);
     }
 
-    Quad_t fquad(fvec2 pos, const Graphics::TextureAtlas::Region &image)
+    Quad_t fquad(fvec2 pos, const Graphics::Region &image)
     {
-        return fquad(pos, image.size).tex(image.pos);
+        return fquad(pos.rect_size(image.size())).tex(image);
     }
 
-    Quad_t iquad(fvec2 pos, const Graphics::TextureAtlas::Region &image) = delete;
-    Quad_t iquad(ivec2 pos, const Graphics::TextureAtlas::Region &image)
+    Quad_t iquad(ivec2 pos, const Graphics::Region &image)
     {
         return fquad(pos, image);
     }

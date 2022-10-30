@@ -51,6 +51,7 @@ void main()
     Graphics::SimpleRenderQueue<Attribs, 3> queue; // Note that the queue has to be the first field.
     Uniforms uni;
     Graphics::Shader shader;
+    Graphics::TexUnit tex_unit; // This is used when working with textures without their own units.
 
     Data(std::size_t queue_size, const Graphics::ShaderConfig &config) : queue(queue_size), shader("Main", config, Graphics::ShaderPreferences{}, Meta::tag<Attribs>{}, uni, vertex_source, fragment_source) {}
 };
@@ -86,6 +87,21 @@ void Render::BindShader() const
 void Render::Finish()
 {
     data->queue.Flush();
+}
+
+void Render::SetAtlas(std::string_view name)
+{
+    auto it = Graphics::GlobalData::GetAtlases().find(name);
+    if (it == Graphics::GlobalData::GetAtlases().end())
+        throw std::runtime_error(FMT("No such texture atlas: `{}`.", name));
+
+    Finish(); // Since we're planning to clobber `data->tex_unit`.
+
+    if (!data->tex_unit)
+        data->tex_unit = nullptr;
+    data->tex_unit.Attach(it->second.texture);
+    SetTextureUnit(data->tex_unit);
+    SetTextureSize(it->second.size);
 }
 
 void Render::SetTextureUnit(const Graphics::TexUnit &unit)
@@ -124,15 +140,8 @@ Render::Quad_t::~Quad_t()
         return;
 
     ASSERT(data.has_texture || data.has_color, "2D poly renderer: Quad with no texture nor color specified.");
-    ASSERT(data.abs_pos + data.has_center < 2, "2D poly renderer: Quad with absolute corner coodinates with a center specified.");
-    ASSERT(data.abs_tex_pos <= data.has_texture, "2D poly renderer: Quad with absolute texture coordinates mode but no texture coordinates specified.");
     ASSERT((data.has_texture && data.has_color) == data.has_tex_color_fac, "2D poly renderer: Quad with texture and color, but without a mixing factor.");
     ASSERT(data.has_matrix <= data.has_center, "2D poly renderer: Quad with a matrix but without a center specified.");
-
-    if (data.abs_pos)
-        data.size -= data.pos;
-    if (data.abs_tex_pos)
-        data.tex_size -= data.tex_pos;
 
     Render::Data::Attribs out[4];
 
@@ -283,7 +292,7 @@ Render::Text_t::~Text_t()
             else
                 symbol_pos = pos + (data.matrix * (offset + symbol.offset).to_vec3(1)).to_vec2();
 
-            auto quad = renderer->fquad(symbol_pos, symbol.size).tex(symbol.texture_pos).color(data.color).mix(0).alpha(data.alpha).beta(data.beta);
+            auto quad = renderer->fquad(symbol_pos.rect_size(symbol.size)).tex(symbol.texture_pos).color(data.color).mix(0).alpha(data.alpha).beta(data.beta);
             if (data.has_matrix)
                 quad.matrix(data.matrix.to_mat2()).pixel_center(fvec2(0));
 

@@ -3,38 +3,20 @@
 const ivec2 screen_size = ivec2(480, 270);
 const std::string_view window_name = "Iota";
 
-Interface::Window window(std::string(window_name), screen_size * 2, Interface::windowed, adjust_(Interface::WindowSettings{}, min_size = screen_size));
+Interface::Window window(std::string(window_name), screen_size * 2, Interface::windowed, adjust_(Interface::WindowSettings{}, .min_size = screen_size));
 static Graphics::DummyVertexArray dummy_vao = nullptr;
 
 Audio::Context audio_context = nullptr;
 Audio::SourceManager audio;
 
 const Graphics::ShaderConfig shader_config = Graphics::ShaderConfig::Core();
-Interface::ImGuiController gui_controller(Poly::derived<Interface::ImGuiController::GraphicsBackend_Modern>, adjust_(Interface::ImGuiController::Config{}, shader_header = shader_config.common_header, store_state_in_file = {}));
+Interface::ImGuiController gui_controller(Poly::derived<Interface::ImGuiController::GraphicsBackend_Modern>, adjust_(Interface::ImGuiController::Config{}, .shader_header = shader_config.common_header, .store_state_in_file = {}));
 
 Graphics::FontFile Fonts::Files::main(Program::ExeDir() + "assets/Monocat_6x12.ttf", 12);
 Graphics::Font Fonts::main;
 
-Graphics::TextureAtlas texture_atlas = []{
-    // Don't generate a new atlas in prod.
-    std::string source_dir = IMP_PLATFORM_IF_NOT(prod)("assets/_images") "";
-    // Look for the atlas relative to the exe in prod, and relative to the project root otherwise.
-    std::string target_prefix = IMP_PLATFORM_IF(prod)(Program::ExeDir() + "assets/") IMP_PLATFORM_IF_NOT(prod)("assets/assets/");
-    Graphics::TextureAtlas ret(ivec2(2048), source_dir, target_prefix + "atlas.png", target_prefix + "atlas.refl", {{"/font_storage", ivec2(256)}});
-    auto font_region = ret.Get("/font_storage");
-
-    Unicode::CharSet glyph_ranges;
-    glyph_ranges.Add(Unicode::Ranges::Basic_Latin);
-
-    Graphics::MakeFontAtlas(ret.GetImage(), font_region.pos, font_region.size, {
-        {Fonts::main, Fonts::Files::main, glyph_ranges, Graphics::FontFile::monochrome_with_hinting},
-    });
-    return ret;
-}();
-Graphics::Texture texture_main = Graphics::Texture(nullptr).Wrap(Graphics::clamp).Interpolation(Graphics::nearest).SetData(texture_atlas.GetImage());
-
 GameUtils::AdaptiveViewport adaptive_viewport(shader_config, screen_size);
-Render r = adjust_(Render(0x2000, shader_config), SetTexture(texture_main), SetMatrix(adaptive_viewport.GetDetails().MatrixCentered()));
+Render r = adjust_(Render(0x2000, shader_config), .SetMatrix(adaptive_viewport.GetDetails().MatrixCentered()));
 
 Input::Mouse mouse;
 
@@ -105,12 +87,36 @@ struct Application : Program::DefaultBasicState
 
     void Init()
     {
+        // Initialize ImGui.
         ImGui::StyleColorsDark();
+
+        { // Load images.
+            Graphics::GlobalData::LoadParams load_params(Program::ExeDir() + "assets/images/");
+            load_params.atlas_params = [](std::string_view atlas)
+            {
+                Graphics::GlobalData::AtlasParams ret;
+                if (atlas == "")
+                {
+                    ret.modify_image = [](Graphics::Image &image)
+                    {
+                        Unicode::CharSet glyph_ranges;
+                        glyph_ranges.Add(Unicode::Ranges::Basic_Latin);
+
+                        Graphics::MakeFontAtlas(image, Graphics::GlobalData::Image<"font_atlas", ivec2(256)>(), {
+                            {Fonts::main, Fonts::Files::main, glyph_ranges, Graphics::FontFile::monochrome_with_hinting},
+                        });
+                    };
+                }
+                return ret;
+            };
+            Graphics::GlobalData::Load(load_params);
+            r.SetAtlas("");
+        }
 
         // Load various small fonts
         auto monochrome_font_flags = ImGuiFreeTypeBuilderFlags_Monochrome | ImGuiFreeTypeBuilderFlags_MonoHinting;
 
-        gui_controller.LoadFont(Program::ExeDir() + "assets/Monocat_6x12.ttf", 12.0f, adjust(ImFontConfig{}, FontBuilderFlags = monochrome_font_flags));
+        gui_controller.LoadFont(Program::ExeDir() + "assets/Monocat_6x12.ttf", 12.0f, adjust(ImFontConfig{}, .FontBuilderFlags = monochrome_font_flags));
         gui_controller.LoadDefaultFont();
         gui_controller.RenderFontsWithFreetype();
 

@@ -10,6 +10,7 @@
 
 #include "graphics/font.h"
 #include "graphics/image.h"
+#include "macros/enum_flag_operators.h"
 #include "macros/finally.h"
 #include "program/errors.h"
 #include "stream/readonly_data.h"
@@ -304,14 +305,14 @@ namespace Graphics
 
     struct FontAtlasEntry
     {
-        enum Flags
+        enum class Flags
         {
             none             = 0,
-            no_default_glyph = 0b1,
-            no_line_gap      = 0b10,
+            no_default_glyph = 1 << 0,
+            no_line_gap      = 1 << 1,
         };
-        friend constexpr Flags operator|(Flags a, Flags b) {return Flags(int(a) | int(b));}
-        friend constexpr Flags operator&(Flags a, Flags b) {return Flags(int(a) & int(b));}
+        IMP_ENUM_FLAG_OPERATORS_IN_CLASS(Flags)
+        using enum Flags;
 
         Font *target = 0;
         const FontFile *source = 0;
@@ -324,9 +325,9 @@ namespace Graphics
             : target(&target), source(&source), glyphs(&glyphs), render_flags(render_flags), flags(flags) {}
     };
 
-    inline void MakeFontAtlas(Image &image, ivec2 pos, ivec2 size, const std::vector<FontAtlasEntry> &entries, bool add_gaps = 1) // Throws on failure.
+    inline void MakeFontAtlas(Image &image, irect2 rect, const std::vector<FontAtlasEntry> &entries, bool add_gaps = true) // Throws on failure.
     {
-        if (!image.RectInBounds(pos, size))
+        if (!image.Bounds().includes(rect))
             Program::Error("Invalid target rectangle for a font atlas.");
 
         struct Glyph
@@ -343,7 +344,7 @@ namespace Graphics
             // Save font metrics.
             entry.target->SetAscent(entry.source->Ascent());
             entry.target->SetDescent(entry.source->Descent());
-            entry.target->SetLineSkip(entry.flags & entry.no_line_gap ? entry.source->Height() : entry.source->LineSkip());
+            entry.target->SetLineSkip(bool(entry.flags & entry.no_line_gap) ? entry.source->Height() : entry.source->LineSkip());
             entry.target->SetKerningFunc(entry.source->KerningFunc());
 
             auto AddGlyph = [&](uint32_t ch)
@@ -366,7 +367,7 @@ namespace Graphics
             };
 
             // Save the default glyph.
-            if (!(entry.flags & entry.no_default_glyph) && !entry.glyphs->Contains(Unicode::default_char))
+            if (!bool(entry.flags & entry.no_default_glyph) && !entry.glyphs->Contains(Unicode::default_char))
                 AddGlyph(Unicode::default_char);
 
             // Save the rest of the glyphs.
@@ -375,16 +376,16 @@ namespace Graphics
         }
 
         // Pack rectangles.
-        if (Packing::PackRects(size, rects.data(), rects.size(), add_gaps))
-            Program::Error("Unable to fit the font atlas for into ", size.x, 'x', size.y, " rectangle.");
+        if (Packing::PackRects(rect.size(), rects.data(), rects.size(), add_gaps))
+            Program::Error("Unable to fit the font atlas for into ", rect.size().x, 'x', rect.size().y, " rectangle.");
 
         // Fill target area with transparent black.
-        image.UnsafeFill(pos, size, u8vec4(0));
+        image.UnsafeFill(rect, u8vec4(0));
 
         // Export results.
         for (size_t i = 0; i < glyphs.size(); i++)
         {
-            ivec2 glyph_pos = pos + rects[i].pos;
+            ivec2 glyph_pos = rect.a + rects[i].pos;
 
             glyphs[i].target->texture_pos = svec2(glyph_pos);
 

@@ -7,7 +7,7 @@
 #include <sstream>
 #include <type_traits>
 
-#define VERSION "3.6.0"
+#define VERSION "3.7.0"
 
 #pragma GCC diagnostic ignored "-Wpragmas" // Silence GCC warning about the next line disabling a warning that GCC doesn't have.
 #pragma GCC diagnostic ignored "-Wstring-plus-int" // Silence clang warning about `1+R"()"` paUern.
@@ -909,6 +909,11 @@ int main(int argc, char **argv)
                         template <vector_or_scalar T> vector_range_t<T> operator()(T size) const
                         {
                             return vector_range_t<T>(T(0), size);
+                        }
+
+                        template <int D, typename T> vector_range_t<vec<D,T>> operator()(rect<D,T> r) const
+                        {
+                            return vector_range_t<vec<D,T>>(r.a, r.size());
                         }
 
                         template <vector_or_scalar T> friend vector_range_halfbound<T> operator<=(T point, vector_range_factory)

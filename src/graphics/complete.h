@@ -7,6 +7,7 @@
 #include "graphics/font_file.h"
 #include "graphics/font.h"
 #include "graphics/framebuffer.h"
+#include "graphics/global_image_loader.h"
 #include "graphics/image.h"
 #include "graphics/index_buffer.h"
 #include "graphics/scissor.h"

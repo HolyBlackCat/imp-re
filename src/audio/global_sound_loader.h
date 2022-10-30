@@ -39,27 +39,28 @@ namespace Audio::GlobalData
         }
 
         template <Meta::ConstString Name, ChannelsOrNullptr auto ChannelCount, FormatOrNullptr auto FileFormat>
-        struct RegisterAutoLoadedBuffer
+        struct RegisterBuffer
         {
-            [[maybe_unused]] inline static const Buffer &ref = []() -> Buffer &
+            inline static const Buffer &ref = []() -> Buffer &
             {
-                auto [data, ok] = GetAutoLoadedBuffers().try_emplace(Name.str);
+                auto [iter, ok] = GetAutoLoadedBuffers().try_emplace(Name.str);
                 ASSERT(ok, "Attempt to register a duplicate auto-loaded sound file. This shouldn't be possible.");
                 if constexpr (!std::is_null_pointer_v<decltype(ChannelCount)>)
-                    data->second.channels_override = ChannelCount;
+                    iter->second.channels_override = ChannelCount;
                 if constexpr (!std::is_null_pointer_v<decltype(FileFormat)>)
-                    data->second.format_override = FileFormat;
-                return data->second.buffer; // We rely on `std::map` never invalidating the references.
+                    iter->second.format_override = FileFormat;
+                return iter->second.buffer; // We rely on `std::map` never invalidating the references.
             }();
         };
     }
 
     // Returns a reference to a buffer, loaded from the filename passed as the parameter.
     // The load doesn't happen at the call point, and is done by `LoadFiles()`, which magically knows all files that it needs to load in this manner.
+    // The returned reference is stable across reloads.
     template <Meta::ConstString Name, ChannelsOrNullptr auto ChannelCount = nullptr, FormatOrNullptr auto FileFormat = nullptr>
     [[nodiscard]] const Buffer &Sound()
     {
-        return impl::RegisterAutoLoadedBuffer<Name, ChannelCount, FileFormat>::ref;
+        return impl::RegisterBuffer<Name, ChannelCount, FileFormat>::ref;
     }
 
     // Same as `Sound()`, but without the optional parameters.

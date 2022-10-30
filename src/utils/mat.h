@@ -1,6 +1,6 @@
 // mat.h
 // Vector and matrix math
-// Version 3.6.0
+// Version 3.7.0
 // Generated, don't touch.
 
 #pragma once
@@ -897,6 +897,11 @@ namespace Math
             template <vector_or_scalar T> vector_range_t<T> operator()(T size) const
             {
                 return vector_range_t<T>(T(0), size);
+            }
+
+            template <int D, typename T> vector_range_t<vec<D,T>> operator()(rect<D,T> r) const
+            {
+                return vector_range_t<vec<D,T>>(r.a, r.size());
             }
 
             template <vector_or_scalar T> friend vector_range_halfbound<T> operator<=(T point, vector_range_factory)

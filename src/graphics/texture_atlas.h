@@ -1,170 +1,28 @@
 #pragma once
 
-#include <ctime>
-#include <map>
-#include <string>
-#include <type_traits>
-#include <utility>
-#include <vector>
+#include <functional>
+#include <variant>
 
 #include "graphics/image.h"
-#include "program/errors.h"
-#include "reflection/structs.h"
-#include "strings/format.h"
-#include "utils/filesystem.h"
+#include "macros/enum_flag_operators.h"
+#include "stream/readonly_data.h"
 #include "utils/mat.h"
 
 namespace Graphics
 {
-    class TextureAtlas
+    // Call this to add an image to the atlas.
+    // `data` is either the image data or the size of an empty image.
+    // `texcoords` receives the texture coords.
+    using AtlasInputFunc = std::function<void(std::variant<Stream::ReadOnlyData, ivec2> data, irect2 &texcoords)>;
+
+    enum class AtlasFlags
     {
-        REFL_SIMPLE_STRUCT_WITHOUT_NAMES( ImageDesc
-            REFL_DECL(ivec2) pos, size
-        )
-
-        REFL_SIMPLE_STRUCT( Desc
-            REFL_DECL(std::map<std::string, ImageDesc>) images
-        )
-
-        Image image;
-        Desc desc;
-        std::string source_dir;
-
-      public:
-        struct Region
-        {
-            ivec2 pos = ivec2(0);
-            ivec2 size = ivec2(0);
-
-            Region() {}
-
-            [[nodiscard]] Region region(ivec2 sub_pos, ivec2 sub_size) const
-            {
-                Region ret;
-                ret.pos = pos + sub_pos;
-                ret.size = sub_size;
-                return ret;
-            }
-
-            [[nodiscard]] Region margin(int m) const
-            {
-                Region ret;
-                ret.pos = pos + m;
-                ret.size = size - 2 * m;
-                return ret;
-            }
-        };
-
-        class RegionList
-        {
-            friend class TextureAtlas;
-
-            std::vector<Region> list;
-
-          public:
-            RegionList() {}
-
-            // [] wraps around for easier animation.
-            [[nodiscard]] Region &operator[](int index)
-            {
-                return const_cast<Region &>(std::as_const(*this)[index]);
-            }
-            [[nodiscard]] const Region &operator[](int index) const
-            {
-                return list[mod_ex(index, int(list.size()))];
-            }
-        };
-
-        TextureAtlas() {}
-
-        // Pass empty string as `source_dir` to disallow regeneration.
-        // `artifical_regions` are empty "images" that are added to the atlas.
-        TextureAtlas(ivec2 target_size, const std::string &source_dir, const std::string &out_image_file, const std::string &out_desc_file, const std::map<std::string, ivec2> &artifical_regions = {}, bool add_gaps = true);
-
-        [[nodiscard]] const std::string &SourceDirectory() const
-        {
-            return source_dir;
-        }
-
-        [[nodiscard]] Image &GetImage()
-        {
-            return image;
-        }
-        [[nodiscard]] const Image &GetImage() const
-        {
-            return image;
-        }
-
-        [[nodiscard]] bool GetOpt(const std::string &name, Region &target) const // Returns false if no such image.
-        {
-            auto it = desc.images.find(name);
-            if (it == desc.images.end())
-                return false;
-
-            target.pos = it->second.pos;
-            target.size = it->second.size;
-            return true;
-        }
-
-        [[nodiscard]] Region Get(const std::string &name) const
-        {
-            Region ret;
-            if (!GetOpt(name, ret))
-                Program::Error("No image `", name, "` in texture atlas for `", source_dir, "`.");
-            return ret;
-        }
-        [[nodiscard]] RegionList GetList(const std::string &prefix, int first_index, const std::string &suffix, int count = -1) const
-        {
-            RegionList ret;
-
-            int offset = 0;
-            while (offset != count)
-            {
-                int index = first_index + offset;
-                std::string name = STR((prefix), (index), (suffix));
-
-                Region image;
-                if (!GetOpt(name, image))
-                {
-                    if (count < 0)
-                        break;
-                    Program::Error("Image list `", prefix, '#', suffix, "` from texture atlas for `", source_dir, "` has no image with index ", index, ".");
-                }
-                ret.list.push_back(std::move(image));
-
-                offset++;
-            }
-
-            return ret;
-        }
-
-        // Fills `object` with region data.
-        // `object` has to have its members reflected.
-        // The only allowed member types are `Region` and `RegionList`.
-        template <typename T>
-        void InitRegions(T &object, std::string suffix) const
-        {
-            static_assert(Refl::Class::members_known<T> && Refl::Class::member_names_known<T>, "Members of this class are not reflected.");
-
-            Meta::cexpr_for<Refl::Class::member_count<T>>([&](auto index)
-            {
-                constexpr auto i = index.value;
-                using member_t = Refl::Class::member_type<T, i>;
-                member_t &member = Refl::Class::Member<i>(object);
-                // Refl::Class::MemberName<T>(i)
-                if constexpr (std::is_same_v<member_t, Region>)
-                {
-                    member = Get(Refl::Class::MemberName<T>(i) + suffix);
-                }
-                else if constexpr (std::is_same_v<member_t, RegionList>)
-                {
-                    member = GetList(Refl::Class::MemberName<T>(i), 0, suffix);
-                }
-                else
-                {
-                    static_assert(Meta::value<false, decltype(index)>, "This type is not supported. Must be `Graphics::TextureAtlas::{Region|RegionList}`.");
-                }
-            });
-        }
+        none = 0,
+        add_gaps = 1 << 0,
     };
+    IMP_ENUM_FLAG_OPERATORS(AtlasFlags)
+
+    // Packs images into an atlas. Throws on failure.
+    // Call the `func` you receive once for each image that needs to be loaded.
+    [[nodiscard]] Image MakeAtlas(ivec2 target_size, std::function<void(AtlasInputFunc func)> func, AtlasFlags flags = AtlasFlags::none);
 }

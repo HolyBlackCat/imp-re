@@ -36,7 +36,8 @@ namespace States
 
             r.BindShader();
 
-            r.iquad(mouse.pos(), ivec2(32)).center().rotate(angle).color(mouse.left.down() ? fvec3(1,0.5,0) : fvec3(0,0.5,1));
+            r.iquad(mouse.pos(), "dummy"_image).center().rotate(angle);
+            r.iquad(mouse.pos().rect_size(32)).center().rotate(angle).color(mouse.left.down() ? fvec3(1,0.5,0) : fvec3(0,0.5,1));
             r.itext(mouse.pos(), Graphics::Text(Fonts::main, STR((audio.ActiveSources())))).color(fvec3(1));
 
             r.Finish();

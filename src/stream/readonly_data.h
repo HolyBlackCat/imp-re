@@ -47,6 +47,10 @@ namespace Stream
         {
             *this = file(file_name);
         }
+        ReadOnlyData(std::string_view file_name) // This allows implicit conversions from `std::string_view`.
+        {
+            *this = file(std::string(file_name));
+        }
 
         // Stores a reference to an existing memory block.
         [[nodiscard]] static ReadOnlyData mem_reference(const std::uint8_t *begin, const std::uint8_t *end)
