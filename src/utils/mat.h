@@ -1,6 +1,6 @@
 // mat.h
 // Vector and matrix math
-// Version 3.8.0
+// Version 3.9.0
 // Generated, don't touch.
 
 #pragma once
@@ -367,6 +367,11 @@ namespace Math
         template <typename T> using vec_base_t = typename impl_vec_base<T>::type;
         template <vector_or_scalar T> using vec_base_strong_t = typename impl_vec_base<T>::type;
 
+        // Whether `T` is a vector with the base type `U`.
+        template <typename T, typename U> concept vector_with_base = vector<T> && std::same_as<U, vec_base_t<T>>;
+        // Whether `T` is a vector or scalar with the base type `U`.
+        template <typename T, typename U> concept vector_or_scalar_with_base = vector_or_scalar<T> && std::same_as<U, vec_base_t<T>>;
+
         // If `T` is a vector (possibly const), returns its size. Otherwise returns 1.
         template <typename T> struct impl_vec_size : std::integral_constant<int, 1> {};
         template <int D, typename T> struct impl_vec_size<      vec<D,T>> : std::integral_constant<int, D> {};
@@ -553,6 +558,7 @@ namespace Math
         template <vector V> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr auto operator~(const V &v) -> change_vec_base_t<V, decltype(~v.x)> {return apply_elementwise([](vec_base_t<V> v) IMP_MATH_SMALL_LAMBDA {return ~v;}, v);}
         template <vector V> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr auto operator+(const V &v) -> change_vec_base_t<V, decltype(+v.x)> {return apply_elementwise([](vec_base_t<V> v) IMP_MATH_SMALL_LAMBDA {return +v;}, v);}
         template <vector V> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr auto operator-(const V &v) -> change_vec_base_t<V, decltype(-v.x)> {return apply_elementwise([](vec_base_t<V> v) IMP_MATH_SMALL_LAMBDA {return -v;}, v);}
+        template <vector_or_scalar_with_base<bool> V> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr auto operator!(const V &v) -> change_vec_base_t<V, decltype(!v.x)> {return apply_elementwise([](vec_base_t<V> v) IMP_MATH_SMALL_LAMBDA {return !v;}, v);}
         template <vector V> IMP_MATH_SMALL_FUNC constexpr V &operator++(V &v) {apply_elementwise([](vec_base_t<V> &v) IMP_MATH_SMALL_LAMBDA {++v;}, v); return v;}
         template <vector V> IMP_MATH_SMALL_FUNC constexpr V operator++(V &v, int) {V ret = v; apply_elementwise([](vec_base_t<V> &v) IMP_MATH_SMALL_LAMBDA {++v;}, v); return ret;}
         template <vector V> IMP_MATH_SMALL_FUNC constexpr V &operator--(V &v) {apply_elementwise([](vec_base_t<V> &v) IMP_MATH_SMALL_LAMBDA {--v;}, v); return v;}
@@ -633,6 +639,7 @@ namespace Math
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator!=(const A &a, compare_not_all<B> &&b) {return not_all_nonzero_elements(apply_elementwise(std::not_equal_to{}, a, b.value));}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator!=(compare_elemwise<A> &&a, const B &b) {return apply_elementwise(std::not_equal_to{}, a.value, b);}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator!=(const A &a, compare_elemwise<B> &&b) {return apply_elementwise(std::not_equal_to{}, a, b.value);}
+        template <vector_or_scalar_with_base<bool> A, vector_or_scalar_with_base<bool> B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator&&(const A &a, const B &b) {if constexpr (vector<A>) return compare_elemwise(a) && b; else return a && compare_elemwise(b);}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator&&(compare_any<A> &&a, const B &b) {return any_nonzero_elements(apply_elementwise(std::logical_and{}, a.value, b));}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator&&(const A &a, compare_any<B> &&b) {return any_nonzero_elements(apply_elementwise(std::logical_and{}, a, b.value));}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator&&(compare_all<A> &&a, const B &b) {return all_nonzero_elements(apply_elementwise(std::logical_and{}, a.value, b));}
@@ -643,6 +650,7 @@ namespace Math
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator&&(const A &a, compare_not_all<B> &&b) {return not_all_nonzero_elements(apply_elementwise(std::logical_and{}, a, b.value));}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator&&(compare_elemwise<A> &&a, const B &b) {return apply_elementwise(std::logical_and{}, a.value, b);}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator&&(const A &a, compare_elemwise<B> &&b) {return apply_elementwise(std::logical_and{}, a, b.value);}
+        template <vector_or_scalar_with_base<bool> A, vector_or_scalar_with_base<bool> B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool> operator||(const A &a, const B &b) {if constexpr (vector<A>) return compare_elemwise(a) || b; else return a || compare_elemwise(b);}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator||(compare_any<A> &&a, const B &b) {return any_nonzero_elements(apply_elementwise(std::logical_or{}, a.value, b));}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator||(const A &a, compare_any<B> &&b) {return any_nonzero_elements(apply_elementwise(std::logical_or{}, a, b.value));}
         template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool operator||(compare_all<A> &&a, const B &b) {return all_nonzero_elements(apply_elementwise(std::logical_or{}, a.value, b));}

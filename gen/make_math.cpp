@@ -7,7 +7,7 @@
 #include <sstream>
 #include <type_traits>
 
-#define VERSION "3.8.0"
+#define VERSION "3.9.0"
 
 #pragma GCC diagnostic ignored "-Wpragmas" // Silence GCC warning about the next line disabling a warning that GCC doesn't have.
 #pragma GCC diagnostic ignored "-Wstring-plus-int" // Silence clang warning about `1+R"()"` paUern.
@@ -384,6 +384,11 @@ int main(int argc, char **argv)
                 template <typename T> using vec_base_t = typename impl_vec_base<T>::type;
                 template <vector_or_scalar T> using vec_base_strong_t = typename impl_vec_base<T>::type;
 
+                // Whether `T` is a vector with the base type `U`.
+                template <typename T, typename U> concept vector_with_base = vector<T> && std::same_as<U, vec_base_t<T>>;
+                // Whether `T` is a vector or scalar with the base type `U`.
+                template <typename T, typename U> concept vector_or_scalar_with_base = vector_or_scalar<T> && std::same_as<U, vec_base_t<T>>;
+
                 // If `T` is a vector (possibly const), returns its size. Otherwise returns 1.
                 template <typename T> struct impl_vec_size : std::integral_constant<int, 1> {};
                 template <int D, typename T> struct impl_vec_size<      vec<D,T>> : std::integral_constant<int, D> {};
@@ -568,6 +573,7 @@ int main(int argc, char **argv)
             const std::string
                 ops2[]{"+","-","*","/","%","^","&","|","<<",">>"},
                 ops1[]{"~","+","-"},
+                ops1bool[]{"!"},
                 ops1incdec[]{"++","--"},
                 ops2as[]{"+=","-=","*=","/=","%=","^=","&=","|=","<<=",">>="};
 
@@ -602,6 +608,13 @@ int main(int argc, char **argv)
                        " -> change_vec_base_t<V, decltype(",op,"v.x)> {return apply_elementwise([](vec_base_t<V> v) IMP_MATH_SMALL_LAMBDA {return ",op,"v;}, v);}\n");
             }
 
+            for (auto op : ops1bool)
+            {
+                // @ vec
+                output("template <vector_or_scalar_with_base<bool> V> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr auto operator",op,"(const V &v)"
+                       " -> change_vec_base_t<V, decltype(",op,"v.x)> {return apply_elementwise([](vec_base_t<V> v) IMP_MATH_SMALL_LAMBDA {return ",op,"v;}, v);}\n");
+            }
+
             for (auto op : ops1incdec)
             {
                 // @ vec
@@ -623,11 +636,13 @@ int main(int argc, char **argv)
             for (const auto& [op, std_op] : ops2comp)
             {
                 // Default implementation without an explicit mode.
-                std::string default_mode = op == "==" ? "all" : op == "!=" ? "any" : op == "&&" || op == "||" ? "" : "elemwise";
+                std::string default_mode = op == "==" ? "all" : op == "!=" ? "any" : "elemwise";
+                // A concept constraining the default implementation.
+                std::string default_concept = op == "&&" || op == "||" ? "vector_or_scalar_with_base<bool>" : "vector_or_scalar";
 
                 if (!default_mode.empty())
                 {
-                    output("template <vector_or_scalar A, vector_or_scalar B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr ",
+                    output("template <",default_concept," A, ",default_concept," B> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr ",
                            default_mode != "elemwise" ? "bool" : "vec<common_vec_size_v<vec_size_strong_v<A>, vec_size_strong_v<B>>, bool>",
                            " operator",op,"(const A &a, const B &b) {if constexpr (vector<A>) return compare_",default_mode,"(a) ",op," b; else return a ",op," compare_",default_mode,"(b);}\n");
                 }
