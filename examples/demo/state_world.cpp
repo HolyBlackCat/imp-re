@@ -7,7 +7,6 @@ namespace States
         MEMBERS()
 
         float angle = 0;
-        std::shared_ptr<Audio::Source> src;
 
         void Init() override
         {
