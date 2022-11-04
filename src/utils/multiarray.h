@@ -60,9 +60,14 @@ class MultiArray
         return size_vec;
     }
 
+    [[nodiscard]] typename index_vec_t::rect_type bounds() const
+    {
+        return index_vec_t{}.rect_size(size_vec);
+    }
+
     [[nodiscard]] bool pos_in_range(index_vec_t pos) const
     {
-        return (pos >= 0).all() && (pos < size_vec).all();
+        return bounds().contains(pos);
     }
 
     [[nodiscard]] type &unsafe_at(index_vec_t pos)
