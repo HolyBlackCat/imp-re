@@ -7,7 +7,7 @@
 #include <sstream>
 #include <type_traits>
 
-#define VERSION "3.10.0"
+#define VERSION "3.11.0"
 
 #pragma GCC diagnostic ignored "-Wpragmas" // Silence GCC warning about the next line disabling a warning that GCC doesn't have.
 #pragma GCC diagnostic ignored "-Wstring-plus-int" // Silence clang warning about `1+R"()"` paUern.
@@ -2381,12 +2381,12 @@ int main(int argc, char **argv)
                         template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect<D,larger_t<T,U>> shrink_dir(vec<D,U> x) const {return offset_a(max(x,larger_t<T,U>{})).offset_b(min(x,larger_t<T,U>{}));}
                         template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect<D,larger_t<T,U>> shrink_dir(U        x) const {return shrink_dir(vec<D,U>(x));}
                         // Checking collisions.
-                        template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool includes(vec<D,U> p) const {return (p >= a).all() && (p </*sic*/ b).all();}
-                        template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool includes(rect<D,U> r) const {return (r.a >= a).all() && (r.b <= b).all();}
+                        template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool contains(vec<D,U> p) const {return (p >= a).all() && (p </*sic*/ b).all();}
+                        template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool contains(rect<D,U> r) const {return (r.a >= a).all() && (r.b <= b).all();}
                         template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool touches(rect r) const {return (r.a < b).all() && (r.b > a).all();}
                         // Modifying the rect.
-                        template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect<D,larger_t<T,U>> add(vec<D,U>  p) const {return add(p.tiny_rect());}
-                        template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect<D,larger_t<T,U>> add(rect<D,U> r) const {return min(a, r.a).rect_to(max(b, r.b));}
+                        template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect<D,larger_t<T,U>> combine(vec<D,U>  p) const {return combine(p.tiny_rect());}
+                        template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect<D,larger_t<T,U>> combine(rect<D,U> r) const {return min(a, r.a).rect_to(max(b, r.b));}
                         template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect<D,larger_t<T,U>> intersect(rect<D,U> r) const {return max(a, r.a).rect_to(min(b, r.b));}
                         // Constructing the contour.
                         [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr vec_type corner(int i) const requires(dim==2) {return vec_type((i+1)&2?b.x:a.x, i&2?b.y:a.y);}

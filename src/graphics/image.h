@@ -86,14 +86,14 @@ namespace Graphics
 
         u8vec4 TryGet(ivec2 pos) const // Returns transparent black if out of range.
         {
-            if (Bounds().includes(pos))
+            if (Bounds().contains(pos))
                 return UnsafeAt(pos);
             else
                 return u8vec4(0);
         }
         void TrySet(ivec2 pos, u8vec4 color)
         {
-            if (Bounds().includes(pos))
+            if (Bounds().contains(pos))
                 UnsafeAt(pos) = color;
         }
 

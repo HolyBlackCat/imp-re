@@ -116,7 +116,7 @@ class AabbTree
         {
             const Node &sibling_node = nodes[sibling_index];
 
-            scalar combined_area = RectWeight(new_aabb.add(sibling_node.aabb));
+            scalar combined_area = RectWeight(new_aabb.combine(sibling_node.aabb));
 
             // Original comment said:
             // "Cost of creating a new parent for this node and the new leaf"
@@ -132,7 +132,7 @@ class AabbTree
             {
                 scalar &child_cost = child_costs[i];
                 const Node &child_node = nodes[sibling_node.children[i]];
-                child_cost = inheritance_cost + RectWeight(new_aabb.add(child_node.aabb));
+                child_cost = inheritance_cost + RectWeight(new_aabb.combine(child_node.aabb));
                 if (!child_node.IsLeaf())
                     child_cost -= RectWeight(child_node.aabb);
             }
@@ -158,7 +158,7 @@ class AabbTree
 
         new_parent_node = {};
         new_parent_node.parent = old_parent_index;
-        new_parent_node.aabb = new_aabb.add(sibling_node.aabb);
+        new_parent_node.aabb = new_aabb.combine(sibling_node.aabb);
         new_parent_node.height = sibling_node.height + 1;
 
         if (old_parent_index == null_index)
@@ -251,12 +251,12 @@ class AabbTree
         sort_two_var(new_aabb.a, new_aabb.b);
         rect large_aabb = new_aabb.expand_dir(new_velocity * params.velocity_margin_factor);
 
-        if (node.aabb.includes(new_aabb))
+        if (node.aabb.contains(new_aabb))
         {
             // The new rect fits inside the existing one.
             // Check if we should shrink the rect.
             rect extra_large_aabb = large_aabb.expand(params.extra_margin + params.shrink_margin);
-            if (extra_large_aabb.includes(node.aabb))
+            if (extra_large_aabb.contains(node.aabb))
                 return; // No shrink needed.
 
             // Shrinking is needed.
@@ -295,7 +295,7 @@ class AabbTree
     template <typename F>
     bool CollidePoint(T point, F &&func) const
     {
-        return CollideCustom([&point](const rect &aabb){return aabb.includes(point);}, std::forward<F>(func));
+        return CollideCustom([&point](const rect &aabb){return aabb.contains(point);}, std::forward<F>(func));
     }
 
     // An AABB collision test.
@@ -481,8 +481,8 @@ class AabbTree
     			c.children[1] = id;
     			a.children[1] = ie;
     			e.parent = ia;
-    			a.aabb = b.aabb.add(e.aabb);
-    			c.aabb = a.aabb.add(d.aabb);
+    			a.aabb = b.aabb.combine(e.aabb);
+    			c.aabb = a.aabb.combine(d.aabb);
 
     			a.height = 1 + max(b.height, e.height);
     			c.height = 1 + max(a.height, d.height);
@@ -492,8 +492,8 @@ class AabbTree
     			c.children[1] = ie;
     			a.children[1] = id;
     			d.parent = ia;
-    			a.aabb = b.aabb.add(d.aabb);
-    			c.aabb = a.aabb.add(e.aabb);
+    			a.aabb = b.aabb.combine(d.aabb);
+    			c.aabb = a.aabb.combine(e.aabb);
 
     			a.height = 1 + max(b.height, d.height);
     			c.height = 1 + max(a.height, e.height);
@@ -541,8 +541,8 @@ class AabbTree
     			b.children[1] = id;
     			a.children[0] = ie;
     			e.parent = ia;
-    			a.aabb = c.aabb.add(e.aabb);
-    			b.aabb = a.aabb.add(d.aabb);
+    			a.aabb = c.aabb.combine(e.aabb);
+    			b.aabb = a.aabb.combine(d.aabb);
 
     			a.height = 1 + max(c.height, e.height);
     			b.height = 1 + max(a.height, d.height);
@@ -552,8 +552,8 @@ class AabbTree
     			b.children[1] = ie;
     			a.children[0] = id;
     			d.parent = ia;
-    			a.aabb = c.aabb.add(d.aabb);
-    			b.aabb = a.aabb.add(e.aabb);
+    			a.aabb = c.aabb.combine(d.aabb);
+    			b.aabb = a.aabb.combine(e.aabb);
 
     			a.height = 1 + max(c.height, d.height);
     			b.height = 1 + max(a.height, e.height);
@@ -577,7 +577,7 @@ class AabbTree
             const Node &child1 = nodes[node.children[1]];
 
             node.height = 1 + max(child0.height, child1.height);
-            node.aabb = child0.aabb.add(child1.aabb);
+            node.aabb = child0.aabb.combine(child1.aabb);
 
             index = node.parent;
         }
@@ -611,7 +611,7 @@ class AabbTree
             ASSERT_ALWAYS(child1.parent == index);
 
             ASSERT_ALWAYS(node.height == 1 + max(child0.height, child1.height));
-            ASSERT_ALWAYS(node.aabb == child0.aabb.add(child1.aabb));
+            ASSERT_ALWAYS(node.aabb == child0.aabb.combine(child1.aabb));
 
             ValidateNode(node.children[0]);
             ValidateNode(node.children[1]);

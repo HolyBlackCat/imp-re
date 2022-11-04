@@ -327,7 +327,7 @@ namespace Graphics
 
     inline void MakeFontAtlas(Image &image, irect2 rect, const std::vector<FontAtlasEntry> &entries, bool add_gaps = true) // Throws on failure.
     {
-        if (!image.Bounds().includes(rect))
+        if (!image.Bounds().contains(rect))
             Program::Error("Invalid target rectangle for a font atlas.");
 
         struct Glyph
