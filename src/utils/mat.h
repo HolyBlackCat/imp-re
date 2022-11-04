@@ -963,7 +963,7 @@ namespace Math
         // Refuses to work if one of the arguments is a signed integer, and the other is unsigned.
         template <vector_or_scalar A, vector_or_scalar B>
         requires((std::is_unsigned_v<vec_base_t<A>> != std::is_unsigned_v<vec_base_t<B>>) <= (std::is_floating_point_v<vec_base_t<A>> || std::is_floating_point_v<vec_base_t<B>>))
-        [[nodiscard]] constexpr vec<common_vec_size_v<vec_size_v<A>, vec_size_v<B>>,int> diffsign(A a, B b)
+        [[nodiscard]] constexpr vec_or_scalar_t<common_vec_size_v<vec_size_v<A>,vec_size_v<B>>,int> diffsign(A a, B b)
         {
             // Works on scalars and vectors.
             return (a > b) - (a < b);
