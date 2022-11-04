@@ -22,14 +22,14 @@ IMP_DIAGNOSTICS_POP
 const ivec2 screen_size = ivec2(480, 270);
 const std::string_view window_name = "Iota";
 
-Interface::Window window(std::string(window_name), screen_size * 2, Interface::windowed, adjust_(Interface::WindowSettings{}, min_size = screen_size));
+Interface::Window window(std::string(window_name), screen_size * 2, Interface::windowed, adjust_(Interface::WindowSettings{}, .min_size = screen_size));
 static Graphics::DummyVertexArray dummy_vao = nullptr;
 
 Audio::Context audio_context = nullptr;
 Audio::SourceManager audio_controller;
 
 const Graphics::ShaderConfig shader_config = Graphics::ShaderConfig::Core();
-Interface::ImGuiController gui_controller(Poly::derived<Interface::ImGuiController::GraphicsBackend_Modern>, adjust_(Interface::ImGuiController::Config{}, shader_header = shader_config.common_header, store_state_in_file = {}));
+Interface::ImGuiController gui_controller(Poly::derived<Interface::ImGuiController::GraphicsBackend_Modern>, adjust_(Interface::ImGuiController::Config{}, .shader_header = shader_config.common_header, .store_state_in_file = {}));
 
 namespace Fonts
 {
@@ -40,26 +40,8 @@ namespace Fonts
     Graphics::Font main;
 }
 
-Graphics::TextureAtlas texture_atlas = []{
-    // Don't generate a new atlas in prod.
-    std::string source_dir = IMP_PLATFORM_IF_NOT(prod)("assets/_images") "";
-    // Look for the atlas relative to the exe in prod, and relative to the project root otherwise.
-    std::string target_prefix = IMP_PLATFORM_IF(prod)(Program::ExeDir() + "assets/") IMP_PLATFORM_IF_NOT(prod)("assets/assets/");
-    Graphics::TextureAtlas ret(ivec2(2048), source_dir, target_prefix + "atlas.png", target_prefix + "atlas.refl", {{"/font_storage", ivec2(256)}});
-    auto font_region = ret.Get("/font_storage");
-
-    Unicode::CharSet glyph_ranges;
-    glyph_ranges.Add(Unicode::Ranges::Basic_Latin);
-
-    Graphics::MakeFontAtlas(ret.GetImage(), font_region.pos, font_region.size, {
-        {Fonts::main, Fonts::Files::main, glyph_ranges, Graphics::FontFile::monochrome_with_hinting},
-    });
-    return ret;
-}();
-Graphics::Texture texture_main = Graphics::Texture(nullptr).Wrap(Graphics::clamp).Interpolation(Graphics::nearest).SetData(texture_atlas.GetImage());
-
 GameUtils::AdaptiveViewport adaptive_viewport(shader_config, screen_size);
-Render r = adjust_(Render(0x2000, shader_config), SetTexture(texture_main), SetMatrix(adaptive_viewport.GetDetails().MatrixCentered()));
+Render r = adjust_(Render(0x2000, shader_config), .SetMatrix(adaptive_viewport.GetDetails().MatrixCentered()));
 
 Input::Mouse mouse;
 
@@ -167,7 +149,7 @@ struct AabbTreeDemo
     {
         // Objects.
         for (const Object &obj : objects)
-            r.iquad(obj.a, obj.b).absolute().color(obj.color).beta(0.5);
+            r.iquad(obj.a.rect_to(obj.b)).color(obj.color).beta(0.5);
 
         { // AABB tree.
             fvec3 color(1,1,1);
@@ -179,13 +161,13 @@ struct AabbTreeDemo
                 auto aabb = tree.GetNodeAabb(tree.Nodes().GetElem(i));
 
                 // Top.
-                r.iquad(aabb.a-1, ivec2(aabb.b.x - aabb.a.x + 2, 1)).color(color).alpha(alpha);
+                r.iquad((aabb.a-1).rect_size(ivec2(aabb.b.x - aabb.a.x + 2, 1))).color(color).alpha(alpha);
                 // Bottom
-                r.iquad(ivec2(aabb.a.x - 1, aabb.b.y), ivec2(aabb.b.x - aabb.a.x + 2, 1)).color(color).alpha(alpha);
+                r.iquad(ivec2(aabb.a.x - 1, aabb.b.y).rect_size(ivec2(aabb.b.x - aabb.a.x + 2, 1))).color(color).alpha(alpha);
                 // Left.
-                r.iquad(aabb.a with(x -= 1), ivec2(1, aabb.b.y - aabb.a.y)).color(color).alpha(alpha);
+                r.iquad((aabb.a with(.x -= 1)).rect_size(ivec2(1, aabb.b.y - aabb.a.y))).color(color).alpha(alpha);
                 // Right.
-                r.iquad(ivec2(aabb.b.x, aabb.a.y), ivec2(1, aabb.b.y - aabb.a.y)).color(color).alpha(alpha);
+                r.iquad(ivec2(aabb.b.x, aabb.a.y).rect_size(ivec2(1, aabb.b.y - aabb.a.y))).color(color).alpha(alpha);
 
                 r.itext((aabb.a + aabb.b) / 2, Graphics::Text(Fonts::main, FMT("{}", tree.Nodes().GetElem(i)))).color(color).alpha(text_alpha);
 
@@ -242,7 +224,7 @@ struct AabbTreeDemo
                 #endif
                 fvec3 color = hit ? fvec3(1,0,0) : fvec3(0,1,0);
                 float alpha = 0.4;
-                r.iquad(a, b).absolute().color(color).alpha(alpha);
+                r.iquad(a.rect_to(b)).color(color).alpha(alpha);
             }
 
             { // Point collision.
@@ -266,8 +248,8 @@ struct AabbTreeDemo
                 fvec3 color = hit ? fvec3(1,0,0) : fvec3(0,1,0);
                 float alpha = 0.8;
                 int len = 10;
-                r.iquad(point with(y -= len), ivec2(1, len*2+1)).color(color).alpha(alpha);
-                r.iquad(point with(x -= len), ivec2(len*2+1, 1)).color(color).alpha(alpha);
+                r.iquad((point with(.y -= len)).rect_size(ivec2(1, len*2+1))).color(color).alpha(alpha);
+                r.iquad((point with(.x -= len)).rect_size(ivec2(len*2+1, 1))).color(color).alpha(alpha);
             }
         }
     }
@@ -344,10 +326,33 @@ struct Application : Program::DefaultBasicState
     {
         ImGui::StyleColorsDark();
 
+        { // Load images.
+            Graphics::GlobalData::LoadParams load_params(Program::ExeDir() + "assets/images/");
+            load_params.atlas_params = [](std::string_view atlas)
+            {
+                Graphics::GlobalData::AtlasParams ret;
+                if (atlas == "")
+                {
+                    ret.modify_image = [](Graphics::Image &image)
+                    {
+                        Unicode::CharSet glyph_ranges;
+                        glyph_ranges.Add(Unicode::Ranges::Basic_Latin);
+
+                        Graphics::MakeFontAtlas(image, Graphics::GlobalData::Image<"font_atlas", ivec2(256)>(), {
+                            {Fonts::main, Fonts::Files::main, glyph_ranges, Graphics::FontFile::monochrome_with_hinting},
+                        });
+                    };
+                }
+                return ret;
+            };
+            Graphics::GlobalData::Load(load_params);
+            r.SetAtlas("");
+        }
+
         // Load various small fonts
         auto monochrome_font_flags = ImGuiFreeTypeBuilderFlags_Monochrome | ImGuiFreeTypeBuilderFlags_MonoHinting;
 
-        gui_controller.LoadFont(Program::ExeDir() + "assets/Monocat_6x12.ttf", 12.0f, adjust(ImFontConfig{}, FontBuilderFlags = monochrome_font_flags));
+        gui_controller.LoadFont(Program::ExeDir() + "assets/Monocat_6x12.ttf", 12.0f, adjust(ImFontConfig{}, .FontBuilderFlags = monochrome_font_flags));
         gui_controller.LoadDefaultFont();
         gui_controller.RenderFontsWithFreetype();
 

@@ -25,15 +25,14 @@
 // Only 2D vectors have been tested properly, the cost heuristics may not work in higher dimensions.
 // `UserData` is an arbitrary type, an instance of which will be stored in each node.
 // Keep it small, since it'll also be stored in internal non-leaf nodes, and copied around on a whim.
-// If `Inclusive == false`, the second corner of AABBs is exclusive. This is more convenient when dealing integral coordinates.
-// `Inclusive == true` is intended for floating-point coordinates. It makes both AABB corners inclusive.
-template <Math::vector T, typename UserData = void, bool Inclusive = false>
+template <Math::vector T, typename UserData = void>
 class AabbTree
 {
     struct Empty {};
   public:
-    using vector = T;
     using scalar = typename T::type;
+    using vector = T;
+    using rect = typename T::rect_type;
     using user_data = std::conditional_t<std::is_void_v<UserData>, Empty, UserData>;
 
     struct Params
@@ -58,91 +57,28 @@ class AabbTree
         int balance_threshold = 1;
     };
 
+    // This is used to judge how large a rect is.
+    [[nodiscard]] scalar RectWeight(rect r) const
+    {
+        return r.size().sum(); // Half-perimeter. It's unclear if a different function would work.
+    }
+
     // Constructs an null/invalid tree. Use the other constructor to make a proper one.
     constexpr AabbTree() {}
 
     // Makes an empty tree.
     AabbTree(Params params) : params(std::move(params)) {}
 
-    struct Aabb
-    {
-        T a; // Inclusive.
-        T b; // Normally exclusive, greater or equal to `a`. But if `Inclusive == true`, becomes inclusive.
-
-        [[nodiscard]] friend constexpr bool operator==(const Aabb &, const Aabb &) = default;
-
-        // Returns the smallest AABB containing both this one and `other`.
-        [[nodiscard]] Aabb Combine(const Aabb &other) const
-        {
-            Aabb ret;
-            ret.a = min(a, other.a);
-            ret.b = max(b, other.b);
-            return ret;
-        }
-
-        // This is used to judge the size of the AABB.
-        // Unclear if a different function would work.
-        [[nodiscard]] scalar GetPerimeter() const
-        {
-            return (b - a).sum() * 2;
-        }
-
-        // Expands the AABB by `value`, uniformly in all directions.
-        // The `value` can be negative. Decreasing the size can't make it smaller than 0.
-        [[nodiscard]] Aabb Expand(T value) const
-        {
-            Aabb ret;
-            ret.a = a - value;
-            ret.b = b + value;
-            if (ret.a(any) > ret.b)
-                ret.a = ret.b = (ret.a + ret.b) / 2;
-            return ret;
-        }
-
-        // Expands the AABB by `value`, in one direction (depending on the sign on `value`).
-        [[nodiscard]] Aabb ExpandInDir(T value) const
-        {
-            Aabb ret = *this;
-            for (int i = 0; i < 2; i++)
-                (value[i] < 0 ? ret.a : ret.b) += value;
-            return ret;
-        }
-
-        // Returns true if `other` is fully contained in this AABB, inclusive.
-        [[nodiscard]] bool Contains(const Aabb &other) const
-        {
-            return other.a(all) >= a && other.b(all) <= b;
-        }
-
-        // Returns true if `point` is contained in this AAB, inclusive.
-        [[nodiscard]] bool ContainsPoint(T point) const
-        {
-            if constexpr (Inclusive)
-                return a(all) <= point && b(all) >= point;
-            else
-                return a(all) <= point && b(all) > point; // Sic, note `>`. `b` is exclusive, but `a` isn't.
-        }
-
-        // Returns true if this AABB intersects with `other` in any way.
-        [[nodiscard]] bool Intersects(const Aabb &other) const
-        {
-            if constexpr (Inclusive)
-                return a(all) <= other.b && b(all) >= other.a;
-            else
-                return a(all) < other.b && b(all) > other.a;
-        }
-    };
-
     // Creates a new node. Returns the node index.
     // `suggested_index` allows you to force a specific index. Mostly for internal use.
-    [[nodiscard]] int AddNode(Aabb new_aabb, user_data new_data = {}, int new_index = null_index) noexcept
+    [[nodiscard]] int AddNode(rect new_aabb, user_data new_data = {}, int new_index = null_index) noexcept
     {
         #if IMP_AUTO_VALIDATE_AABB_TREES
         FINALLY{Validate();};
         #endif
 
         sort_two_var(new_aabb.a, new_aabb.b);
-        new_aabb = new_aabb.Expand(params.extra_margin);
+        new_aabb = new_aabb.expand(params.extra_margin);
 
         ASSERT(new_index == null_index || !node_set.Contains(new_index));
         if (new_index == null_index)
@@ -180,7 +116,7 @@ class AabbTree
         {
             const Node &sibling_node = nodes[sibling_index];
 
-            scalar combined_area = new_aabb.Combine(sibling_node.aabb).GetPerimeter();
+            scalar combined_area = RectWeight(new_aabb.add(sibling_node.aabb));
 
             // Original comment said:
             // "Cost of creating a new parent for this node and the new leaf"
@@ -188,7 +124,7 @@ class AabbTree
 
             // Original comment said:
             // "Minimum cost of pushing the leaf further down the tree"
-            scalar inheritance_cost = 2 * (combined_area - sibling_node.aabb.GetPerimeter());
+            scalar inheritance_cost = 2 * (combined_area - RectWeight(sibling_node.aabb));
 
             // Some unknown heuristic...
             scalar child_costs[2];
@@ -196,9 +132,9 @@ class AabbTree
             {
                 scalar &child_cost = child_costs[i];
                 const Node &child_node = nodes[sibling_node.children[i]];
-                child_cost = inheritance_cost + new_aabb.Combine(child_node.aabb).GetPerimeter();
+                child_cost = inheritance_cost + RectWeight(new_aabb.add(child_node.aabb));
                 if (!child_node.IsLeaf())
-                    child_cost -= child_node.aabb.GetPerimeter();
+                    child_cost -= RectWeight(child_node.aabb);
             }
 
             if (sibling_cost < child_costs[0] && sibling_cost < child_costs[1])
@@ -222,7 +158,7 @@ class AabbTree
 
         new_parent_node = {};
         new_parent_node.parent = old_parent_index;
-        new_parent_node.aabb = new_aabb.Combine(sibling_node.aabb);
+        new_parent_node.aabb = new_aabb.add(sibling_node.aabb);
         new_parent_node.height = sibling_node.height + 1;
 
         if (old_parent_index == null_index)
@@ -305,7 +241,7 @@ class AabbTree
     // Modifies a node.
     // `new_velocity` is used to predictively expand AABB in the specified direction,
     // it's multiplied by `params.velocity_margin_factor`.
-    void ModifyNode(int target_index, Aabb new_aabb, T new_velocity)
+    void ModifyNode(int target_index, rect new_aabb, T new_velocity)
     {
         ASSERT(node_set.Contains(target_index));
 
@@ -313,14 +249,14 @@ class AabbTree
         ASSERT(node.IsLeaf());
 
         sort_two_var(new_aabb.a, new_aabb.b);
-        Aabb large_aabb = new_aabb.ExpandInDir(new_velocity * params.velocity_margin_factor);
+        rect large_aabb = new_aabb.expand_dir(new_velocity * params.velocity_margin_factor);
 
-        if (node.aabb.Contains(new_aabb))
+        if (node.aabb.includes(new_aabb))
         {
             // The new rect fits inside the existing one.
             // Check if we should shrink the rect.
-            Aabb extra_large_aabb = large_aabb.Expand(params.extra_margin + params.shrink_margin);
-            if (extra_large_aabb.Contains(node.aabb))
+            rect extra_large_aabb = large_aabb.expand(params.extra_margin + params.shrink_margin);
+            if (extra_large_aabb.includes(node.aabb))
                 return; // No shrink needed.
 
             // Shrinking is needed.
@@ -347,7 +283,7 @@ class AabbTree
 
     // Returns the AABB of a node. It might be larger than the requested AABB.
     // For debug purposes, you can give it IDs of non-leaf nodes, which can only be obtained by calling `Nodes()`.
-    [[nodiscard]] Aabb GetNodeAabb(int node_index) const
+    [[nodiscard]] rect GetNodeAabb(int node_index) const
     {
         ASSERT(node_set.Contains(node_index));
         return nodes[node_index].aabb;
@@ -359,21 +295,21 @@ class AabbTree
     template <typename F>
     bool CollidePoint(T point, F &&func) const
     {
-        return CollideCustom([&point](const Aabb &aabb){return aabb.ContainsPoint(point);}, std::forward<F>(func));
+        return CollideCustom([&point](const rect &aabb){return aabb.includes(point);}, std::forward<F>(func));
     }
 
     // An AABB collision test.
     // `func` is `bool func(int node)`. It's called for all colliding nodes. If it returns true, the function stops immediately and also returns true.
     // Since we expand AABBs, you might get false positive nodes. Manually check if the collision is exact.
     template <typename F>
-    bool CollideAabb(Aabb aabb, F &&func) const
+    bool CollideAabb(rect aabb, F &&func) const
     {
         sort_two_var(aabb.a, aabb.b);
-        return CollideCustom([&aabb](const Aabb &node_aabb){return aabb.Intersects(node_aabb);}, std::forward<F>(func));
+        return CollideCustom([&aabb](const rect &node_aabb){return aabb.touches(node_aabb);}, std::forward<F>(func));
     }
 
     // A custom collision test.
-    // `check_collision` is `bool check_collision(const Aabb &aabb)`. If it returns true, this AABB will be examined further.
+    // `check_collision` is `bool check_collision(const rect &aabb)`. If it returns true, this AABB will be examined further.
     // `func` is `bool func(int node)`. It's called for all colliding nodes. If it returns true, the function stops immediately and also returns true.
     // Since we expand AABBs, you might get false positive nodes. Manually check if the collision is exact.
     template <typename C, typename F>
@@ -458,7 +394,7 @@ class AabbTree
 
     struct Node
     {
-        Aabb aabb;
+        rect aabb;
         // The height of the sub-tree.
         int height = 0;
 
@@ -545,8 +481,8 @@ class AabbTree
     			c.children[1] = id;
     			a.children[1] = ie;
     			e.parent = ia;
-    			a.aabb = b.aabb.Combine(e.aabb);
-    			c.aabb = a.aabb.Combine(d.aabb);
+    			a.aabb = b.aabb.add(e.aabb);
+    			c.aabb = a.aabb.add(d.aabb);
 
     			a.height = 1 + max(b.height, e.height);
     			c.height = 1 + max(a.height, d.height);
@@ -556,8 +492,8 @@ class AabbTree
     			c.children[1] = ie;
     			a.children[1] = id;
     			d.parent = ia;
-    			a.aabb = b.aabb.Combine(d.aabb);
-    			c.aabb = a.aabb.Combine(e.aabb);
+    			a.aabb = b.aabb.add(d.aabb);
+    			c.aabb = a.aabb.add(e.aabb);
 
     			a.height = 1 + max(b.height, d.height);
     			c.height = 1 + max(a.height, e.height);
@@ -605,8 +541,8 @@ class AabbTree
     			b.children[1] = id;
     			a.children[0] = ie;
     			e.parent = ia;
-    			a.aabb = c.aabb.Combine(e.aabb);
-    			b.aabb = a.aabb.Combine(d.aabb);
+    			a.aabb = c.aabb.add(e.aabb);
+    			b.aabb = a.aabb.add(d.aabb);
 
     			a.height = 1 + max(c.height, e.height);
     			b.height = 1 + max(a.height, d.height);
@@ -616,8 +552,8 @@ class AabbTree
     			b.children[1] = ie;
     			a.children[0] = id;
     			d.parent = ia;
-    			a.aabb = c.aabb.Combine(d.aabb);
-    			b.aabb = a.aabb.Combine(e.aabb);
+    			a.aabb = c.aabb.add(d.aabb);
+    			b.aabb = a.aabb.add(e.aabb);
 
     			a.height = 1 + max(c.height, d.height);
     			b.height = 1 + max(a.height, e.height);
@@ -641,7 +577,7 @@ class AabbTree
             const Node &child1 = nodes[node.children[1]];
 
             node.height = 1 + max(child0.height, child1.height);
-            node.aabb = child0.aabb.Combine(child1.aabb);
+            node.aabb = child0.aabb.add(child1.aabb);
 
             index = node.parent;
         }
@@ -675,7 +611,7 @@ class AabbTree
             ASSERT_ALWAYS(child1.parent == index);
 
             ASSERT_ALWAYS(node.height == 1 + max(child0.height, child1.height));
-            ASSERT_ALWAYS(node.aabb == child0.aabb.Combine(child1.aabb));
+            ASSERT_ALWAYS(node.aabb == child0.aabb.add(child1.aabb));
 
             ValidateNode(node.children[0]);
             ValidateNode(node.children[1]);
