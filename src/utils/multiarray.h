@@ -13,7 +13,7 @@
 #include "utils/mat.h"
 
 
-template <int D, typename T>
+template <int D, typename T, typename Index = std::ptrdiff_t>
 class MultiArray
 {
   public:
@@ -22,8 +22,8 @@ class MultiArray
     static_assert(dimensions <= 4, "Arrays with more than 4 dimensions are not supported.");
 
     using type = T;
-    using index_t = std::ptrdiff_t;
-    using index_vec_t = xvec<D>;
+    using index_t = Index;
+    using index_vec_t = vec<D, index_t>;
 
     struct ReflHelper; // Our reflection metadata uses this to access private fields.
 
@@ -198,6 +198,6 @@ class MultiArray
     }
 };
 
-template <typename T> using Array2D = MultiArray<2, T>;
-template <typename T> using Array3D = MultiArray<3, T>;
-template <typename T> using Array4D = MultiArray<4, T>;
+template <typename T, typename Index = std::ptrdiff_t> using Array2D = MultiArray<2, T, Index>;
+template <typename T, typename Index = std::ptrdiff_t> using Array3D = MultiArray<3, T, Index>;
+template <typename T, typename Index = std::ptrdiff_t> using Array4D = MultiArray<4, T, Index>;

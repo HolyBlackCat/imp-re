@@ -6,7 +6,7 @@
 #include "reflection/interface_struct.h"
 #include "utils/multiarray.h"
 
-template <int D, typename T> struct MultiArray<D, T>::ReflHelper
+template <int D, typename T, typename Index> struct MultiArray<D, T, Index>::ReflHelper
 {
     static auto &GetSizeVec(MultiArray<D, T> &array)
     {
