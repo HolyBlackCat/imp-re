@@ -1,6 +1,6 @@
 // mat.h
 // Vector and matrix math
-// Version 3.7.0
+// Version 3.8.0
 // Generated, don't touch.
 
 #pragma once
@@ -1567,6 +1567,7 @@ namespace Math
         template <typename T> struct vec<2,T> // vec2
         {
             using type = T;
+            using rect_type = rect2<T>;
             static constexpr int size = 2;
             static constexpr bool is_floating_point = std::is_floating_point_v<type>;
             type x, y;
@@ -1640,6 +1641,7 @@ namespace Math
         template <typename T> struct vec<3,T> // vec3
         {
             using type = T;
+            using rect_type = rect3<T>;
             static constexpr int size = 3;
             static constexpr bool is_floating_point = std::is_floating_point_v<type>;
             type x, y, z;
@@ -1701,6 +1703,7 @@ namespace Math
         template <typename T> struct vec<4,T> // vec4
         {
             using type = T;
+            using rect_type = rect4<T>;
             static constexpr int size = 4;
             static constexpr bool is_floating_point = std::is_floating_point_v<type>;
             type x, y, z, w;
@@ -2324,6 +2327,10 @@ namespace Math
             template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect<D,larger_t<T,U>> expand(U        x) const {return offset_a(-x).offset_b(x);}
             template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect<D,larger_t<T,U>> shrink(vec<D,U> x) const {return offset_a(x).offset_b(-x);}
             template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect<D,larger_t<T,U>> shrink(U        x) const {return offset_a(x).offset_b(-x);}
+            template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect<D,larger_t<T,U>> expand_dir(vec<D,U> x) const {return offset_a(min(x,larger_t<T,U>{})).offset_b(max(x,larger_t<T,U>{}));}
+            template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect<D,larger_t<T,U>> expand_dir(U        x) const {return expand_dir(vec<D,U>(x));}
+            template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect<D,larger_t<T,U>> shrink_dir(vec<D,U> x) const {return offset_a(max(x,larger_t<T,U>{})).offset_b(min(x,larger_t<T,U>{}));}
+            template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect<D,larger_t<T,U>> shrink_dir(U        x) const {return shrink_dir(vec<D,U>(x));}
             template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool includes(vec<D,U> p) const {return (p >= a).all() && (p </*sic*/ b).all();}
             template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool includes(rect<D,U> r) const {return (r.a >= a).all() && (r.b <= b).all();}
             template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool touches(rect r) const {return (r.a < b).all() && (r.b > a).all();}
@@ -2332,6 +2339,7 @@ namespace Math
             template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect<D,larger_t<T,U>> intersect(rect<D,U> r) const {return max(a, r.a).rect_to(min(b, r.b));}
             [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr vec_type corner(int i) const requires(dim==2) {return vec_type((i+1)&2?b.x:a.x, i&2?b.y:a.y);}
             [[nodiscard]] constexpr std::array<vec_type, 4> to_contour() const requires(dim==2) {std::array<vec_type, 4> ret; for (int i=0;i<4;i++) ret[i]=corner(i); return ret;}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC friend constexpr bool operator==(rect x, rect y) {return x.a == y.a && x.b == y.b;}
         };
 
         // input/output
