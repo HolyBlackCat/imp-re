@@ -1727,6 +1727,10 @@ int main(int argc, char **argv)
 
                             // Abs
                             output("[[nodiscard]] constexpr vec abs() const {return vec(", Fields(", ", "std::abs(@)"), ");}\n");
+
+                            // Index
+                            // Can't forwrad the elements here, since the indices can repeat.
+                            output("template <typename C> [[nodiscard]] constexpr auto index(C &&container) const -> vec<common_vec_size_v<",w,",vec_size_v<std::decay_t<decltype(container[x])>>>,vec_base_t<std::decay_t<decltype(container[x])>>> {return {",Fields(", ", "Math::vec_elem(#,container[@])"),"};}\n");
                         }
 
                         { // Resize

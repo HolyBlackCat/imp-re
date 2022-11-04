@@ -1597,6 +1597,7 @@ namespace Math
             [[nodiscard]] constexpr type min() const {return std::min({x,y});}
             [[nodiscard]] constexpr type max() const {return std::max({x,y});}
             [[nodiscard]] constexpr vec abs() const {return vec(std::abs(x), std::abs(y));}
+            template <typename C> [[nodiscard]] constexpr auto index(C &&container) const -> vec<common_vec_size_v<2,vec_size_v<std::decay_t<decltype(container[x])>>>,vec_base_t<std::decay_t<decltype(container[x])>>> {return {Math::vec_elem(0,container[x]), Math::vec_elem(1,container[y])};}
             [[nodiscard]] constexpr vec3<type> to_vec3(type nz) const {return {x, y, nz};}
             [[nodiscard]] constexpr vec4<type> to_vec4(type nz, type nw) const {return {x, y, nz, nw};}
             [[nodiscard]] constexpr vec3<type> to_vec3() const {return {x, y, 0};}
@@ -1670,6 +1671,7 @@ namespace Math
             [[nodiscard]] constexpr type min() const {return std::min({x,y,z});}
             [[nodiscard]] constexpr type max() const {return std::max({x,y,z});}
             [[nodiscard]] constexpr vec abs() const {return vec(std::abs(x), std::abs(y), std::abs(z));}
+            template <typename C> [[nodiscard]] constexpr auto index(C &&container) const -> vec<common_vec_size_v<3,vec_size_v<std::decay_t<decltype(container[x])>>>,vec_base_t<std::decay_t<decltype(container[x])>>> {return {Math::vec_elem(0,container[x]), Math::vec_elem(1,container[y]), Math::vec_elem(2,container[z])};}
             [[nodiscard]] constexpr vec2<type> to_vec2() const {return {x, y};}
             [[nodiscard]] constexpr vec4<type> to_vec4(type nw) const {return {x, y, z, nw};}
             [[nodiscard]] constexpr vec4<type> to_vec4() const {return {x, y, z, 0};}
@@ -1733,6 +1735,7 @@ namespace Math
             [[nodiscard]] constexpr type min() const {return std::min({x,y,z,w});}
             [[nodiscard]] constexpr type max() const {return std::max({x,y,z,w});}
             [[nodiscard]] constexpr vec abs() const {return vec(std::abs(x), std::abs(y), std::abs(z), std::abs(w));}
+            template <typename C> [[nodiscard]] constexpr auto index(C &&container) const -> vec<common_vec_size_v<4,vec_size_v<std::decay_t<decltype(container[x])>>>,vec_base_t<std::decay_t<decltype(container[x])>>> {return {Math::vec_elem(0,container[x]), Math::vec_elem(1,container[y]), Math::vec_elem(2,container[z]), Math::vec_elem(3,container[w])};}
             [[nodiscard]] constexpr vec2<type> to_vec2() const {return {x, y};}
             [[nodiscard]] constexpr vec3<type> to_vec3() const {return {x, y, z};}
             [[nodiscard]] constexpr auto len_sqr() const {return x*x + y*y + z*z + w*w;}
