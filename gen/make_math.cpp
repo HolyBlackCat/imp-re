@@ -7,7 +7,7 @@
 #include <sstream>
 #include <type_traits>
 
-#define VERSION "3.9.0"
+#define VERSION "3.10.0"
 
 #pragma GCC diagnostic ignored "-Wpragmas" // Silence GCC warning about the next line disabling a warning that GCC doesn't have.
 #pragma GCC diagnostic ignored "-Wstring-plus-int" // Silence clang warning about `1+R"()"` paUern.
@@ -2348,24 +2348,30 @@ int main(int argc, char **argv)
                         [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool has_length() const {return (b > a).any();}
                         [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool has_area() const {return (b > a).all();}
                         [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect fix() const {rect ret = *this; sort_two_var(ret.a, ret.b); return ret;} // Swap components of `a` and `b` to order them correctly.
+                        // Offsetting.
                         template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect<D,larger_t<T,U>> offset_a(vec<D,U> x) const {rect<D,larger_t<T,U>> ret = *this; ret.a += x; return ret;}
                         template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect<D,larger_t<T,U>> offset_a(U        x) const {rect<D,larger_t<T,U>> ret = *this; ret.a += x; return ret;}
                         template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect<D,larger_t<T,U>> offset_b(vec<D,U> x) const {rect<D,larger_t<T,U>> ret = *this; ret.b += x; return ret;}
                         template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect<D,larger_t<T,U>> offset_b(U        x) const {rect<D,larger_t<T,U>> ret = *this; ret.b += x; return ret;}
                         template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect<D,larger_t<T,U>> offset  (vec<D,U> x) const {return offset_a(x).offset_b(x);}
                         template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect<D,larger_t<T,U>> offset  (U        x) const {return offset_a(x).offset_b(x);}
-                        // Operators `+` and `-` call `.offset()`.
-                        template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC friend constexpr rect<D,larger_t<T,U>> operator+(rect r, vec<D,U> x) {return r.offset(x);}
-                        template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC friend constexpr rect<D,larger_t<T,U>> operator+(rect r, U        x) {return r.offset(x);}
-                        template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC friend constexpr rect<D,larger_t<T,U>> operator+(vec<D,U> x, rect r) {return r + x;}
-                        template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC friend constexpr rect<D,larger_t<T,U>> operator+(U        x, rect r) {return r + x;}
-                        template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC friend constexpr rect<D,larger_t<T,U>> operator-(rect r, vec<D,U> x) {return r + -x;}
-                        template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC friend constexpr rect<D,larger_t<T,U>> operator-(rect r, U        x) {return r + -x;}
-                        template <safely_convertible_to<T> U = T> IMP_MATH_SMALL_FUNC friend constexpr rect<D,larger_t<T,U>> operator+=(rect &r, vec<D,U> x) {r = r + x; return r;}
-                        template <safely_convertible_to<T> U = T> IMP_MATH_SMALL_FUNC friend constexpr rect<D,larger_t<T,U>> operator+=(rect &r, U        x) {r = r + x; return r;}
-                        template <safely_convertible_to<T> U = T> IMP_MATH_SMALL_FUNC friend constexpr rect<D,larger_t<T,U>> operator-=(rect &r, vec<D,U> x) {r = r - x; return r;}
-                        template <safely_convertible_to<T> U = T> IMP_MATH_SMALL_FUNC friend constexpr rect<D,larger_t<T,U>> operator-=(rect &r, U        x) {r = r - x; return r;}
-                        // There's no `scalar - rect`.
+                        // Operators. Those apply to both corners. Don't forget to `.fix()` the rect if you negate it.
+                        [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect operator+() const {return *this;}
+                        [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect operator-() const {return (-a).rect_to(-b);}
+                    )");
+                    for (const char *op : {"+","-","*","/"})
+                    {
+                        output(
+                            "template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC friend constexpr rect<D,larger_t<T,U>> operator",op,"(rect r, vec<D,U> x) {return (r.a ",op," x).rect_to(r.b ",op," x);}\n"
+                            "template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC friend constexpr rect<D,larger_t<T,U>> operator",op,"(rect r, U        x) {return (r.a ",op," x).rect_to(r.b ",op," x);}\n"
+                            "template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC friend constexpr rect<D,larger_t<T,U>> operator",op,"(vec<D,U> x, rect r) {return (x ",op," r.a).rect_to(x ",op," r.b);}\n"
+                            "template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC friend constexpr rect<D,larger_t<T,U>> operator",op,"(U        x, rect r) {return (x ",op," r.a).rect_to(x ",op," r.b);}\n"
+                            "template <safely_convertible_to<T> U = T> IMP_MATH_SMALL_FUNC friend constexpr rect<D,larger_t<T,U>> operator",op,"=(rect &r, vec<D,U> x) {r = r ",op," x; return r;}\n"
+                            "template <safely_convertible_to<T> U = T> IMP_MATH_SMALL_FUNC friend constexpr rect<D,larger_t<T,U>> operator",op,"=(rect &r, U        x) {r = r ",op," x; return r;}\n"
+                        );
+                    }
+                    output(1+R"(
+                        // Expanding and shrinking.
                         template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect<D,larger_t<T,U>> expand(vec<D,U> x) const {return offset_a(-x).offset_b(x);}
                         template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect<D,larger_t<T,U>> expand(U        x) const {return offset_a(-x).offset_b(x);}
                         template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect<D,larger_t<T,U>> shrink(vec<D,U> x) const {return offset_a(x).offset_b(-x);}
@@ -2374,14 +2380,18 @@ int main(int argc, char **argv)
                         template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect<D,larger_t<T,U>> expand_dir(U        x) const {return expand_dir(vec<D,U>(x));}
                         template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect<D,larger_t<T,U>> shrink_dir(vec<D,U> x) const {return offset_a(max(x,larger_t<T,U>{})).offset_b(min(x,larger_t<T,U>{}));}
                         template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect<D,larger_t<T,U>> shrink_dir(U        x) const {return shrink_dir(vec<D,U>(x));}
+                        // Checking collisions.
                         template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool includes(vec<D,U> p) const {return (p >= a).all() && (p </*sic*/ b).all();}
                         template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool includes(rect<D,U> r) const {return (r.a >= a).all() && (r.b <= b).all();}
                         template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool touches(rect r) const {return (r.a < b).all() && (r.b > a).all();}
+                        // Modifying the rect.
                         template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect<D,larger_t<T,U>> add(vec<D,U>  p) const {return add(p.tiny_rect());}
                         template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect<D,larger_t<T,U>> add(rect<D,U> r) const {return min(a, r.a).rect_to(max(b, r.b));}
                         template <cv_unqualified_scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect<D,larger_t<T,U>> intersect(rect<D,U> r) const {return max(a, r.a).rect_to(min(b, r.b));}
+                        // Constructing the contour.
                         [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr vec_type corner(int i) const requires(dim==2) {return vec_type((i+1)&2?b.x:a.x, i&2?b.y:a.y);}
                         [[nodiscard]] constexpr std::array<vec_type, 4> to_contour() const requires(dim==2) {std::array<vec_type, 4> ret; for (int i=0;i<4;i++) ret[i]=corner(i); return ret;}
+                        // Comparisons.
                         [[nodiscard]] IMP_MATH_SMALL_FUNC friend constexpr bool operator==(rect x, rect y) {return x.a == y.a && x.b == y.b;}
                     };
 
