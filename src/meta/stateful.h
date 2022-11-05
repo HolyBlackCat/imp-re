@@ -65,6 +65,7 @@ namespace Meta::Stateful
         template <typename Name, std::size_t I, typename Unique = DefaultUnique>
         using Elem = impl::ReadElem<Name, I, Unique>;
 
+        // Returns the list elements as `Meta::TypeList<...>`.
         template <typename Name, typename Unique = DefaultUnique>
         using Elems = typename impl::ReadElemList<Name, std::make_index_sequence<size<Name, Unique>>, Unique>::type;
     }
