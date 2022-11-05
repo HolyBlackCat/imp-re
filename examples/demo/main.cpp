@@ -91,26 +91,28 @@ struct Application : Program::DefaultBasicState
         ImGui::StyleColorsDark();
 
         { // Load images.
-            Graphics::GlobalData::LoadParams load_params(Program::ExeDir() + "assets/images/");
-            load_params.atlas_params = [](std::string_view atlas)
-            {
-                Graphics::GlobalData::AtlasParams ret;
-                if (atlas == "")
-                {
-                    ret.modify_image = [](Graphics::Image &image)
-                    {
-                        Unicode::CharSet glyph_ranges;
-                        glyph_ranges.Add(Unicode::Ranges::Basic_Latin);
-
-                        Graphics::MakeFontAtlas(image, Graphics::GlobalData::Image<"font_atlas", ivec2(256)>(), {
-                            {Fonts::main, Fonts::Files::main, glyph_ranges, Graphics::FontFile::monochrome_with_hinting},
-                        });
-                    };
-                }
-                return ret;
-            };
-            Graphics::GlobalData::Load(load_params);
+            Graphics::GlobalData::Load(Program::ExeDir() + "assets/images/");
             r.SetAtlas("");
+
+            // Load the font atlas.
+            struct FontLoader : Graphics::GlobalData::Generator
+            {
+                ivec2 Size() const override
+                {
+                    return ivec2(256);
+                }
+
+                void Generate(Graphics::Image &image, irect2 rect) override
+                {
+                    Unicode::CharSet glyph_ranges;
+                    glyph_ranges.Add(Unicode::Ranges::Basic_Latin);
+
+                    Graphics::MakeFontAtlas(image, rect, {
+                        {Fonts::main, Fonts::Files::main, glyph_ranges, Graphics::FontFile::monochrome_with_hinting},
+                    });
+                }
+            };
+            (void)Graphics::GlobalData::Image<"font_atlas", FontLoader>();
         }
 
         // Load various small fonts

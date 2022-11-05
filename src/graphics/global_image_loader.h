@@ -33,12 +33,22 @@ namespace Graphics::GlobalData
 
     using AtlasMap = std::map<std::string, Atlas, std::less<>>;
 
+    // Derive from this to generate an image, see `Image()` below.
+    // An instance is created when the image is generated.
+    // `Size()` is called first, then `Generate()` is called. Then the object is destroyed.
+    struct Generator
+    {
+        virtual ~Generator() = default;
+        [[nodiscard]] virtual ivec2 Size() const = 0;
+        virtual void Generate(Image &image, irect2 rect) = 0;
+    };
+
     namespace impl
     {
         struct ImageData
         {
             Region region;
-            bool empty = false; // If true, don't load a file and create an empty image of the specified size.
+            std::function<std::unique_ptr<Generator>()> make_generator; // If not null, used to generate the image instead of loading it.
         };
 
         struct State
@@ -56,33 +66,31 @@ namespace Graphics::GlobalData
             return ret;
         }
 
-        template <Meta::ConstString Name, ivec2 Size>
+        template <Meta::ConstString Name, typename Generate>
         struct RegisterImage
         {
             inline static const Region &ref = []() -> Region &
             {
                 auto [iter, ok] = GetState().regions.try_emplace(Name.str);
                 ASSERT(ok, "Attempt to register a duplicate auto-loaded image. This shouldn't be possible.");
-                if (Size)
-                {
-                    iter->second.empty = true;
-                    static_cast<irect2 &>(iter->second.region) = ivec2().rect_size(Size);
-                }
+                // Wrapping into our own lambdas to not require copyability.
+                if constexpr (!std::is_null_pointer_v<Generate>)
+                    iter->second.make_generator = []() -> std::unique_ptr<Generator> {return std::make_unique<Generate>();};
                 return iter->second.region;
             }();
         };
     }
 
-    // Loads an image.
-    // If `Size` is specified, no file is loaded and an empty image of the specified size is created.
-    // The returned reference is stable across reloads.
-    template <Meta::ConstString Name, ivec2 Size = ivec2()>
+    // Loads an image. The returned reference is stable across reloads.
+    // If `Generate` is not null, it's used to generate the image instead of loading it.
+    template <Meta::ConstString Name, typename Generate = std::nullptr_t>
+    requires std::is_null_pointer_v<Generate> || (std::derived_from<Generate, Generator> && std::default_initializable<Generate>)
     [[nodiscard]] const Region &Image()
     {
-        return impl::RegisterImage<Name, Size>::ref;
+        return impl::RegisterImage<Name, Generate>::ref;
     }
 
-    // Same as `EmptyImage()`, but doesn't let you specify `Size`.
+    // Same as `EmptyImage()`, but doesn't let you specify any extra template arguments.
     template <Meta::ConstString Name>
     [[nodiscard]] const Region &operator""_image()
     {
@@ -147,6 +155,7 @@ namespace Graphics::GlobalData
 
         TexUnit tex_unit = nullptr; // We need this to upload images to textures.
 
+        // For each atlas...
         for (auto &[atlas_name, regions] : regions_per_atlas)
         {
             Atlas &atlas = impl::GetState().atlases.try_emplace(atlas_name).first->second;
@@ -155,22 +164,44 @@ namespace Graphics::GlobalData
             if (params.atlas_params)
                 atlas_params = params.atlas_params(atlas_name);
 
+            struct GeneratedImage
+            {
+                std::unique_ptr<Generator> generator;
+                impl::State::RegionPair *region = nullptr;
+            };
+            std::vector<GeneratedImage> generated_images;
+
+            // Generate the atlas.
             atlas.image = MakeAtlas(atlas_params.size, [&, &regions = regions](AtlasInputFunc func)
             {
                 for (impl::State::RegionPair *pair : regions)
                 {
-                    if (pair->second.empty)
-                        func(pair->second.region.size(), pair->second.region);
+                    if (pair->second.make_generator)
+                    {
+                        if (generated_images.empty())
+                            generated_images.reserve(regions.size());
+                        generated_images.push_back({.generator = pair->second.make_generator(), .region = pair});
+                        func(generated_images.back().generator->Size(), pair->second.region);
+                    }
                     else
+                    {
                         func(params.get_data(pair->first), pair->second.region);
+                    }
                 }
             }, atlas_params.atlas_flags);
 
+            // Insert the custom images into the atlas, if any.
+            for (GeneratedImage &generated : generated_images)
+                generated.generator->Generate(atlas.image, generated.region->second.region);
+            generated_images.clear();
+
+            // Run a custom callback on the image, if any.
             if (atlas_params.modify_image)
                 atlas_params.modify_image(atlas.image);
 
             atlas.size = atlas.image.Size();
 
+            // Load the image into a texture.
             if (!bool(atlas_params.flags & Flags::no_texture))
             {
                 atlas.texture = nullptr;
