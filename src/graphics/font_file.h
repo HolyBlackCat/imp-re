@@ -355,8 +355,8 @@ namespace Graphics
                 // Copy glyph to the font.
                 FontFile::GlyphData glyph_data = entry.source->GetGlyph(ch, entry.render_flags);
                 Font::Glyph &font_glyph = (ch != Unicode::default_char ? entry.target->Insert(ch) : entry.target->DefaultGlyph());
-                font_glyph.size = svec2(glyph_data.image.Size());
-                font_glyph.offset = svec2(glyph_data.offset);
+                font_glyph.size = glyph_data.image.Size();
+                font_glyph.offset = glyph_data.offset;
                 font_glyph.advance = glyph_data.advance;
 
                 // Save it into the glyph vector.
@@ -387,7 +387,7 @@ namespace Graphics
         {
             ivec2 glyph_pos = rect.a + rects[i].pos;
 
-            glyphs[i].target->texture_pos = svec2(glyph_pos);
+            glyphs[i].target->texture_pos = glyph_pos;
 
             image.UnsafeDrawImage(glyphs[i].image, glyph_pos);
         }

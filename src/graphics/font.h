@@ -13,9 +13,9 @@ namespace Graphics
       public:
         struct Glyph
         {
-            svec2 texture_pos = svec2(0);
-            svec2 size = svec2(0);
-            svec2 offset = svec2(0);
+            ivec2 texture_pos;
+            ivec2 size;
+            ivec2 offset;
             int advance = 0;
         };
 
@@ -103,9 +103,17 @@ namespace Graphics
             else
                 return default_glyph;
         }
-        Glyph &Insert(uint32_t ch) // If the glyph already exists, returns a reference to it instead of creating a new one.
+        // If the glyph already exists, returns a reference to it instead of creating a new one.
+        Glyph &Insert(uint32_t ch)
         {
             return glyphs.insert({ch, {}}).first->second;
+        }
+
+        // Offset all regions by this amount.
+        void Offset(ivec2 offset)
+        {
+            for (auto &[code, glyph] : glyphs)
+                glyph.texture_pos += offset;
         }
     };
 }

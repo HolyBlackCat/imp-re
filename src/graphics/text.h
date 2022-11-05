@@ -16,15 +16,15 @@ namespace Graphics
         struct Symbol
         {
             uint32_t ch = 0;
-            svec2 texture_pos = svec2(0);
-            svec2 offset = svec2(0);
-            svec2 size = svec2(0);
-            short advance = 0;
-            short kerning = 0;
+            ivec2 texture_pos;
+            ivec2 offset;
+            ivec2 size;
+            int advance = 0;
+            int kerning = 0;
 
-            short ascent = 0;
-            short descent = 0;
-            short line_gap = 0;
+            int ascent = 0;
+            int descent = 0;
+            int line_gap = 0;
         };
 
         struct Line
