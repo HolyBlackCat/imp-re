@@ -55,7 +55,8 @@ namespace Graphics
         ivec2 Size() const {return size;}
         irect2 Bounds() const {return ivec2().rect_size(Size());}
 
-        void Save(std::string file_name, Format format = png) // Throws on failure.
+        // Throws on failure.
+        void Save(std::string file_name, Format format = png) const
         {
             if (!*this)
                 Program::Error("Attempt to save an empty image to a file.");
