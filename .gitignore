@@ -5,16 +5,14 @@
 /dist/**
 /obj/**
 
-/assets/assets/atlas.*
-
 *.tar.gz
 *.tar.zst
 *.zip
 
 /.vscode/launch.json
 
-local_config.mk
+/local_config.mk
 
-compile_commands.json
+/compile_commands.json
 gmon.out
 imgui.ini
