@@ -518,13 +518,7 @@ namespace Ent
 
             ~Controller()
             {
-                // Destroy entities from all lists.
-                // Since `EntityCategories()` errors on entities without categories, this doesn't leak.
-                for (const auto &list : state.lists)
-                {
-                    while (Entity *entity = list->AnyEntity())
-                        destroy(*entity);
-                }
+                DestroyAllEntities();
             }
 
             // Returns true if this is a non-null controller.
@@ -618,6 +612,18 @@ namespace Ent
             [[nodiscard]] const typename Cat::list_t &get() const
             {
                 return const_cast<Controller *>(this)->get<Cat>();
+            }
+
+            // Destroys all entities in the controller.
+            void DestroyAllEntities()
+            {
+                // Destroy entities from all lists.
+                // Since `EntityCategories()` errors on entities without categories, this doesn't leak.
+                for (const auto &list : state.lists)
+                {
+                    while (Entity *entity = list->AnyEntity())
+                        destroy(*entity);
+                }
             }
         };
     };
