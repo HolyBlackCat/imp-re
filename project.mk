@@ -175,6 +175,7 @@ $(call Library,SDL2-2.24.1.tar.gz)
   $(call LibrarySetting,common_flags,-fno-sanitize=address -fno-sanitize=undefined)# ASAN/UBSAN cause linker errors in Linux, when making `libSDL2.so`. `-DSDL_ASAN=ON` doesn't help.
 $(call Library,SDL2_net-2.2.0.tar.gz)
   $(call LibrarySetting,deps,SDL2-2.24.1)
+  $(call LibrarySetting,common_flags,-fno-sanitize=address -fno-sanitize=undefined)# See above.
 endif
 
 $(call Library,zlib-1.2.12.tar.gz)
