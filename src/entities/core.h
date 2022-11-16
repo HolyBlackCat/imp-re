@@ -205,8 +205,14 @@ namespace Ent
     class Entity
     {
       public:
+        Entity() {}
+
         // We use this class to delete entities.
         virtual ~Entity() = default;
+
+        // Prevent slicing.
+        Entity(const Entity &) = delete;
+        Entity& operator=(const Entity &) = delete;
 
         // We provide a bunch of wrappers over `dynamic_cast`:
 
