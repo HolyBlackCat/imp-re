@@ -4,7 +4,9 @@
 // Some parts look ugly because they're in a template lambda and need `.template` everywhere, but this way we get more test coverage.
 // It's recommended to run this with ASAN when developing, just in case.
 
-struct Game : Ent::BasicTag<Game> {};
+struct Game : Ent::BasicTag<Game,
+    Ent::Mixins::ComponentsAsCategories // Allow `controller.get<T>()` to accept component types directly.
+> {};
 
 struct Pos
 {
@@ -30,10 +32,10 @@ struct Map
 Game::Controller game = nullptr;
 
 // Entity categories.
-using WithPos         = Game::Category<Ent::OrderedList, Pos>;
-using WithPosAndVel   = Game::Category<Ent::UnorderedList, Pos, Vel>;
-using TheMapEntity    = Game::Category<Ent::SingleEntity, Map>;
-using TheMap          = Game::Category<Ent::SingleComponent, Map>;
+using WithPos       = Game::Category<Ent::OrderedList, Pos>;
+using WithPosAndVel = Game::Category<Ent::UnorderedList, Pos, Vel>;
+using TheMap        = Game::Category<Ent::SingleEntity, Map>;
+using TheMapComp    = Game::Category<Ent::SingleComponent<Map>, Map>;
 
 IMP_MAIN(,)
 {
@@ -89,10 +91,13 @@ IMP_MAIN(,)
         catch (...) {}
 
         std::cout << "The map:\n";
+        // Variant 0.
+        // `Ent::Mixins::ComponentsAsCategories` lets us do this.
+        std::cout << game.template get<Map>()->map << '\n';
         // Variant 1.
-        std::cout << game.template get<TheMap>()->map << '\n';
+        std::cout << game.template get<TheMapComp>()->map << '\n';
         // Variant 2.
-        std::cout << game.template get<TheMapEntity>()->template get<Map>().map << '\n';
+        std::cout << game.template get<TheMap>()->template get<Map>().map << '\n';
     };
 
     std::cout << "--- Non-const:\n";

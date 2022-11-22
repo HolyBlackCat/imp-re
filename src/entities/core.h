@@ -372,6 +372,15 @@ namespace Ent
     template <typename T, typename Tag>
     concept EntityCategory = Meta::cvref_unqualified<T> && std::derived_from<T, impl::CategoryBase<Tag>> && requires{typename T::list_t; typename T::predicate_t;};
 
+    // Checks `Tag::PrepareCategoryType<T>::type` against the `Category` concept.
+    // Normally that's an identity type funciton, see the comments on it for details.
+    template <typename T, typename Tag>
+    concept UnpreparedEntityCategory = EntityCategory<typename Tag::template PrepareCategoryType<T>::type, Tag>;
+
+    // Gives the list type associated with the category `Cat`, after transforming it with `PrepareCategoryType`.
+    template <typename Tag, typename Cat>
+    using UnpreparedCategoryListType = typename Tag::template PrepareCategoryType<Cat>::type::list_t;
+
     // Assigns indices to categories.
     template <TagType Tag>
     class CategoryRegistry
@@ -452,186 +461,217 @@ namespace Ent
 
     namespace impl
     {
-        struct EmptyTagBase {};
+        // The default tag implementation. This is ultimately a CRTP base.
+        template <typename Tag>
+        struct DefaultTag
+        {
+            // In this class defintion, refer to customizable members with `Tag::`,
+            // to make sure they can be overriden in mixins.
+
+            // Register `Tag` as a tag type.
+            static_assert((void(impl::RegisterAsTag<Tag>{}), true));
+
+            // Each entity gets an incremental ID of this type.
+            using unique_id_t = unsigned int;
+
+            // An implementation of `PredicateBase` for testing if an entity has all the listed components.
+            template <Component<Tag> ...Comp>
+            struct HasComponents : PredicateBase<Tag>
+            {
+                bool Matches(const EntityDesc<Tag> &desc) const override
+                {
+                    return (desc.template Has<Comp>() && ...);
+                }
+            };
+
+            // An entity category.
+            template <typename EntityList, Predicate<Tag> Pred> requires List<EntityList, Tag, Pred>
+            struct CustomCategory : impl::CategoryBase<Tag>
+            {
+                using list_t = typename EntityList::template Type<Tag, Pred>;
+                using predicate_t = Pred;
+            };
+
+            // A simple entity category, with a predicate checking for certain components.
+            template <typename EntityList, Component<Tag> ...Comp> requires List<EntityList, Tag, HasComponents<Comp...>>
+            using Category = CustomCategory<EntityList, HasComponents<Comp...>>;
+
+            // This is used to modify a category type when it's passed to `Controller::get()` and others.
+            // The input type doesn't have to be a category.
+            template <typename T>
+            struct PrepareCategoryType {using type = T;};
+
+            // Each entity automatically inherits from this.
+            // Can't be overriden.
+            using Entity = Ent::Entity<Tag>;
+
+            // An entity controller.
+            class Controller
+            {
+                struct State
+                {
+                    std::vector<std::unique_ptr<ListBase<Tag>>> lists;
+                    typename Tag::unique_id_t id_counter = 0;
+                };
+                State state;
+
+              public:
+                // Makes a null controller.
+                constexpr Controller() {}
+
+                // Makes a valid controller.
+                Controller(std::nullptr_t)
+                {
+                    state.lists.resize(CategoryRegistry<Tag>::Count());
+                    for (int i = 0; i < CategoryRegistry<Tag>::Count(); i++)
+                        state.lists[i] = CategoryRegistry<Tag>::Descriptions()[i].make_list();
+                }
+
+                Controller(Controller &&other) noexcept : state(std::exchange(other.state, {})) {}
+                Controller &operator=(Controller other) noexcept
+                {
+                    std::swap(state, other.state);
+                    return *this;
+                }
+
+                ~Controller()
+                {
+                    DestroyAllEntities();
+                }
+
+                // Returns true if this is a non-null controller.
+                [[nodiscard]] explicit operator bool() const {return !state.lists.empty();}
+
+                // Throw if this is a null controller.
+                void ThrowIfNull() const
+                {
+                    if (!*this)
+                        throw std::runtime_error("Attempt to use a null entity controller.");
+                }
+
+                // The final entity type that can be created.
+                // Mostly for internal use.
+                template <EntityType<Tag> E>
+                struct FullEntity final : Entity, E
+                {
+                    using E::E;
+
+                    const std::vector<int> &EntityCategoryIndices() const override
+                    {
+                        return EntityCategories<Tag, E>();
+                    }
+                };
+
+                // Create an entity in this controller.
+                template <EntityType<Tag> E, typename ...P>
+                requires std::constructible_from<FullEntity<E>, P &&...>
+                E &create(P &&... params)
+                {
+                    ThrowIfNull();
+                    using full_entity_t = FullEntity<E>;
+                    static_assert(std::derived_from<full_entity_t, Entity>, "Do not inherit from `Entity` manually.");
+
+                    const auto &categories = EntityCategories<Tag, E>();
+
+                    // Make the entity.
+                    full_entity_t *ret = new full_entity_t(std::forward<P>(params)...);
+
+                    // Construct a guard.
+                    std::size_t category_index = 0;
+                    auto HandleException = [&]
+                    {
+                        while (category_index-- > 0)
+                            state.lists[categories[category_index]]->Erase(*ret);
+                        delete ret;
+                    };
+                    struct Guard
+                    {
+                        decltype(HandleException) *func = nullptr;
+                        ~Guard() {if (func) (*func)();}
+                    };
+                    Guard guard{&HandleException};
+
+                    // Assign a unique id.
+                    // This has to be done before inserting to the lists, since they can use it.
+                    impl::EntityState<Tag>::ModifyState(*ret).unique_id = state.id_counter++;
+
+                    // Insert the entity to lists. This part can throw.
+                    for (; category_index < categories.size(); category_index++)
+                        state.lists[categories[category_index]]->Insert(*ret);
+
+                    // Disarm the guard.
+                    guard.func = nullptr;
+                    return *ret;
+                }
+
+                // Destroy an entity in this controller.
+                template <typename E> requires EntityType<E, Tag> || Component<E, Tag> || std::same_as<E, Entity>
+                void destroy(E &entity_or_component) noexcept
+                {
+                    ThrowIfNull();
+                    Entity &entity = dynamic_cast<Entity &>(entity_or_component);
+                    // Remove from lists.
+                    const auto &categories = entity.EntityCategoryIndices();
+                    for (int list_index : categories)
+                        state.lists[list_index]->Erase(entity);
+                    // Destroy the entity.
+                    // `Entity` always has a virtual destructor, but a component might not have one.
+                    delete &entity;
+                }
+
+                // Return an entity category.
+                template <UnpreparedEntityCategory<Tag> Cat>
+                [[nodiscard]] UnpreparedCategoryListType<Tag, Cat> &get()
+                {
+                    ThrowIfNull();
+                    using PreparedCat = typename Tag::template PrepareCategoryType<Cat>::type;
+                    return ListFriend::Cast<typename PreparedCat::list_t &>(*state.lists[CategoryRegistry<Tag>::template Type<PreparedCat>::index]);
+                }
+                template <UnpreparedEntityCategory<Tag> Cat>
+                [[nodiscard]] const UnpreparedCategoryListType<Tag, Cat> &get() const
+                {
+                    return const_cast<Controller *>(this)->get<Cat>();
+                }
+
+                // Destroys all entities in the controller.
+                void DestroyAllEntities()
+                {
+                    // Destroy entities from all lists.
+                    // Since `EntityCategories()` errors on entities without categories, this doesn't leak.
+                    for (const auto &list : state.lists)
+                    {
+                        while (Entity *entity = list->AnyEntity())
+                            destroy(*entity);
+                    }
+                }
+            };
+        };
+
+        // Returns `M0<Derived,M1<Derived,...Mn<Derived,Base>>>`.
+        // `Derived` is the assumed most-derived class in the chain. It's gived to each mixin as a template parameter.
+        // Each mixin must inherit from its second template parameter. The last mixin receives `Base`.
+        template <typename Derived, typename Base, template <typename, typename> typename ...M>
+        struct CombineMixins
+        {
+            using type = Base;
+        };
+
+        template <typename Derived, typename Base, template <typename, typename> typename M0, template <typename, typename> typename ...M>
+        struct CombineMixins<Derived, Base, M0, M...>
+        {
+            using NextBase = typename CombineMixins<Derived, Base, M...>::type;
+            using type = M0<Derived, NextBase>;
+            static_assert(std::derived_from<type, NextBase>, "Mixins must inherit from their second template parameters.");
+        };
     }
 
     // A CRTP base for producing tag types.
-    template <typename Tag, typename BaseTag = impl::EmptyTagBase>
-    struct BasicTag : BaseTag
+    // `Mixins` is an optional list of mixins. Each receives `Tag` as the first template parameter,
+    // and must inherit from the second parameter.
+    template <typename Tag, template <typename/*Tag*/, typename/*NextBase*/> typename ...Mixins>
+    struct BasicTag : impl::CombineMixins<Tag, impl::DefaultTag<Tag>, Mixins...>::type
     {
-        // Register `Tag` as a tag type.
-        static_assert((void(impl::RegisterAsTag<Tag>{}), true));
-
-        // Each entity gets an incremental ID of this type.
-        using unique_id_t = unsigned int;
-
-        // An implementation of `PredicateBase` for testing if an entity has all the listed components.
-        template <Component<Tag> ...Comp>
-        struct HasComponents : PredicateBase<Tag>
-        {
-            using required_components = Meta::type_list<Comp...>;
-
-            bool Matches(const EntityDesc<Tag> &desc) const override
-            {
-                return (desc.template Has<Comp>() && ...);
-            }
-        };
-
-        // An entity category.
-        template <typename EntityList, Predicate<Tag> Pred> requires List<EntityList, Tag, Pred>
-        struct CustomCategory : impl::CategoryBase<Tag>
-        {
-            using list_t = typename EntityList::template Type<Tag, Pred>;
-            using predicate_t = Pred;
-        };
-
-        // A simple entity category, with a predicate checking for certain components.
-        template <typename EntityList, Component<Tag> ...Comp> requires List<EntityList, Tag, HasComponents<Comp...>>
-        using Category = CustomCategory<EntityList, HasComponents<Comp...>>;
-
-        // Each entity automatically inherits from this.
-        // Can't be overriden.
-        using Entity = Ent::Entity<Tag>;
-
-        // An entity controller.
-        class Controller
-        {
-            struct State
-            {
-                std::vector<std::unique_ptr<ListBase<Tag>>> lists;
-                typename Tag::unique_id_t id_counter = 0;
-            };
-            State state;
-
-          public:
-            // Makes a null controller.
-            constexpr Controller() {}
-
-            // Makes a valid controller.
-            Controller(std::nullptr_t)
-            {
-                state.lists.resize(CategoryRegistry<Tag>::Count());
-                for (int i = 0; i < CategoryRegistry<Tag>::Count(); i++)
-                    state.lists[i] = CategoryRegistry<Tag>::Descriptions()[i].make_list();
-            }
-
-            Controller(Controller &&other) noexcept : state(std::exchange(other.state, {})) {}
-            Controller &operator=(Controller other) noexcept
-            {
-                std::swap(state, other.state);
-                return *this;
-            }
-
-            ~Controller()
-            {
-                DestroyAllEntities();
-            }
-
-            // Returns true if this is a non-null controller.
-            [[nodiscard]] explicit operator bool() const {return !state.lists.empty();}
-
-            // Throw if this is a null controller.
-            void ThrowIfNull() const
-            {
-                if (!*this)
-                    throw std::runtime_error("Attempt to use a null entity controller.");
-            }
-
-            // The final entity type that can be created.
-            // Mostly for internal use.
-            template <EntityType<Tag> E>
-            struct FullEntity final : Entity, E
-            {
-                using E::E;
-
-                const std::vector<int> &EntityCategoryIndices() const override
-                {
-                    return EntityCategories<Tag, E>();
-                }
-            };
-
-            // Create an entity in this controller.
-            template <EntityType<Tag> E, typename ...P>
-            requires std::constructible_from<FullEntity<E>, P &&...>
-            E &create(P &&... params)
-            {
-                ThrowIfNull();
-                using full_entity_t = FullEntity<E>;
-                static_assert(std::derived_from<full_entity_t, Entity>, "Do not inherit from `Entity` manually.");
-
-                const auto &categories = EntityCategories<Tag, E>();
-
-                // Make the entity.
-                full_entity_t *ret = new full_entity_t(std::forward<P>(params)...);
-
-                // Construct a guard.
-                std::size_t category_index = 0;
-                auto HandleException = [&]
-                {
-                    while (category_index-- > 0)
-                        state.lists[categories[category_index]]->Erase(*ret);
-                    delete ret;
-                };
-                struct Guard
-                {
-                    decltype(HandleException) *func = nullptr;
-                    ~Guard() {if (func) (*func)();}
-                };
-                Guard guard{&HandleException};
-
-                // Assign a unique id.
-                // This has to be done before inserting to the lists, since they can use it.
-                impl::EntityState<Tag>::ModifyState(*ret).unique_id = state.id_counter++;
-
-                // Insert the entity to lists. This part can throw.
-                for (; category_index < categories.size(); category_index++)
-                    state.lists[categories[category_index]]->Insert(*ret);
-
-                // Disarm the guard.
-                guard.func = nullptr;
-                return *ret;
-            }
-
-            // Destroy an entity in this controller.
-            template <typename E> requires EntityType<E, Tag> || Component<E, Tag> || std::same_as<E, Entity>
-            void destroy(E &entity_or_component) noexcept
-            {
-                ThrowIfNull();
-                Entity &entity = dynamic_cast<Entity &>(entity_or_component);
-                // Remove from lists.
-                const auto &categories = entity.EntityCategoryIndices();
-                for (int list_index : categories)
-                    state.lists[list_index]->Erase(entity);
-                // Destroy the entity.
-                // `Entity` always has a virtual destructor, but a component might not have one.
-                delete &entity;
-            }
-
-            // Return an entity category.
-            template <EntityCategory<Tag> Cat>
-            [[nodiscard]] typename Cat::list_t &get()
-            {
-                ThrowIfNull();
-                return ListFriend::Cast<typename Cat::list_t &>(*state.lists[CategoryRegistry<Tag>::template Type<Cat>::index]);
-            }
-            template <EntityCategory<Tag> Cat>
-            [[nodiscard]] const typename Cat::list_t &get() const
-            {
-                return const_cast<Controller *>(this)->get<Cat>();
-            }
-
-            // Destroys all entities in the controller.
-            void DestroyAllEntities()
-            {
-                // Destroy entities from all lists.
-                // Since `EntityCategories()` errors on entities without categories, this doesn't leak.
-                for (const auto &list : state.lists)
-                {
-                    while (Entity *entity = list->AnyEntity())
-                        destroy(*entity);
-                }
-            }
-        };
+        // See `impl::DefaultTag` for the default members.
     };
 }
 

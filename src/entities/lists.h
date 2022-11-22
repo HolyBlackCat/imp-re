@@ -157,29 +157,19 @@ namespace Ent
 
     namespace impl
     {
-        // Whether `T` is a specialization of `HasComponents` with a single argument.
-        template <typename T, typename Tag>
-        concept SingleComponentPredicate = Predicate<T, Tag> && Meta::specialization_of<T, Tag::template HasComponents> && Meta::list_size<typename T::required_components> == 1;
-
-        // If `T` is a `SingleComponentPredicate`, returns its target component. Otherwise `void`.
-        template <typename Tag, typename Pred>
-        struct SinglePredicateComponent {};
-        template <typename Tag, SingleComponentPredicate<Tag> Pred>
-        struct SinglePredicateComponent<Tag, Pred> {using type = Meta::list_type_at<typename Pred::required_components, 0>;};
-
         // A single-entity "list", that can either dereference to a whole entity or to a specific component.
-        template <bool IsSingleComponent>
+        // If `Comp` is void, dereferences to a whole entity.
+        template <typename Comp>
         struct Single
         {
             template <TagType Tag, Predicate<Tag> Pred>
             class Type : ListBase<Tag>
             {
                 friend ListFriend;
-                static_assert(IsSingleComponent <= SingleComponentPredicate<Pred, Tag>, "For single-component lists, the predicate must be `HasComponents` with a single argument.");
 
                 // If `IsSingleComponent` is false, returns `Entity<Tag>`.
                 // Otherwise returns the sole component that `Pred` requires (the `static_assert` above checks that we have one).
-                using elem_t = typename std::conditional_t<IsSingleComponent, SinglePredicateComponent<Tag, Pred>, std::enable_if<true, Entity<Tag>>>::type;
+                using elem_t = typename std::conditional_t<std::is_void_v<Comp>, Entity<Tag>, Comp>;
 
                 Entity<Tag> *current = nullptr;
 
@@ -236,9 +226,22 @@ namespace Ent
     }
 
     // A single-entity list.
-    using SingleEntity = impl::Single<false>;
+    using SingleEntity = impl::Single<void>;
 
     // A single-entity list that returns a specific component by default.
-    // It requires the predicate to be `HasComponents` with a single argument.
-    using SingleComponent = impl::Single<true>;
+    template <typename Comp> requires(!std::is_void_v<Comp>)
+    using SingleComponent = impl::Single<Comp>;
+
+    namespace Mixins
+    {
+        // When a component is used as a category type, automatically generate a category for it, with `SingleComponent<T>` as a list.
+        template <typename Tag, typename NextBase>
+        struct ComponentsAsCategories : NextBase
+        {
+            template <typename T>
+            struct PrepareCategoryType {using type = typename NextBase::template PrepareCategoryType<T>::type;};
+            template <Component<Tag> T>
+            struct PrepareCategoryType<T> {using type = typename Tag::template Category<SingleComponent<T>, T>;};
+        };
+    }
 }
