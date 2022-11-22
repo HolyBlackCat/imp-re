@@ -134,9 +134,14 @@ namespace Ent
     template <TagType Tag>
     class ComponentRegistry
     {
-        static int &MutableCount()
+        struct State
         {
-            static int ret = 0;
+            bool finalized = false;
+            int count = 0;
+        };
+        static State &GetState()
+        {
+            static State ret;
             return ret;
         }
 
@@ -144,16 +149,26 @@ namespace Ent
         ComponentRegistry() = delete;
         ~ComponentRegistry() = delete;
 
-        [[nodiscard]] static int Count() {return MutableCount();}
+        // The number of registered components for this tag.
+        [[nodiscard]] static int Count() {return GetState().count;}
 
+        // Registers a component at program startup, and gives its index.
         template <Component<Tag> T>
         struct Type
         {
-            inline static const int index = MutableCount()++;
+            inline static const int index = []{
+                State &state = GetState();
+                if (state.finalized)
+                    throw std::runtime_error("Entities: Internal error: Attempt to register a component too late.\nMake sure any global controllers are null by default, and are initialized later.");
+                return state.count++;
+            }();
 
           private:
             static constexpr std::integral_constant<const int *, &index> registration_helper;
         };
+
+        // After this is called, attempting to register a component will cause an error.
+        static void Finalize() {GetState().finalized = true;}
     };
 
 
@@ -395,9 +410,14 @@ namespace Ent
         };
 
       private:
-        static std::vector<Desc> &MutableDescList()
+        struct State
         {
-            static std::vector<Desc> ret;
+            bool finalized = false;
+            std::vector<Desc> descs;
+        };
+        static State &GetState()
+        {
+            static State ret;
             return ret;
         }
 
@@ -406,17 +426,20 @@ namespace Ent
         ~CategoryRegistry() = delete;
 
         // The number of registered categories.
-        [[nodiscard]] static int Count() {return int(MutableDescList().size());}
+        [[nodiscard]] static int Count() {return int(GetState().descs.size());}
         // Extra information for registered categories.
-        [[nodiscard]] static const std::vector<Desc> &Descriptions() {return MutableDescList();}
+        [[nodiscard]] static const std::vector<Desc> &Descriptions() {return GetState().descs;}
 
-        // Registers categories and returns their indices.
+        // Registers a category and returns its index.
         template <EntityCategory<Tag> T>
         struct Type
         {
             inline static const int index = []{
+                State &state = GetState();
+                if (state.finalized)
+                    throw std::runtime_error("Entities: Internal error: Attempt to register a category too late.\nMake sure any global controllers are null by default, and are initialized later.");
                 int ret = Count();
-                MutableDescList().push_back({
+                state.descs.push_back({
                     .make_list = []() -> std::unique_ptr<ListBase<Tag>>
                     {
                         // `ListFriend::Cast` can't throw so this should be ok.
@@ -432,6 +455,9 @@ namespace Ent
           private:
             static constexpr std::integral_constant<const int *, &index> registration_helper;
         };
+
+        // After this is called, attempting to register a category will cause an error.
+        static void Finalize() {GetState().finalized = true;}
     };
 
     // Lists categories of an entity. The resulting list is sorted.
@@ -520,8 +546,12 @@ namespace Ent
                 constexpr Controller() {}
 
                 // Makes a valid controller.
+                // WARNING: This can't be called before entering `main()`.
                 Controller(std::nullptr_t)
                 {
+                    ComponentRegistry<Tag>::Finalize();
+                    CategoryRegistry<Tag>::Finalize();
+
                     state.lists.resize(CategoryRegistry<Tag>::Count());
                     for (int i = 0; i < CategoryRegistry<Tag>::Count(); i++)
                         state.lists[i] = CategoryRegistry<Tag>::Descriptions()[i].make_list();
