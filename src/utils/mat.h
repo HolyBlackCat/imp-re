@@ -1,6 +1,6 @@
 // mat.h
 // Vector and matrix math
-// Version 3.12.0
+// Version 3.13.0
 // Generated, don't touch.
 
 #pragma once
@@ -361,7 +361,9 @@ namespace Math
         template <typename T> struct helper_is_matrix : std::false_type {};
         template <int W, int H, typename T> struct helper_is_matrix<mat<W,H,T>> : std::true_type {};
         template <typename T> concept matrix = cv_unqualified<T>/*redundant*/ && helper_is_matrix<T>::value;
+        template <typename T> concept square_matrix = matrix<T> && T::width == T::height;
         template <typename T> concept matrix_maybe_const = matrix<std::remove_const_t<T>>;
+        template <typename T> concept square_matrix_maybe_const = square_matrix<std::remove_const_t<T>>;
 
         // For vectors returns their element type, for scalars returns them unchanged.
         template <typename T> struct helper_vec_base {using type = T;};
