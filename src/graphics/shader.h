@@ -413,11 +413,11 @@ namespace Graphics
         inline static constexpr bool
             is_array   = std::is_array_v<type_with_extent>,
             is_texture = std::is_same_v<type, TexUnit>,
-            is_bool    = std::is_same_v<Math::vec_base_t<type>, bool>;
+            is_bool    = std::is_same_v<Math::vec_base_weak_t<type>, bool>;
 
         inline static constexpr int array_elements = std::extent_v<std::conditional_t<is_array, type_with_extent, type_with_extent[1]>>;
 
-        using effective_type = std::conditional_t<is_texture || is_bool, Math::change_vec_base_t<type, int>, type>; // Textures and bools become ints here
+        using effective_type = std::conditional_t<is_texture || is_bool, Math::change_vec_base_weak_t<type, int>, type>; // Textures and bools become ints here
 
         using base_type = typename std::conditional_t<Math::scalar<effective_type>, std::enable_if<1, effective_type>, effective_type>::type; // Vectors and matrices become scalars here.
 
