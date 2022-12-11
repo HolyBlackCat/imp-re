@@ -7,7 +7,7 @@
 #include <sstream>
 #include <type_traits>
 
-#define VERSION "3.13.0"
+#define VERSION "3.14.0"
 
 #pragma GCC diagnostic ignored "-Wpragmas" // Silence GCC warning about the next line disabling a warning that GCC doesn't have.
 #pragma GCC diagnostic ignored "-Wstring-plus-int" // Silence clang warning about `1+R"()"` paUern.
@@ -246,11 +246,11 @@ int main(int argc, char **argv)
         section("inline namespace Utility // Scalar concepts", []
         {
             output(1+R"(
-                template <typename T> concept cv_unqualified = std::is_same_v<T, std::remove_cv_t<T>>;
+                template <typename T> concept cvref_unqualified = std::is_same_v<T, std::remove_cvref_t<T>>;
 
                 // Whether a type is a scalar.
                 template <typename T> struct helper_is_scalar : std::is_arithmetic<T> {}; // Not `std::is_scalar`, because that includes pointers.
-                template <typename T> concept scalar = cv_unqualified<T> && helper_is_scalar<T>::value;
+                template <typename T> concept scalar = cvref_unqualified<T> && helper_is_scalar<T>::value;
                 template <typename T> concept scalar_maybe_const = scalar<std::remove_const_t<T>>;
             )");
         });
@@ -275,25 +275,25 @@ int main(int argc, char **argv)
             { // Fixed size.
                 // Vectors of specific size
                 for (int i = 2; i <= 4; i++)
-                    output(" template <typename T> using vec", i, " = vec<", i, ",T>;");
+                    output(" template <scalar T> using vec", i, " = vec<", i, ",T>;");
                 next_line();
 
                 // Rects of specific size
                 for (int i = 2; i <= 4; i++)
-                    output(" template <typename T> using rect", i, " = rect<", i, ",T>;");
+                    output(" template <scalar T> using rect", i, " = rect<", i, ",T>;");
                 next_line();
 
                 // Matrices of specific size
                 for (int h = 2; h <= 4; h++)
                 {
                     for (int w = 2; w <= 4; w++)
-                        output(" template <typename T> using mat", w, "x", h, " = mat<", w, ",", h, ",T>;");
+                        output(" template <scalar T> using mat", w, "x", h, " = mat<", w, ",", h, ",T>;");
                     next_line();
                 }
 
                 // Square matrices of specific size
                 for (int i = 2; i <= 4; i++)
-                    output(" template <typename T> using mat", i, " = mat", i, "x", i, "<T>;");
+                    output(" template <scalar T> using mat", i, " = mat", i, "x", i, "<T>;");
                 next_line();
             }
             next_line();
@@ -342,8 +342,7 @@ int main(int argc, char **argv)
         {
             output(1+R"(
                 // Specializing this adds corresponding constructors and conversion operators to vectors and matrices.
-                // The template arguments will never be const.
-                template <typename From, typename To>
+                template <scalar From, scalar To>
                 struct Convert
                 {
                     // To operator()(const From &) const {...}
@@ -362,10 +361,13 @@ int main(int argc, char **argv)
         section("inline namespace Utility // Helper templates", []
         {
             output(1+R"(
+                // Some of the concept definitions here are redundant.
+                // In some cases this sanitizes user specializations. In some cases it should help with subsumption.
+
                 // Check if `T` is a vector type.
                 template <typename T> struct helper_is_vector : std::false_type {};
                 template <int D, typename T> struct helper_is_vector<vec<D,T>> : std::true_type {};
-                template <typename T> concept vector = cv_unqualified<T>/*redundant*/ && helper_is_vector<T>::value;
+                template <typename T> concept vector = cvref_unqualified<T>/*redundant*/ && helper_is_vector<T>::value;
                 template <typename T> concept vector_maybe_const = vector<std::remove_const_t<T>>;
 
                 template <typename T> concept vector_or_scalar = scalar<T> || vector<T>;
@@ -377,7 +379,7 @@ int main(int argc, char **argv)
                 // Check if `T` is a matrix type.
                 template <typename T> struct helper_is_matrix : std::false_type {};
                 template <int W, int H, typename T> struct helper_is_matrix<mat<W,H,T>> : std::true_type {};
-                template <typename T> concept matrix = cv_unqualified<T>/*redundant*/ && helper_is_matrix<T>::value;
+                template <typename T> concept matrix = cvref_unqualified<T>/*redundant*/ && helper_is_matrix<T>::value;
                 template <typename T> concept square_matrix = matrix<T> && T::width == T::height;
                 template <typename T> concept matrix_maybe_const = matrix<std::remove_const_t<T>>;
                 template <typename T> concept square_matrix_maybe_const = square_matrix<std::remove_const_t<T>>;
@@ -433,25 +435,50 @@ int main(int argc, char **argv)
                 // This version accepts any types, and treats them as scalars.
                 template <typename A, typename B> using change_vec_base_weak_t = typename helper_change_vec_base<A,B>::type;
 
+                // Whether `T` is a floating-point type, or a vector of such.
+                template <typename T> struct helper_is_floating_point_scalar : std::is_floating_point<T> {};
+                template <typename T> concept floating_point_scalar = scalar<T> && helper_is_floating_point_scalar<T>::value;
+                template <typename T> concept floating_point_vector = vector<T>/*reject const types*/ && floating_point_scalar<vec_base_t<T>>;
+                template <typename T> concept floating_point_vector_or_scalar = floating_point_scalar<T> || floating_point_vector<T>;
+
+                // Whether `T` is an integral type, or a vector of such.
+                template <typename T> struct helper_is_integral_scalar : std::is_integral<T> {};
+                template <typename T> concept integral_scalar = scalar<T> && helper_is_integral_scalar<T>::value;
+                template <typename T> concept integral_vector = vector<T> && integral_scalar<vec_base_t<T>>;
+                template <typename T> concept integral_vector_or_scalar = integral_scalar<T> || integral_vector<T>;
+
+                // Whether `T` is a signed/unsigned integral type, or a vector of such.
+                template <typename T> struct helper_is_unsigned_integral_scalar : std::is_unsigned<T> {};
+                template <typename T> concept   signed_integral_scalar = integral_scalar<T> && !helper_is_unsigned_integral_scalar<T>::value;
+                template <typename T> concept unsigned_integral_scalar = integral_scalar<T> &&  helper_is_unsigned_integral_scalar<T>::value;
+                template <typename T> concept   signed_integral_vector = integral_vector<T> &&   signed_integral_scalar<vec_base_t<T>>;
+                template <typename T> concept unsigned_integral_vector = integral_vector<T> && unsigned_integral_scalar<vec_base_t<T>>;
+                template <typename T> concept   signed_integral_vector_or_scalar =   signed_integral_scalar<T> ||   signed_integral_vector<T>;
+                template <typename T> concept unsigned_integral_vector_or_scalar = unsigned_integral_scalar<T> || unsigned_integral_vector<T>;
+
+                template <typename T> concept signed_maybe_floating_point_scalar = signed_integral_scalar<T> || floating_point_scalar<T>;
+                template <typename T> concept signed_maybe_floating_point_vector = signed_integral_vector<T> || floating_point_vector<T>;
+                template <typename T> concept signed_maybe_floating_point_vector_or_scalar = signed_integral_vector_or_scalar<T> || floating_point_vector_or_scalar<T>;
+
                 // Returns a reasonable 'floating-point counterpart' for a type.
                 // Currently if the type is not floating-point, returns `float`. Otherwise returns the same type.
-                // If `T` is a vector (possibly const), it's base type is changed according to the same rules.
-                template <vector_or_scalar_maybe_const T> using floating_point_t = std::conditional_t<std::is_floating_point_v<vec_base_weak_t<T>>, T, change_vec_base_t<T, float>>;
+                // If `T` is a vector, it's base type is changed according to the same rules.
+                template <vector_or_scalar T> using floating_point_t = std::conditional_t<floating_point_vector_or_scalar<T>, T, change_vec_base_t<T, float>>;
 
-                // 3-way compares two scalar or vector types to determine which one is 'larger' (according to `sizeof`),
-                // except floating-point types are always considered to be larger than integral ones.
-                // For vector types, examines their base types instead.
+                // 3-way compares two scalar or vector types to determine which one is 'larger'.
                 // Considers the types equivalent only if they are the same.
-                template <cv_unqualified A, cv_unqualified B> inline constexpr std::partial_ordering compare_types_v = []{
+                template <cvref_unqualified A, cvref_unqualified B> inline constexpr std::partial_ordering compare_types_v = []{
                     if constexpr (std::is_same_v<A, B>)
                     $   return std::partial_ordering::equivalent;
                     else if constexpr (!vector_or_scalar<A> || !vector_or_scalar<B>)
                     $   return std::partial_ordering::unordered;
-                    else if constexpr (std::is_floating_point_v<vec_base_t<A>> < std::is_floating_point_v<vec_base_t<B>>)
+                    else if constexpr (vec_size_v<A> != vec_size_v<B>)
+                    $   return std::partial_ordering::unordered;
+                    else if constexpr (floating_point_vector_or_scalar<A> < floating_point_vector_or_scalar<B>)
                     $   return std::partial_ordering::less;
-                    else if constexpr (std::is_floating_point_v<vec_base_t<A>> > std::is_floating_point_v<vec_base_t<B>>)
+                    else if constexpr (floating_point_vector_or_scalar<A> > floating_point_vector_or_scalar<B>)
                     $   return std::partial_ordering::greater;
-                    else if constexpr (std::is_signed_v<A> != std::is_signed_v<B>)
+                    else if constexpr (signed_integral_vector_or_scalar<A> != signed_integral_vector_or_scalar<B>)
                     $   return std::partial_ordering::unordered;
                     else if constexpr (sizeof(vec_base_t<A>) < sizeof(vec_base_t<B>))
                     $   return std::partial_ordering::less;
@@ -472,7 +499,7 @@ int main(int argc, char **argv)
                 template <typename A, typename B> requires(compare_types_v<A,B> == std::partial_ordering::less      ) struct helper_larger<A,B> {using type = B;};
                 template <typename A, typename B> requires(compare_types_v<A,B> == std::partial_ordering::greater   ) struct helper_larger<A,B> {using type = A;};
                 // Causes a soft error if there's no larger type.
-                template <cv_unqualified ...P> using larger_t = vec_or_scalar_t<common_vec_size_v<vec_size_weak_v<P>...>, typename helper_larger<std::remove_cv_t<vec_base_weak_t<P>>...>::type>;
+                template <cvref_unqualified ...P> using larger_t = vec_or_scalar_t<common_vec_size_v<vec_size_weak_v<P>...>, typename helper_larger<std::remove_cv_t<vec_base_weak_t<P>>...>::type>;
 
                 // Checks if it's possible to determine the 'larger' type among `P`.
                 template <typename ...P> concept have_larger_type = requires{typename larger_t<P...>;};
@@ -503,8 +530,8 @@ int main(int argc, char **argv)
         section("inline namespace Utility // Helpers for operators", []
         {
             output(1+R"(
-                // Returns i-th vector element. Also works on scalar, ignoring the index.
-                template <typename T> requires vector_or_scalar<std::remove_cvref_t<T>>
+                // Returns i-th vector element. For other types ignores the index.
+                template <typename T>
                 [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr decltype(auto) vec_elem(int i, T &&vec)
                 {
                     if constexpr (std::is_lvalue_reference_v<T>)
@@ -819,21 +846,19 @@ int main(int argc, char **argv)
             decorative_section("Ranges", []
             {
                 output(1+R"(
-                    template <typename T> class vector_range_t
+                    template <integral_vector_or_scalar T> class vector_range_t
                     {
-                        static_assert(!std::is_const_v<T> && std::is_integral_v<vec_base_t<T>>, "The template parameter must be integral.");
-
-                        T vec_begin = T(0);
-                        T vec_end = T(0);
+                        T vec_begin{};
+                        T vec_end{};
 
                       @public:
                         class iterator
                         {
                             friend class vector_range_t<T>;
 
-                            T vec_begin = T(0);
-                            T vec_end = T(0);
-                            T vec_cur = T(0);
+                            T vec_begin{};
+                            T vec_end{};
+                            T vec_cur{};
                             bool finished = true;
 
                             iterator(T vec_begin, T vec_end) : vec_begin(vec_begin), vec_end(vec_end), vec_cur(vec_begin), finished(compare_any(vec_begin) >= vec_end) {}
@@ -901,32 +926,28 @@ int main(int argc, char **argv)
                             return {};
                         }
 
-                        template <int A, typename B> friend vector_range_t operator+(const vector_range_t &range, vec<A,B> offset)
+                        [[nodiscard]] friend vector_range_t operator+(const vector_range_t &range, std::same_as<T> auto offset)
                         {
-                            static_assert(std::is_same_v<T, vec<A,B>>, "The offset must have exactly the same type as the range.");
                             return vector_range_t(range.vec_begin + offset, range.vec_end + offset);
                         }
-                        template <int A, typename B> friend vector_range_t operator+(vec<A,B> offset, const vector_range_t &range)
+                        [[nodiscard]] friend vector_range_t operator+(std::same_as<T> auto offset, const vector_range_t &range)
                         {
                             return range + offset;
                         }
                     };
 
-                    template <typename T> class vector_range_halfbound
+                    template <integral_vector_or_scalar T> class vector_range_halfbound
                     {
-                        static_assert(vector<T> && !std::is_const_v<T> && std::is_integral_v<vec_base_t<T>>, "The template parameter must be an integral vector.");
-
-                        T vec_begin = T(0);
+                        T vec_begin{};
 
                       @public:
                         vector_range_halfbound(T vec_begin) : vec_begin(vec_begin) {}
 
-                        template <int A, typename B> friend vector_range_t<T> operator<(const vector_range_halfbound &range, vec<A,B> point)
+                        [[nodiscard]] friend vector_range_t<T> operator<(const vector_range_halfbound &range, std::same_as<T> auto point)
                         {
-                            static_assert(std::is_same_v<T, vec<A,B>>, "The upper limit must have exactly the same type as the lower limit.");
                             return vector_range_t<T>(range.vec_begin, point);
                         }
-                        template <int A, typename B> friend vector_range_t<T> operator<=(const vector_range_halfbound &range, vec<A,B> point)
+                        [[nodiscard]] friend vector_range_t<T> operator<=(const vector_range_halfbound &range, std::same_as<T> auto point)
                         {
                             return range < point+1;
                         }
@@ -989,18 +1010,18 @@ int main(int argc, char **argv)
 
             output(1+R"(
                 // The value of pi.
-                template <typename T> [[nodiscard]] constexpr T pi() {return T(3.14159265358979323846l);}
+                template <scalar T> [[nodiscard]] constexpr T pi() {return T(3.14159265358979323846l);}
                 constexpr float       f_pi  = pi<float>();
                 constexpr double      d_pi  = pi<double>();
                 constexpr long double ld_pi = pi<long double>();
 
                 // Conversions between degrees and radians.
-                template <typename T> [[nodiscard]] constexpr auto to_rad(T in)
+                template <vector_or_scalar T> [[nodiscard]] constexpr auto to_rad(T in)
                 {
                     using fp_t = floating_point_t<T>;
                     return in * pi<fp_t>() / fp_t(180);
                 }
-                template <typename T> [[nodiscard]] constexpr auto to_deg(T in)
+                template <vector_or_scalar T> [[nodiscard]] constexpr auto to_deg(T in)
                 {
                     using fp_t = floating_point_t<T>;
                     return in * fp_t(180) / pi<fp_t>();
@@ -1014,9 +1035,8 @@ int main(int argc, char **argv)
                 }
                 // Returns the sign of `a - b`. Unlike `sign(a - b)`, not affected by overflow.
                 // Refuses to work if one of the arguments is a signed integer, and the other is unsigned.
-                template <vector_or_scalar A, vector_or_scalar B>
-                requires((std::is_unsigned_v<vec_base_t<A>> != std::is_unsigned_v<vec_base_t<B>>) <= (std::is_floating_point_v<vec_base_t<A>> || std::is_floating_point_v<vec_base_t<B>>))
-                [[nodiscard]] constexpr vec_or_scalar_t<common_vec_size_v<vec_size_v<A>,vec_size_v<B>>,int> diffsign(A a, B b)
+                template <vector_or_scalar A, vector_or_scalar B> requires have_larger_type<A, B>
+                [[nodiscard]] constexpr auto diffsign(A a, B b) -> vec_or_scalar_t<common_vec_size_v<vec_size_v<A>,vec_size_v<B>>,int>
                 {
                     // Works on scalars and vectors.
                     return (a > b) - (a < b);
@@ -1030,7 +1050,8 @@ int main(int argc, char **argv)
                 // If both `min` and `max` are omitted, 0 and 1 are assumed.
                 // If bounds contradict each other, only the `max` bound is used.
 
-                template <vector_or_scalar A, safely_convertible_to<A> B> constexpr void clamp_var_min(A &var, B min)
+                template <vector_or_scalar A, safely_convertible_to<A> B>
+                constexpr void clamp_var_min(A &var, B min)
                 {
                     if constexpr (!any_vectors_v<A,B>)
                     {
@@ -1043,7 +1064,8 @@ int main(int argc, char **argv)
                     }
                 }
 
-                template <vector_or_scalar A, safely_convertible_to<A> B> constexpr void clamp_var_max(A &var, B max)
+                template <vector_or_scalar A, safely_convertible_to<A> B>
+                constexpr void clamp_var_max(A &var, B max)
                 {
                     if constexpr (!any_vectors_v<A,B>)
                     {
@@ -1056,37 +1078,42 @@ int main(int argc, char **argv)
                     }
                 }
 
-                template <vector_or_scalar A, safely_convertible_to<A> B, safely_convertible_to<A> C> constexpr void clamp_var(A &var, B min, C max)
+                template <vector_or_scalar A, safely_convertible_to<A> B, safely_convertible_to<A> C>
+                constexpr void clamp_var(A &var, B min, C max)
                 {
                     clamp_var_min(var, min);
                     clamp_var_max(var, max);
                 }
 
-                template <vector_or_scalar A, safely_convertible_to<A> B> constexpr void clamp_var_abs(A &var, B abs_max)
+                template <vector_or_scalar A, safely_convertible_to<A> B> requires signed_maybe_floating_point_vector_or_scalar<B>
+                constexpr void clamp_var_abs(A &var, B abs_max)
                 {
-                    static_assert(std::is_signed_v<vec_base_t<B>>, "`abs_max` must be signed."); // This allows floating-point types too.
                     clamp_var(var, -abs_max, abs_max);
                 }
 
-                template <vector_or_scalar A, safely_convertible_to<A> B> [[nodiscard]] constexpr A clamp_min(A val, B min)
+                template <vector_or_scalar A, safely_convertible_to<A> B>
+                [[nodiscard]] constexpr A clamp_min(A val, B min)
                 {
                     clamp_var_min(val, min);
                     return val;
                 }
 
-                template <vector_or_scalar A, safely_convertible_to<A> B> [[nodiscard]] constexpr A clamp_max(A val, B max)
+                template <vector_or_scalar A, safely_convertible_to<A> B>
+                [[nodiscard]] constexpr A clamp_max(A val, B max)
                 {
                     clamp_var_max(val, max);
                     return val;
                 }
 
-                template <vector_or_scalar A, safely_convertible_to<A> B, safely_convertible_to<A> C> [[nodiscard]] constexpr A clamp(A val, B min, C max)
+                template <vector_or_scalar A, safely_convertible_to<A> B, safely_convertible_to<A> C>
+                [[nodiscard]] constexpr A clamp(A val, B min, C max)
                 {
                     clamp_var(val, min, max);
                     return val;
                 }
 
-                template <vector_or_scalar A, safely_convertible_to<A> B> [[nodiscard]] constexpr A clamp_abs(A val, B abs_max)
+                template <vector_or_scalar A, safely_convertible_to<A> B> requires signed_maybe_floating_point_vector_or_scalar<B>
+                [[nodiscard]] constexpr A clamp_abs(A val, B abs_max)
                 {
                     clamp_var_abs(val, abs_max);
                     return val;
@@ -1103,12 +1130,10 @@ int main(int argc, char **argv)
 
                 // Rounds a floating-point scalar or vector.
                 // Returns an integral type (`int` by default).
-                template <typename I = int, typename F> [[nodiscard]] change_vec_base_t<F,I> iround(F x)
+                template <signed_integral_scalar I = int, floating_point_vector_or_scalar F>
+                [[nodiscard]] change_vec_base_t<F,I> iround(F x)
                 {
-                    static_assert(std::is_floating_point_v<vec_base_t<F>>, "Argument must be floating-point.");
-                    static_assert(std::is_integral_v<I> && std::is_signed_v<I>, "Template argument must be integral and signed.");
-
-                    if constexpr(!any_vectors_v<F>)
+                    if constexpr (!any_vectors_v<F>)
                     {
                         // This seems to be faster than `std::lround()`.
                         return I(std::round(x));
@@ -1123,55 +1148,49 @@ int main(int argc, char **argv)
                 // Some of them are imported from `std` and extended to operate on vectors. Some are custom.
 
                 using std::abs;
-                template <typename T, std::enable_if_t<any_vectors_v<T>, std::nullptr_t> = nullptr>
+                template <vector T>
                 [[nodiscard]] T abs(T x)
                 {
                     return apply_elementwise([](auto val){return std::abs(val);}, x);
                 }
 
                 using std::round;
-                template <typename T, std::enable_if_t<any_vectors_v<T>, std::nullptr_t> = nullptr>
+                template <floating_point_vector T>
                 [[nodiscard]] T round(T x)
                 {
-                    static_assert(std::is_floating_point_v<vec_base_t<T>>, "Argument must be floating-point.");
                     return apply_elementwise([](auto val){return std::round(val);}, x);
                 }
 
                 using std::floor;
-                template <typename T, std::enable_if_t<any_vectors_v<T>, std::nullptr_t> = nullptr>
+                template <floating_point_vector T>
                 [[nodiscard]] T floor(T x)
                 {
-                    static_assert(std::is_floating_point_v<vec_base_t<T>>, "Argument must be floating-point.");
                     return apply_elementwise([](auto val){return std::floor(val);}, x);
                 }
 
                 using std::ceil;
-                template <typename T, std::enable_if_t<any_vectors_v<T>, std::nullptr_t> = nullptr>
+                template <floating_point_vector T>
                 [[nodiscard]] T ceil(T x)
                 {
-                    static_assert(std::is_floating_point_v<vec_base_t<T>>, "Argument must be floating-point.");
                     return apply_elementwise([](auto val){return std::ceil(val);}, x);
                 }
 
                 using std::trunc;
-                template <typename T, std::enable_if_t<any_vectors_v<T>, std::nullptr_t> = nullptr>
+                template <floating_point_vector T>
                 [[nodiscard]] T trunc(T x)
                 {
-                    static_assert(std::is_floating_point_v<vec_base_t<T>>, "Argument must be floating-point.");
                     return apply_elementwise([](auto val){return std::trunc(val);}, x);
                 }
 
-                template <typename T>
+                template <floating_point_vector T>
                 [[nodiscard]] T round_maxabs(T x) // Round away from zero.
                 {
-                    static_assert(std::is_floating_point_v<vec_base_t<T>>, "Argument must be floating-point.");
                     return apply_elementwise([](auto val){return val < 0 ? std::floor(val) : std::ceil(val);}, x);
                 }
 
-                template <typename T> [[nodiscard]] T frac(T x)
+                template <floating_point_vector T>
+                [[nodiscard]] T frac(T x)
                 {
-                    static_assert(std::is_floating_point_v<vec_base_t<T>>, "Argument must be floating-point.");
-
                     if constexpr (!any_vectors_v<T>)
                     $   return std::modf(x, 0);
                     else
@@ -1179,22 +1198,19 @@ int main(int argc, char **argv)
                 }
 
                 using std::nextafter;
-                template <typename A, typename B, std::enable_if_t<any_vectors_v<A, B>, std::nullptr_t> = nullptr>
+                template <floating_point_vector_or_scalar A, floating_point_vector_or_scalar B>
+                requires any_vectors_v<A, B> && std::is_same_v<vec_base_t<A>, vec_base_t<B>> && have_larger_type<A, B>
                 [[nodiscard]] A nextafter(A a, B b)
                 {
-                    static_assert(vector<B> <= vector<A>, "If `b` is a vector, `a` has to be a vector as well.");
-                    static_assert(std::is_floating_point_v<vec_base_t<A>> && std::is_floating_point_v<vec_base_t<B>> && std::is_same_v<vec_base_t<A>, vec_base_t<B>>, "Arguments must be floating-point and have the same base type.");
                     return apply_elementwise([](auto a, auto b){return std::nextafter(a, b);}, a, b);
                 }
 
                 // Integer division, slightly changed to behave nicely for negative values of the left operand:
                 //           i : -4  -3  -2  -1  0  1  2  3  4
                 // div_ex(i,2) : -2  -2  -1  -1  0  0  1  1  2
-                template <typename A, typename B> [[nodiscard]] constexpr A div_ex(A a, B b)
+                template <integral_vector_or_scalar A, integral_vector_or_scalar B>
+                [[nodiscard]] constexpr A div_ex(A a, B b)
                 {
-                    static_assert(vector<B> <= vector<A>, "If `b` is a vector, `a` has to be a vector as well.");
-                    static_assert(std::is_integral_v<vec_base_t<A>> && std::is_integral_v<vec_base_t<B>>, "Arguments must be integral.");
-
                     if constexpr (!any_vectors_v<A,B>)
                     {
                         if (a >= 0)
@@ -1209,11 +1225,9 @@ int main(int argc, char **argv)
                 }
 
                 // True integral modulo that remains periodic for negative values of the left operand.
-                template <typename A, typename B> [[nodiscard]] constexpr A mod_ex(A a, B b)
+                template <integral_vector_or_scalar A, integral_vector_or_scalar B>
+                [[nodiscard]] constexpr A mod_ex(A a, B b)
                 {
-                    static_assert(vector<B> <= vector<A>, "If `b` is a vector, `a` has to be a vector as well.");
-                    static_assert(std::is_integral_v<vec_base_t<A>> && std::is_integral_v<vec_base_t<B>>, "Arguments must be integral.");
-
                     if constexpr (!any_vectors_v<A,B>)
                     {
                         if (a >= 0)
@@ -1229,14 +1243,12 @@ int main(int argc, char **argv)
 
                 // Divide `a / b`, rounding away from zero.
                 // Supports both integers and floating-point numbers, including vectors.
-                template <typename A, typename B>
+                template <signed_maybe_floating_point_vector_or_scalar A, signed_maybe_floating_point_vector_or_scalar B>
                 [[nodiscard]] constexpr larger_t<A, B> div_maxabs(A a, B b)
                 {
-                    static_assert(!std::is_unsigned_v<vec_base_t<A>> && !std::is_unsigned_v<vec_base_t<B>>, "Arguments must be signed.");
-
                     if constexpr (!any_vectors_v<A, B>)
                     {
-                        if constexpr (std::is_integral_v<A> && std::is_integral_v<B>)
+                        if constexpr (integral_scalar<A> && integral_scalar<B>)
                         {
                             return (a + (abs(b) - 1) * sign(a)) / b;
                         }
@@ -1254,10 +1266,9 @@ int main(int argc, char **argv)
                 }
 
                 // A simple implementation of `pow` for non-negative integral powers.
-                template <typename A, typename B> [[nodiscard]] constexpr A ipow(A a, B b)
+                template <vector_or_scalar A, integral_scalar B>
+                [[nodiscard]] constexpr A ipow(A a, B b)
                 {
-                    // `A` can be a scalar or a vector. `B` has to be scalar.
-                    static_assert(std::is_integral_v<B>, "Power must be integral.");
                     A ret = 1;
                     while (b > 0)
                     {
@@ -1270,24 +1281,26 @@ int main(int argc, char **argv)
                 }
 
                 using std::pow;
-                template <typename A, typename B, std::enable_if_t<any_vectors_v<A, B>, std::nullptr_t> = nullptr>
+                template <vector_or_scalar A, vector_or_scalar B>
+                requires any_vectors_v<A, B>
                 [[nodiscard]] auto pow(A a, B b)
                 {
                     return apply_elementwise([](auto val_a, auto val_b){return std::pow(val_a, val_b);}, a, b);
                 }
 
                 // Computes the smooth step function. Doesn't clamp `x`.
-                template <typename T> [[nodiscard]] constexpr T smoothstep(T x)
+                template <floating_point_vector_or_scalar T>
+                [[nodiscard]] constexpr T smoothstep(T x)
                 {
                     // No special handling required for `T` being a vector.
-                    static_assert(std::is_floating_point_v<vec_base_t<T>>, "Argument must be floating-point.");
                     return (3 - 2*x) * x*x;
                 }
 
                 // Performs linear interpolation. Returns `a * (1-factor) + b * factor`.
-                template <typename F, typename A, typename B> [[nodiscard]] constexpr auto mix(F factor, A a, B b)
+                template <floating_point_scalar F, vector_or_scalar A, vector_or_scalar B>
+                requires have_larger_type<A, B>
+                [[nodiscard]] constexpr auto mix(F factor, A a, B b)
                 {
-                    static_assert(std::is_floating_point_v<vec_base_t<F>>, "`factor` must be floating-point.");
                     // No special handling required for the parameters being vectors.
                     using type = larger_t<A, B>;
                     return type(a) * (1-factor) + type(b) * factor;
@@ -1314,7 +1327,7 @@ int main(int argc, char **argv)
                 {
                     using T = larger_t<A, B>;
                     std::pair<T, T> ret;
-                    for (int i = 0; i < vec_size_v<T>; i++)
+                    for (int i = 0; i < vec_size_weak_v<T>; i++)
                     {
                         auto a_elem = vec_elem(i, a);
                         auto b_elem = vec_elem(i, b);
@@ -1347,10 +1360,9 @@ int main(int argc, char **argv)
         {
             output(1+R"(
                 // A functor that performs linear mapping on scalars or vectors.
-                template <typename T> struct linear_mapping
+                template <floating_point_vector_or_scalar T>
+                struct linear_mapping
                 {
-                    static_assert(std::is_floating_point_v<vec_base_t<T>>, "Template parameter must be floating-point.");
-
                     T scale = T(1), offset = T(0);
 
                     constexpr linear_mapping() {}
@@ -1385,7 +1397,7 @@ int main(int argc, char **argv)
                 [[nodiscard]] larger_t<A, B> next_value_towards(A value, B target)
                 {
                     using type = larger_t<A, B>;
-                    if constexpr (std::is_floating_point_v<vec_base_t<type>>)
+                    if constexpr (floating_point_vector_or_scalar<type>)
                     $   return nextafter(type(value), type(target));
                     else
                     $   return type(value) + diffsign(type(target), type(value)); // The plain `sign()` could overflow here.
@@ -1404,56 +1416,59 @@ int main(int argc, char **argv)
 
                 // Shrinks a vector as little as possible to give it specific proportions.
                 // Always returns a floating-point type.
-                template <vector A, vector B> [[nodiscard]] constexpr auto shrink_to_proportions(A value, B proportions)
+                template <vector A, vector B> requires have_larger_type<A, B>
+                [[nodiscard]] constexpr auto shrink_to_proportions(A value, B proportions)
                 {
-                    static_assert(vec_size_v<A> == vec_size_v<B>, "Arguments must be vectors of same size.");
                     using type = larger_t<floating_point_t<A>,floating_point_t<B>>;
                     return (type(value) / type(proportions)).min() * type(proportions);
                 }
                 // Expands a vector as little as possible to give it specific proportions.
                 // Always returns a floating-point type.
-                template <vector A, vector B> [[nodiscard]] constexpr auto expand_to_proportions(A value, B proportions)
+                template <vector A, vector B> requires have_larger_type<A, B>
+                [[nodiscard]] constexpr auto expand_to_proportions(A value, B proportions)
                 {
-                    static_assert(vec_size_v<A> == vec_size_v<B>, "Arguments must be vectors of same size.");
                     using type = larger_t<floating_point_t<A>,floating_point_t<B>>;
                     return (type(value) / type(proportions)).max() * type(proportions);
                 }
 
                 // Finds an intersection point of two lines.
-                template <typename T> [[nodiscard]] constexpr vec2<T> line_intersection(vec2<T> a1, vec2<T> a2, vec2<T> b1, vec2<T> b2)
+                template <floating_point_scalar T>
+                [[nodiscard]] constexpr vec2<T> line_intersection(vec2<T> a1, vec2<T> a2, vec2<T> b1, vec2<T> b2)
                 {
-                    static_assert(std::is_floating_point_v<T>, "Arguments must be floating-point.");
                     auto delta_a = a2 - a1;
                     auto delta_b = b2 - b1;
                     return ((a1.y - b1.y) * delta_b.x - (a1.x - b1.x) * delta_b.y) / (delta_a.x * delta_b.y - delta_a.y * delta_b.x) * delta_a + a1;
                 }
 
                 // Finds an intersection point of a line and a plane.
-                template <typename T> [[nodiscard]] constexpr vec3<T> line_plane_intersection(vec3<T> line_point, vec3<T> line_dir, vec3<T> plane_point, vec3<T> plane_normal)
+                template <floating_point_scalar T>
+                [[nodiscard]] constexpr vec3<T> line_plane_intersection(vec3<T> line_point, vec3<T> line_dir, vec3<T> plane_point, vec3<T> plane_normal)
                 {
-                    static_assert(std::is_floating_point_v<T>, "Arguments must be floating-point.");
                     return (plane_point - line_point).dot(plane_normal) / line_dir.dot(plane_normal) * line_dir + line_point;
                 }
 
                 // Projects a point onto a line. `dir` is assumed to be normalized.
-                template <int D, typename T> [[nodiscard]] constexpr vec<D,T> project_onto_line_norm(vec<D,T> point, vec<D,T> dir)
+                template <vector T>
+                [[nodiscard]] constexpr T project_onto_line_norm(T point, T dir)
                 {
-                    static_assert(std::is_floating_point_v<T>, "Arguments must be floating-point.");
                     return dir * point.dot(dir);
                 }
                 // Projects a point onto a line.
-                template <int D, typename T> [[nodiscard]] constexpr vec<D,T> project_onto_line(vec<D,T> point, vec<D,T> dir)
+                template <floating_point_vector T>
+                [[nodiscard]] constexpr T project_onto_line(T point, T dir)
                 {
                     return project_onto_line_norm(point, dir.norm());
                 }
 
                 // Projects a point onto a plane. `plane_normal` is assumed to be normalized.
-                template <typename T> [[nodiscard]] constexpr vec3<T> project_onto_plane_norm(vec3<T> point, vec3<T> plane_normal)
+                template <floating_point_scalar T>
+                [[nodiscard]] constexpr vec3<T> project_onto_plane_norm(vec3<T> point, vec3<T> plane_normal)
                 {
                     return point - project_onto_line_norm(point, plane_normal);
                 }
                 // Projects a point onto a plane.
-                template <typename T> [[nodiscard]] constexpr vec3<T> project_onto_plane(vec3<T> point, vec3<T> plane_normal)
+                template <floating_point_scalar T>
+                [[nodiscard]] constexpr vec3<T> project_onto_plane(vec3<T> point, vec3<T> plane_normal)
                 {
                     return project_onto_plane_norm(point, plane_normal.norm());
                 }
@@ -1461,7 +1476,8 @@ int main(int argc, char **argv)
                 // Compares the angles of `a` and `b` without doing any trigonometry. Works with integers too.
                 // The assumed angles are in range [0;2pi), with +X having angle 0.
                 // Zero vectors are considered to be greater than everything else.
-                template <typename T> [[nodiscard]] constexpr bool less_positively_rotated(vec2<T> a, vec2<T> b)
+                template <scalar T>
+                [[nodiscard]] constexpr bool less_positively_rotated(vec2<T> a, vec2<T> b)
                 {
                     // This check makes (0,0) worse than any other vector,
                     // and doesn't seem to affect the result if zero vectors are not involved.
@@ -1477,7 +1493,8 @@ int main(int argc, char **argv)
                 }
 
                 // Same, but angle 0 is mapped to `dir` instead of +X.
-                template <typename T> [[nodiscard]] constexpr bool less_positively_rotated(vec2<T> dir, vec2<T> a, vec2<T> b)
+                template <scalar T>
+                [[nodiscard]] constexpr bool less_positively_rotated(vec2<T> dir, vec2<T> a, vec2<T> b)
                 {
                     mat2<T> mat(dir, dir.rot90());
                     return less_positively_rotated(a * mat, b * mat);
@@ -1485,11 +1502,9 @@ int main(int argc, char **argv)
 
                 // Rounds `value` to type `I`, with compensation: `comp` is added to it before rounding, then updated to the difference between rounded and unrounded value.
                 // This makes the average return value converge to `value`.
-                template <typename I = int, typename F> [[nodiscard]] constexpr change_vec_base_t<F,I> round_with_compensation(F value, F &comp)
+                template <integral_scalar I = int, floating_point_vector_or_scalar F>
+                [[nodiscard]] constexpr change_vec_base_t<F,I> round_with_compensation(F value, F &comp)
                 {
-                    static_assert(std::is_floating_point_v<vec_base_t<F>>, "Argument must be floating-point.");
-                    static_assert(std::is_integral_v<I>, "Template argument must be integral, and not a vector.");
-
                     // Works on scalars and vectors.
                     change_vec_base_t<F,I> ret = iround<I>(value += comp);
                     comp = value - ret;
@@ -1504,11 +1519,9 @@ int main(int argc, char **argv)
                 // The number of `1`s in the mask (`std::popcount(mask)`) describes the dimensions of the region: 0 = points, 1 = lines, 2 = rects, and so on.
                 // If the i-th bit is set, the region extends in i-th dimension. Each mask corresponds to a set of parallel lines/planes/etc,
                 // and the zero mask corresponds to the corners of the cuboid.
-                template <typename T, typename F1 = std::nullptr_t, typename F2>
+                template <signed_maybe_floating_point_vector_or_scalar T, typename F1 = std::nullptr_t, typename F2>
                 void for_each_cuboid_point(T a, T b, T step, F1 &&pred, F2 &&func)
                 {
-                    static_assert(!std::is_unsigned_v<vec_base_t<T>>, "Arguments must be signed.");
-
                     // Fix the sign of the `step`.
                     for (int i = 0; i < vec_size_v<T>; i++)
                     {
@@ -1583,11 +1596,10 @@ int main(int argc, char **argv)
                 // `a` and `b` are the corners, inclusive. `step` is the step, the sign is ignored.
                 // `D` is the dimensions of the output. `D == -1` and `D == vec_size_v<T>` mean "fill the whole cuboid".
                 // `D == 0` only outputs the corner points, `D == 1` outputs lines, `D == 2` outputs planes, and so on.
-                template <int D = -1, typename T, typename I>
+                template <int D = -1, signed_maybe_floating_point_vector_or_scalar T, typename I>
+                requires(D >= -1 && D <= vec_size_v<T>)
                 void make_cuboid(T a, T b, T step, I iter)
                 {
-                    static_assert(D >= -1 && D <= vec_size_v<T>, "Invalid number of dimensions.");
-
                     if constexpr (D == -1 || D == vec_size_v<T>)
                     {
                         for_each_cuboid_point(a, b, step, nullptr, [&](T &&point)
@@ -1609,7 +1621,7 @@ int main(int argc, char **argv)
                 }
 
                 // Same, but writes the output to a container.
-                template <typename C, int D = -1, typename T>
+                template <typename C, int D = -1, signed_maybe_floating_point_vector_or_scalar T>
                 [[nodiscard]] C make_cuboid(T a, T b, T step)
                 {
                     C ret;
@@ -1660,7 +1672,7 @@ int main(int argc, char **argv)
 
                         { // Properties
                             output("static constexpr int size = ",w,";\n");
-                            output("static constexpr bool is_floating_point = std::is_floating_point_v<type>;\n");
+                            output("static constexpr bool is_floating_point = floating_point_scalar<type>;\n");
                         }
 
                         { // Members
@@ -1692,7 +1704,7 @@ int main(int argc, char **argv)
                             output("IMP_MATH_SMALL_FUNC explicit constexpr vec(type obj) : ",Fields(", ","@(obj)")," {}\n");
 
                             // Converting
-                            output("template <typename U> IMP_MATH_SMALL_FUNC explicit(!safely_convertible_to<U,T>) constexpr vec(vec",w,"<U> obj) : ",Fields(", ","@(obj.@)")," {}\n");
+                            output("template <scalar U> IMP_MATH_SMALL_FUNC explicit(!safely_convertible_to<U,T>) constexpr vec(vec",w,"<U> obj) : ",Fields(", ","@(obj.@)")," {}\n");
                         }
 
                         { // Customization point constructor and conversion operator
@@ -1703,7 +1715,7 @@ int main(int argc, char **argv)
                         }
 
                         { // Convert to type
-                            output("template <typename U> [[nodiscard]] constexpr vec",w,"<U> to() const {return vec",w,"<U>(",Fields(", ", "U(@)"),");}\n");
+                            output("template <scalar U> [[nodiscard]] constexpr vec",w,"<U> to() const {return vec",w,"<U>(",Fields(", ", "U(@)"),");}\n");
                         }
 
                         { // Member access
@@ -1757,7 +1769,7 @@ int main(int argc, char **argv)
                             output("[[nodiscard]] constexpr vec abs() const {return vec(", Fields(", ", "std::abs(@)"), ");}\n");
 
                             // Index
-                            // Can't forwrad the elements here, since the indices can repeat.
+                            // Can't forward the elements here, since the indices can repeat.
                             output("template <typename C> [[nodiscard]] constexpr auto index(C &&container) const -> vec<common_vec_size_v<",w,",vec_size_v<std::decay_t<decltype(container[x])>>>,vec_base_t<std::decay_t<decltype(container[x])>>> {return {",Fields(", ", "Math::vec_elem(#,container[@])"),"};}\n");
                         }
 
@@ -1828,10 +1840,10 @@ int main(int argc, char **argv)
                             if (w == 2)
                             {
                                 // Construct from angle
-                                output("[[nodiscard]] static constexpr vec dir(type angle, type len = 1) {return vec(std::cos(angle) * len, std::sin(angle) * len); static_assert(is_floating_point, \"The vector must be floating-point.\");}\n");
+                                output("[[nodiscard]] static constexpr vec dir(type angle, type len = 1) requires is_floating_point {return vec(std::cos(angle) * len, std::sin(angle) * len);}\n");
 
                                 // Get angle
-                                output("template <typename U = floating_point_t<type>> [[nodiscard]] constexpr U angle() const {return std::atan2(U(y), U(x));}\n"); // Note that atan2 is well-defined even when applied to (0,0).
+                                output("template <scalar U = floating_point_t<type>> [[nodiscard]] constexpr U angle() const {return std::atan2(U(y), U(x));}\n"); // Note that atan2 is well-defined even when applied to (0,0).
 
                                 // Rotate by 90 degree increments
                                 output("[[nodiscard]] constexpr vec rot90(int steps = 1) const {switch (steps & 3) {default: return *this; case 1: return {-y,x}; case 2: return -*this; case 3: return {y,-x};}}\n");
@@ -1905,7 +1917,7 @@ int main(int argc, char **argv)
                 next_line();
 
                 // Deduction guides
-                output("template <typename ...P, typename = std::enable_if_t<sizeof...(P) >= 2 && sizeof...(P) <= 4>> vec(P...) -> vec<sizeof...(P), larger_t<P...>>;\n");
+                output("template <typename ...P> requires(sizeof...(P) >= 2 && sizeof...(P) <= 4) vec(P...) -> vec<sizeof...(P), larger_t<P...>>;\n");
             });
 
             next_line();
@@ -1963,7 +1975,7 @@ int main(int argc, char **argv)
                             if (w == h)
                                 output("static constexpr int size = ",w,";\n");
 
-                            output("static constexpr bool is_floating_point = std::is_floating_point_v<type>;\n");
+                            output("static constexpr bool is_floating_point = floating_point_scalar<type>;\n");
                         }
 
                         { // Members
@@ -2024,7 +2036,7 @@ int main(int argc, char **argv)
                             output(" {}\n");
 
                             // Converting
-                            output("template <typename U> explicit(!safely_convertible_to<U,T>) constexpr mat(const mat",w,"x",h,"<U> &obj) : ");
+                            output("template <scalar U> explicit(!safely_convertible_to<U,T>) constexpr mat(const mat",w,"x",h,"<U> &obj) : ");
                             for (int i = 0; i < w; i++)
                             {
                                 if (i != 0)
@@ -2042,7 +2054,7 @@ int main(int argc, char **argv)
                         }
 
                         { // Convert to type
-                            output("template <typename U> [[nodiscard]] constexpr mat",w,"x",h,"<U> to() const {return mat",w,"x",h,"<U>(",SmallFields(", ","U(",")"),");}\n");
+                            output("template <scalar U> [[nodiscard]] constexpr mat",w,"x",h,"<U> to() const {return mat",w,"x",h,"<U>(",SmallFields(", ","U(",")"),");}\n");
                         }
 
                         { // Member access
@@ -2139,10 +2151,8 @@ int main(int argc, char **argv)
                                 {
                                   case 2:
                                     output(1+R"(
-                                        [[nodiscard]] constexpr mat inverse()
+                                        [[nodiscard]] constexpr mat inverse() requires is_floating_point
                                         {
-                                            static_assert(is_floating_point, "This function only makes sense for floating-point matrices.");
-
                                             mat ret{};
 
                                             ret.x.x =  y.y;
@@ -2163,10 +2173,8 @@ int main(int argc, char **argv)
                                     break;
                                   case 3:
                                     output(1+R"(
-                                        [[nodiscard]] constexpr mat inverse() const
+                                        [[nodiscard]] constexpr mat inverse() const requires is_floating_point
                                         {
-                                            static_assert(is_floating_point, "This function only makes sense for floating-point matrices.");
-
                                             mat ret{};
 
                                             ret.x.x =  y.y * z.z - z.y * y.z;
@@ -2193,10 +2201,8 @@ int main(int argc, char **argv)
                                     break;
                                   case 4:
                                     output(1+R"(
-                                        [[nodiscard]] constexpr mat inverse() const
+                                        [[nodiscard]] constexpr mat inverse() const requires is_floating_point
                                         {
-                                            static_assert(is_floating_point, "This function only makes sense for floating-point matrices.");
-
                                             mat ret;
 
                                             ret.x.x =  y.y * z.z * w.w - y.y * z.w * w.z - z.y * y.z * w.w + z.y * y.w * w.z + w.y * y.z * z.w - w.y * y.w * z.z;
@@ -2241,9 +2247,7 @@ int main(int argc, char **argv)
 
                                 if (w == min_sz)
                                 {
-                                    output("[[nodiscard]] static constexpr mat ",name,"(",params,")\n{\n");
-                                    if (float_only)
-                                        output("static_assert(is_floating_point, \"This function only makes sense for floating-point matrices.\");\n");
+                                    output("[[nodiscard]] static constexpr mat ",name,"(",params,")",float_only?" requires is_floating_point":"","\n{\n");
                                     output(body,"}\n");
                                 }
                                 else if (w >= min_sz && w <= max_sz)
@@ -2255,13 +2259,13 @@ int main(int argc, char **argv)
                             MakePreset(2, 3, "scale", "vec2<type> v", "v", 1+R"(
                                 return { v.x , 0   ,
                                     $    0   , v.y };
-                            )", 0);
+                            )", false);
 
                             MakePreset(3, 4, "scale", "vec3<type> v", "v", 1+R"(
                                 return { v.x , 0   , 0   ,
                                     $    0   , v.y , 0   ,
                                     $    0   , 0   , v.z };
-                            )", 0);
+                            )", false);
 
                             MakePreset(3, 3, "ortho", "vec2<type> min, vec2<type> max", "min, max", 1+R"(
                                 return { 2 / (max.x - min.x) , 0                   , (min.x + max.x) / (min.x - max.x) ,
@@ -2290,14 +2294,14 @@ int main(int argc, char **argv)
                                 return { 1, 0, v.x ,
                                     $    0, 1, v.y ,
                                     $    0, 0, 1   };
-                            )", 0);
+                            )", false);
 
                             MakePreset(4, 4, "translate", "vec3<type> v", "v", 1+R"(
                                 return { 1 , 0 , 0 , v.x ,
                                     $    0 , 1 , 0 , v.y ,
                                     $    0 , 0 , 1 , v.z ,
                                     $    0 , 0 , 0 , 1   };
-                            )", 0);
+                            )", false);
 
                             MakePreset(2, 3, "rotate", "type angle", "angle", 1+R"(
                                 type c = std::cos(angle);
@@ -2312,7 +2316,7 @@ int main(int argc, char **argv)
                                 return { axis.x * axis.x * (1 - c) + c          , axis.x * axis.y * (1 - c) - axis.z * s , axis.x * axis.z * (1 - c) + axis.y * s,
                                     $    axis.y * axis.x * (1 - c) + axis.z * s , axis.y * axis.y * (1 - c) + c          , axis.y * axis.z * (1 - c) - axis.x * s,
                                     $    axis.x * axis.z * (1 - c) - axis.y * s , axis.y * axis.z * (1 - c) + axis.x * s , axis.z * axis.z * (1 - c) + c         };
-                            )", 0);
+                            )", false);
                             MakePreset(3, 4, "rotate", "vec3<type> axis, type angle", "axis, angle", 1+R"(
                                 return rotate_with_normalized_axis(axis.norm(), angle);
                             )");
@@ -2333,11 +2337,11 @@ int main(int argc, char **argv)
                 { // Deduction guides
                     // From scalars
                     for (int w = 2; w <= 4; w++)
-                        output("template <scalar ...P> requires (sizeof...(P) == ",w*w,") mat(P...) -> mat<",w,", ",w,", larger_t<P...>>;\n");
+                        output("template <scalar ...P> requires(sizeof...(P) == ",w*w,") mat(P...) -> mat<",w,", ",w,", larger_t<P...>>;\n");
 
                     // From vectors
                     for (int h = 2; h <= 4; h++)
-                        output("template <typename ...P> requires (sizeof...(P) >= 2 && sizeof...(P) <= 4 && ((vec_size_v<P> == ",h,") && ...)) mat(P...) -> mat<sizeof...(P), ",h,", larger_t<typename P::type...>>;\n");
+                        output("template <typename ...P> requires(sizeof...(P) >= 2 && sizeof...(P) <= 4 && ((vec_size_v<P> == ",h,") && ...)) mat(P...) -> mat<sizeof...(P), ",h,", larger_t<typename P::type...>>;\n");
                 }
             });
 
@@ -2351,11 +2355,11 @@ int main(int argc, char **argv)
                         using type = T;
                         using vec_type = vec<D,T>;
                         static constexpr int dim = D; // `size` is already used as a function name.
-                        static constexpr bool is_floating_point = std::is_floating_point_v<type>;
+                        static constexpr bool is_floating_point = floating_point_scalar<type>;
                         vec_type a, b; // `a` is inclusive, `b` is exclusive.
                         IMP_MATH_SMALL_FUNC constexpr rect() {} // No fancy constructors, use helpers in `vec`.
                         IMP_MATH_SMALL_FUNC constexpr rect(uninit) : a(uninit{}), b(uninit{}) {}
-                        template <typename U> IMP_MATH_SMALL_FUNC explicit(!safely_convertible_to<U,T>) constexpr rect(rect<D,U> r) : a(r.a), b(r.b) {}
+                        template <scalar U> IMP_MATH_SMALL_FUNC explicit(!safely_convertible_to<U,T>) constexpr rect(rect<D,U> r) : a(r.a), b(r.b) {}
                         template <scalar U> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect<D,U> to() const {return vec<D,U>(a).rect_to(vec<D,U>(b));}
                         [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr vec_type size() const {return b - a;}
                         [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool has_length() const {return (b > a).any();}
@@ -2490,9 +2494,8 @@ int main(int argc, char **argv)
         output(1+R"#(
             inline namespace Quat // Quaternions.
             {
-                template <typename T> struct quat
+                template <floating_point_scalar T> struct quat
                 {
-                    static_assert(std::is_floating_point_v<T>, "The base type must be floating-point.");
                     using type = T;
                     using vec3_t = vec3<T>;
                     using vec4_t = vec4<T>;
