@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "audio/complete.h"
+#include "entities/complete.h"
 #include "gameutils/adaptive_viewport.h"
 #include "gameutils/fps_counter.h"
 #include "gameutils/render.h"
@@ -22,8 +23,8 @@
 #include "macros/adjust.h"
 #include "macros/enum_flag_operators.h"
 #include "macros/finally.h"
-#include "macros/qualifiers.h"
 #include "macros/named_loops.h"
+#include "macros/qualifiers.h"
 #include "meta/common.h"
 #include "program/compiler.h"
 #include "program/entry_point.h"
