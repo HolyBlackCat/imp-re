@@ -39,7 +39,7 @@ namespace Meta
         static_assert(type_name_format.junk_leading != std::size_t(-1), "Unable to determine the type name format on this compiler.");
 
         template <typename T>
-        static constexpr auto type_name_storage = []{
+        constexpr auto type_name_storage = []{
             std::array<char, RawTypeName<T>().size() - type_name_format.junk_total + 1> ret{};
             std::copy_n(RawTypeName<T>().data() + type_name_format.junk_leading, ret.size() - 1, ret.data());
             return ret;
