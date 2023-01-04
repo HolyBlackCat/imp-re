@@ -78,7 +78,7 @@ namespace Strings
         {
             ret.append(source, last_pos, cur_pos - last_pos);
             ret += b;
-            last_pos = cur_pos + a.length();
+            last_pos = cur_pos + a.size();
         }
 
         ret += source.substr(last_pos);
