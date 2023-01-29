@@ -14,14 +14,25 @@
 #include "stream/readonly_data.h"
 #include "utils/mat.h"
 
-namespace Graphics::GlobalData
+namespace Graphics
 {
     // A rect in a texture atlas, plus the name of that atlas.
     struct Region : irect2
     {
-        using irect2::operator=; // This lets us do `Region(...) with(().shrink(n))`, and so on.
         std::string_view atlas;
+
+        // This lets us do `Region(...) with(().shrink(n))`, and so on.
+        // Slightly more flexible than `using irect2::operator=;`.
+        Region &operator=(irect2 r)
+        {
+            irect2::operator=(r);
+            return *this;
+        }
     };
+}
+
+namespace Graphics::GlobalData
+{
 
     // Describes a single global texture atlas.
     struct Atlas
@@ -218,11 +229,6 @@ namespace Graphics::GlobalData
     {
         return impl::GetState().atlases;
     }
-}
-
-namespace Graphics
-{
-    using GlobalData::Region;
 }
 
 using Graphics::GlobalData::operator""_image;
