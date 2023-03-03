@@ -7,7 +7,7 @@
 #include <sstream>
 #include <type_traits>
 
-#define VERSION "3.14.0"
+#define VERSION "3.14.1"
 
 #pragma GCC diagnostic ignored "-Wpragmas" // Silence GCC warning about the next line disabling a warning that GCC doesn't have.
 #pragma GCC diagnostic ignored "-Wstring-plus-int" // Silence clang warning about `1+R"()"` paUern.
@@ -2405,6 +2405,7 @@ int main(int argc, char **argv)
                         template <scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect<D,larger_t<T,U>> combine(vec<D,U>  p) const {return combine(p.tiny_rect());}
                         template <scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect<D,larger_t<T,U>> combine(rect<D,U> r) const {return min(a, r.a).rect_to(max(b, r.b));}
                         template <scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect<D,larger_t<T,U>> intersect(rect<D,U> r) const {return max(a, r.a).rect_to(min(b, r.b));}
+                        template <scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr vec<D,larger_t<T,U>> clamp(vec<D,U> p) const {return min(max(p, a), prev_value(b)); }
                         // Constructing the contour.
                         [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr vec_type corner(int i) const requires(dim==2) {return vec_type((i+1)&2?b.x:a.x, i&2?b.y:a.y);}
                         [[nodiscard]] constexpr std::array<vec_type, 4> to_contour() const requires(dim==2) {std::array<vec_type, 4> ret; for (int i=0;i<4;i++) ret[i]=corner(i); return ret;}
