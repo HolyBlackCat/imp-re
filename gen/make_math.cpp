@@ -7,7 +7,7 @@
 #include <sstream>
 #include <type_traits>
 
-#define VERSION "3.14.1"
+#define VERSION "3.14.2"
 
 #pragma GCC diagnostic ignored "-Wpragmas" // Silence GCC warning about the next line disabling a warning that GCC doesn't have.
 #pragma GCC diagnostic ignored "-Wstring-plus-int" // Silence clang warning about `1+R"()"` paUern.
@@ -1837,6 +1837,11 @@ int main(int argc, char **argv)
                         }
 
                         { // Angles and directions
+                            // Construct axis of specific length.
+                            output("[[nodiscard]] static constexpr vec axis(int a, type len = 1) {vec ret{}; ret[mod_ex(a,",w,")] = len; return ret;}\n");
+                            // Zero all components except the specified one.
+                            output("[[nodiscard]] constexpr vec keep_component(int a) {vec ret{}; a = mod_ex(a,",w,"); ret[a] = (*this)[a]; return ret;}\n");
+
                             if (w == 2)
                             {
                                 // Construct from angle
