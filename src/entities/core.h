@@ -187,7 +187,12 @@ namespace Ent
     // It can't be `final`, since we automatically inherit from them to add extra information.
     // If it's a component, it must be an `IMP_STANDALONE_COMPONENT`.
     template <typename T, typename Tag>
-    concept EntityType = Meta::cvref_unqualified<T> && Meta::list_size<impl::EntityComponentsIfAny<Tag, T>> > 0 && !std::is_final_v<T> && (!Component<T, Tag> || StandaloneComponent<T, Tag>);
+    concept EntityType =
+        Meta::cvref_unqualified<T> &&
+        Meta::list_size<impl::EntityComponentsIfAny<Tag, T>> > 0 &&
+        !std::is_final_v<T> &&
+        !std::is_abstract_v<T> && // This should be redundant, but gives better errors and removes some warnings.
+        (!Component<T, Tag> || StandaloneComponent<T, Tag>);
 
     // A `Meta::TypeList` of components an entity class has.
     // Fails for non-entities (including for classes without components), so it never returns an empty list.
