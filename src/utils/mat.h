@@ -1,6 +1,6 @@
 // mat.h
 // Vector and matrix math
-// Version 3.14.2
+// Version 3.14.3
 // Generated, don't touch.
 
 #pragma once
@@ -1479,12 +1479,13 @@ namespace Math
         // `a` and `b` are the corners, inclusive. `step` is the step, the sign is ignored.
         // `pred` lets you select what parts of the cuboid to output. It's is either `nullptr` (output everything)
         // or `bool pred(unsigned int mask)`, where the mask receives all combinations of N bits, where N is `vec_size_v<T>`.
-        // If `pred` returns true, the corresponding region is emitted using repeated calls to `func`, which is `void func(T &&point)`.
+        // If `pred` returns true, the corresponding region is emitted using repeated calls to `func`, which is `bool func(T &&point)`.
+        // If `func` returns true, the function stops immediately and also returns true. Otherwise returns false when done.
         // The number of `1`s in the mask (`std::popcount(mask)`) describes the dimensions of the region: 0 = points, 1 = lines, 2 = rects, and so on.
         // If the i-th bit is set, the region extends in i-th dimension. Each mask corresponds to a set of parallel lines/planes/etc,
         // and the zero mask corresponds to the corners of the cuboid.
         template <signed_maybe_floating_point_vector_or_scalar T, typename F1 = std::nullptr_t, typename F2>
-        void for_each_cuboid_point(T a, T b, T step, F1 &&pred, F2 &&func)
+        bool for_each_cuboid_point(T a, T b, T step, F1 &&pred, F2 &&func)
         {
             // Fix the sign of the `step`.
             for (int i = 0; i < vec_size_v<T>; i++)
@@ -1505,7 +1506,8 @@ namespace Math
                     T value;
                     for (int i = 0; i < vec_size_v<T>; i++)
                         vec_elem(i, value) = vec_elem(i, pos) == vec_elem(i, count) + 1 ? vec_elem(i, b) : vec_elem(i, a) + vec_elem(i, step) * vec_elem(i, pos);
-                    func(std::move(value));
+                    if (func(std::move(value)))
+                        return true;
                 }
             }
             else
@@ -1550,10 +1552,13 @@ namespace Math
                             else
                                 vec_elem(j, value) = vec_elem(j, a) + (vec_elem(j, pos) + 1) * vec_elem(j, step);
                         }
-                        func(std::move(value));
+                        if (func(std::move(value)))
+                            return true;
                     }
                 }
             }
+
+            return false;
         }
 
         // Produces points to fill a cuboid (line, rect, cube, and so on), either entirely or only the borders. Writes the points of type `T` to `*iter++`.
@@ -1569,6 +1574,7 @@ namespace Math
                 for_each_cuboid_point(a, b, step, nullptr, [&](T &&point)
                 {
                     *iter++ = std::move(point);
+                    return false;
                 });
             }
             else
@@ -1580,6 +1586,7 @@ namespace Math
                 [&](T &&point)
                 {
                     *iter++ = std::move(point);
+                    return false;
                 });
             }
         }
