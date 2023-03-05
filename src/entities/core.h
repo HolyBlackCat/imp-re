@@ -534,6 +534,8 @@ namespace Ent
 
                 friend constexpr auto operator<=>(Id, Id) = default;
 
+                [[nodiscard]] explicit operator bool() const {return value != 0;}
+
                 [[nodiscard]] typename Tag::entity_id_underlying_t get_value() const
                 {
                     return value;
