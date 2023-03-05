@@ -31,9 +31,56 @@ namespace Ent
         template <TagType Tag>
         struct UniqueIdLess
         {
+            using is_transparent = void;
+
             bool operator()(Entity<Tag> *a, Entity<Tag> *b) const
             {
-                return dynamic_cast<Entity<Tag> *>(a)->UniqueId() < dynamic_cast<Entity<Tag> *>(b)->UniqueId();
+                return a->id() < b->id();
+            }
+            bool operator()(Entity<Tag> *a, typename Tag::Id b) const
+            {
+                return a->id() < b;
+            }
+            bool operator()(typename Tag::Id a, Entity<Tag> *b) const
+            {
+                return a < b->id();
+            }
+        };
+
+        // An equality comparator for entity pointers that uses the incremental id.
+        template <TagType Tag>
+        struct UniqueIdEq
+        {
+            using is_transparent = void;
+
+            bool operator()(Entity<Tag> *a, Entity<Tag> *b) const
+            {
+                return a->id() == b->id();
+            }
+            bool operator()(Entity<Tag> *a, typename Tag::Id b) const
+            {
+                return a->id() == b;
+            }
+            bool operator()(typename Tag::Id a, Entity<Tag> *b) const
+            {
+                return a == b->id();
+            }
+        };
+
+        // A hasher for entity pointers that uses the incremental id.
+        // We could just use the default hasher and hash the pointers themselves, but it's nice to be able to find entities by id.
+        template <TagType Tag>
+        struct UniqueIdHash
+        {
+            using is_transparent = void;
+
+            std::size_t operator()(Entity<Tag> *e) const
+            {
+                return operator()(e->id());
+            }
+            std::size_t operator()(typename Tag::Id e) const
+            {
+                return phmap::Hash<decltype(e.get_value())>{}(e.get_value());
             }
         };
 
@@ -45,7 +92,10 @@ namespace Ent
             class Type : ListBase<Tag>
             {
                 friend ListFriend;
-                using set_t = std::conditional_t<Ordered, phmap::btree_set<Entity<Tag> *, UniqueIdLess<Tag>>, phmap::flat_hash_set<Entity<Tag> *>>;
+                using set_t = std::conditional_t<Ordered,
+                    phmap::btree_set<Entity<Tag> *, UniqueIdLess<Tag>>,
+                    phmap::flat_hash_set<Entity<Tag> *, UniqueIdHash<Tag>, UniqueIdEq<Tag>>
+                >;
                 set_t set;
 
                 template <bool IsConst>
@@ -142,6 +192,28 @@ namespace Ent
                 [[nodiscard]] ConstRange at_least_one() const
                 {
                     return {const_cast<Type *>(this)->at_least_one().target};
+                }
+
+                // Find entity by id.
+                [[nodiscard]] Entity<Tag> &by_id(typename Tag::Id id)
+                {
+                    auto ret = by_id_opt(id);
+                    if (!ret)
+                        throw std::runtime_error("No entity with this ID in this list.");
+                    return *ret;
+                }
+                [[nodiscard]] const Entity<Tag> &by_id(typename Tag::Id id) const
+                {
+                    return const_cast<Type *>(this)->by_id(id);
+                }
+                [[nodiscard]] Entity<Tag> *by_id_opt(typename Tag::Id id)
+                {
+                    auto it = set.find(id);
+                    return it == set.end() ? nullptr : *it;
+                }
+                [[nodiscard]] const Entity<Tag> *by_id_opt(typename Tag::Id id) const
+                {
+                    return const_cast<Type *>(this)->by_id_opt(id);
                 }
             };
         };

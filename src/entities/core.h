@@ -2,6 +2,7 @@
 
 // The core implementation of the entity system.
 
+#include <compare>
 #include <concepts>
 #include <cstddef>
 #include <memory>
@@ -203,13 +204,26 @@ namespace Ent
         struct EntityState
         {
             // An incremental id.
-            typename Tag::unique_id_t unique_id = 0;
+            typename Tag::entity_id_underlying_t id = 0;
 
             // Takes an `Entity<Tag>` and returns its internal mutable state.
             template <typename T>
             [[nodiscard]] static auto &ModifyState(T &entity)
             {
                 return entity.Entity::state;
+            }
+        };
+
+        // Use this to access internal state of `Tag::Id`, which is defined way below.
+        struct EntityIdFriend
+        {
+            EntityIdFriend() = delete;
+            ~EntityIdFriend() = delete;
+
+            template <typename T>
+            [[nodiscard]] static auto &Value(T &&object)
+            {
+                return object.value;
             }
         };
     }
@@ -243,9 +257,11 @@ namespace Ent
         template <Component<Tag> Comp> [[nodiscard]] const Comp *get_opt() const {return dynamic_cast<const Comp *>(this);}
 
         // The incremental id of this entity.
-        [[nodiscard]] typename Tag::unique_id_t UniqueId() const
+        [[nodiscard]] typename Tag::Id id() const
         {
-            return state.unique_id;
+            typename Tag::Id ret;
+            impl::EntityIdFriend::Value(ret) = state.id;
+            return ret;
         }
 
         // Mostly for internal use.
@@ -498,7 +514,26 @@ namespace Ent
             static_assert((void(impl::RegisterAsTag<Tag>{}), true));
 
             // Each entity gets an incremental ID of this type.
-            using unique_id_t = unsigned int;
+            // This is mostly a customization point. User code will use `Id` instead.
+            // Inside of this class, use `typename Tag::entity_id_underlying_t` to refer to this type, to allow derived classes to override this.
+            using entity_id_underlying_t = unsigned int;
+
+            // Stores unique entity IDs. Those are never reused.
+            class Id
+            {
+                friend EntityIdFriend;
+                typename Tag::entity_id_underlying_t value = 0; // Actual IDs are always >0.
+
+              public:
+                constexpr Id() {}
+
+                friend constexpr auto operator<=>(Id, Id) = default;
+
+                [[nodiscard]] typename Tag::entity_id_underlying_t get_value() const
+                {
+                    return value;
+                }
+            };
 
             // An implementation of `PredicateBase` for testing if an entity has all the listed components.
             template <Component<Tag> ...Comp>
@@ -537,7 +572,7 @@ namespace Ent
                 struct State
                 {
                     std::vector<std::unique_ptr<ListBase<Tag>>> lists;
-                    typename Tag::unique_id_t id_counter = 0;
+                    typename Tag::entity_id_underlying_t id_counter = 1; // `0` is for null entity IDs.
                 };
                 State state;
 
@@ -592,10 +627,19 @@ namespace Ent
                     }
                 };
 
+                // `.create()` returns this.
+                // You can bind this to `auto [id, entity]`.
+                template <EntityType<Tag> E>
+                struct CreateResult
+                {
+                    Id id;
+                    E &ref;
+                };
+
                 // Create an entity in this controller.
                 template <EntityType<Tag> E, typename ...P>
                 requires std::constructible_from<FullEntity<E>, P &&...>
-                E &create(P &&... params)
+                CreateResult<E> create(P &&... params)
                 {
                     ThrowIfNull();
                     using full_entity_t = FullEntity<E>;
@@ -623,7 +667,7 @@ namespace Ent
 
                     // Assign a unique id.
                     // This has to be done before inserting to the lists, since they can use it.
-                    impl::EntityState<Tag>::ModifyState(*ret).unique_id = state.id_counter++;
+                    impl::EntityState<Tag>::ModifyState(*ret).id = state.id_counter++;
 
                     // Insert the entity to lists. This part can throw.
                     for (; category_index < categories.size(); category_index++)
@@ -631,7 +675,7 @@ namespace Ent
 
                     // Disarm the guard.
                     guard.func = nullptr;
-                    return *ret;
+                    return {.id = static_cast<Entity *>(ret)->id(), .ref = *ret};
                 }
 
                 // Destroy an entity in this controller.

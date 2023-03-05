@@ -32,25 +32,27 @@ struct Map
 Game::Controller game = nullptr;
 
 // Entity categories.
-using WithPos       = Game::Category<Ent::OrderedList, Pos>;
-using WithPosAndVel = Game::Category<Ent::UnorderedList, Pos, Vel>;
-using TheMap        = Game::Category<Ent::SingleEntity, Map>;
-using TheMapComp    = Game::Category<Ent::SingleComponent<Map>, Map>;
+using WithPos          = Game::Category<Ent::OrderedList, Pos>;
+using WithPosUnordered = Game::Category<Ent::UnorderedList, Pos>;
+using WithPosAndVel    = Game::Category<Ent::UnorderedList, Pos, Vel>;
+using TheMap           = Game::Category<Ent::SingleEntity, Map>;
+using TheMapComp       = Game::Category<Ent::SingleComponent<Map>, Map>;
 
 IMP_MAIN(,)
 {
-    Spike &spike1 = game.create<Spike>();
-    spike1.pos = fvec2(10,100);
+    auto spike1 = game.create<Spike>();
+    auto [spike1_id, spike1_ref] = spike1; // Check that structured bindings work.
+    spike1_ref.pos = fvec2(10,100);
 
-    Player &player1 = game.create<Player>();
+    Player &player1 = game.create<Player>().ref;
     player1.pos = fvec2(20,200);
     player1.vel = fvec2(0.2f,0.02f);
 
-    Player &player2 = game.create<Player>();
+    Player &player2 = game.create<Player>().ref;
     player2.pos = fvec2(30,300);
     player2.vel = fvec2(0.3f,0.03f);
 
-    game.create<Map>().map = 42;
+    game.create<Map>().ref.map = 42;
 
     auto test = [&](auto &game)
     {
@@ -98,6 +100,20 @@ IMP_MAIN(,)
         std::cout << game.template get<TheMapComp>()->map << '\n';
         // Variant 2.
         std::cout << game.template get<TheMap>()->template get<Map>().map << '\n';
+
+        // By id.
+        auto ByIdTest = [&](auto &list)
+        {
+            assert(Game::Id{}.get_value() == 0);
+            assert(spike1.id.get_value() == 1);
+            assert(list.by_id_opt(spike1.id)->template get<Pos>().pos == fvec2(10,100));
+            assert(list.by_id_opt(Game::Id{}) == nullptr);
+            assert(list.by_id(spike1.id).template get<Pos>().pos == fvec2(10,100));
+            try {(void)list.by_id(Game::Id{});} catch (...) {}
+            assert(game.template get<WithPosAndVel>().by_id_opt(spike1.id) == nullptr); // Not in this list.
+        };
+        ByIdTest(game.template get<WithPos>());
+        ByIdTest(game.template get<WithPosUnordered>());
     };
 
     std::cout << "--- Non-const:\n";
