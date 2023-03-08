@@ -5,7 +5,8 @@
 // It's recommended to run this with ASAN when developing, just in case.
 
 struct Game : Ent::BasicTag<Game,
-    Ent::Mixins::ComponentsAsCategories // Allow `controller.get<T>()` to accept component types directly.
+    Ent::Mixins::ComponentsAsCategories, // Allow `controller.get<T>()` to accept component types directly.
+    Ent::Mixins::GlobalEntityLists // Create lists of all entities, and add some special functions for them to the controller.
 > {};
 
 struct Pos
@@ -106,10 +107,16 @@ IMP_MAIN(,)
         {
             assert(Game::Id{}.get_value() == 0);
             assert(spike1.id.get_value() == 1);
+            assert(!game.valid(Game::Id{}));
+            assert(game.valid(spike1.id));
             assert(list.entity_with_id_opt(spike1.id)->template get<Pos>().pos == fvec2(10,100));
+            assert(game.get_opt(spike1.id)->template get<Pos>().pos == fvec2(10,100));
             assert(list.entity_with_id_opt(Game::Id{}) == nullptr);
+            assert(game.get_opt(Game::Id{}) == nullptr);
             assert(list.entity_with_id(spike1.id).template get<Pos>().pos == fvec2(10,100));
+            assert(game.get(spike1.id).template get<Pos>().pos == fvec2(10,100));
             try {(void)list.entity_with_id(Game::Id{});} catch (...) {}
+            try {(void)game.get(Game::Id{});} catch (...) {}
             assert(game.template get<WithPosAndVel>().entity_with_id_opt(spike1.id) == nullptr); // Not in this list.
         };
         ByIdTest(game.template get<WithPos>());

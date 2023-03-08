@@ -42,6 +42,7 @@ endif
 # --- Project config ---
 
 _proj_cxxflags += -std=c++2b -pedantic-errors -Wall -Wextra -Wdeprecated -Wextra-semi
+_proj_cxxflags += -ftemplate-backtrace-limit=0
 _proj_cxxflags += -includesrc/program/common_macros.h -includesrc/program/parachute.h
 _proj_cxxflags += -Isrc -Ilib/include
 _proj_cxxflags += -Ilib/include/cglfl_gl3.2_core# OpenGL version

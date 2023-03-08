@@ -195,9 +195,9 @@ namespace Ent
                 }
 
                 // Find entity by id.
-                [[nodiscard]] bool has_entity_with_id_opt(typename Tag::Id id) const
+                [[nodiscard]] bool has_entity_with_id(typename Tag::Id id) const
                 {
-                    return bool(entity_with_id(id));
+                    return bool(entity_with_id_opt(id));
                 }
                 [[nodiscard]] Entity<Tag> &entity_with_id(typename Tag::Id id)
                 {

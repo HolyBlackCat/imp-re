@@ -319,10 +319,14 @@ namespace Ent
     // A list is a tag struct that has a `Type<Tag, Pred>` template in it,
     // which in turn privately inherits from `ListBase`, adds `ListFriend` as a friend, and has any public interface you need.
     template <typename T, typename Tag, typename Pred>
-    concept List = Meta::cvref_unqualified<T> && requires(typename T::template Type<Tag, Pred> list)
+    concept List = Meta::cvref_unqualified<T> && requires
     {
-        requires !std::derived_from<decltype(list), ListBase<Tag>> && std::is_base_of_v<ListBase<Tag>, decltype(list)>; // The base exists, but is not public.
-        ListFriend::Cast<ListBase<Tag> &>(list); // The base can be accessed with the helper.
+        typename T::template Type<Tag, Pred>;
+        // Would also check this, but then `Mixins::GlobalEntityLists` stops working, because of the quirks of the instantiation order.
+        // requires(typename T::template Type<Tag, Pred> list) {
+        //     requires !std::derived_from<decltype(list), ListBase<Tag>> && std::is_base_of_v<ListBase<Tag>, decltype(list)>; // The base exists, but is not public.
+        //     ListFriend::Cast<ListBase<Tag> &>(list); // The base can be accessed with the helper.
+        // }
     };
 
 
@@ -534,7 +538,9 @@ namespace Ent
 
                 friend constexpr auto operator<=>(Id, Id) = default;
 
-                [[nodiscard]] explicit operator bool() const {return value != 0;}
+                // This is a named function, as opposed to `operator bool`, because it doesn't guarantee that the ID is valid.
+                // Use `controller.valid(id)` for that (from `Mixins::GlobalEntityLists`).
+                [[nodiscard]] bool is_nonzero() const {return value != 0;}
 
                 [[nodiscard]] typename Tag::entity_id_underlying_t get_value() const
                 {
