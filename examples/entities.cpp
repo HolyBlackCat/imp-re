@@ -106,11 +106,11 @@ IMP_MAIN(,)
         {
             assert(Game::Id{}.get_value() == 0);
             assert(spike1.id.get_value() == 1);
-            assert(list.by_id_opt(spike1.id)->template get<Pos>().pos == fvec2(10,100));
-            assert(list.by_id_opt(Game::Id{}) == nullptr);
-            assert(list.by_id(spike1.id).template get<Pos>().pos == fvec2(10,100));
-            try {(void)list.by_id(Game::Id{});} catch (...) {}
-            assert(game.template get<WithPosAndVel>().by_id_opt(spike1.id) == nullptr); // Not in this list.
+            assert(list.entity_with_id_opt(spike1.id)->template get<Pos>().pos == fvec2(10,100));
+            assert(list.entity_with_id_opt(Game::Id{}) == nullptr);
+            assert(list.entity_with_id(spike1.id).template get<Pos>().pos == fvec2(10,100));
+            try {(void)list.entity_with_id(Game::Id{});} catch (...) {}
+            assert(game.template get<WithPosAndVel>().entity_with_id_opt(spike1.id) == nullptr); // Not in this list.
         };
         ByIdTest(game.template get<WithPos>());
         ByIdTest(game.template get<WithPosUnordered>());

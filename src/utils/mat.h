@@ -1649,7 +1649,7 @@ namespace Math
             [[nodiscard]] constexpr auto approx_inv_len() const {return 2 / floating_point_t<type>(len_sqr() + 1);}
             [[nodiscard]] constexpr auto approx_norm() const {return *this * approx_inv_len();} // Guaranteed to converge to `len()==1` eventually, when starting from any finite `len_sqr()`.
             [[nodiscard]] static constexpr vec axis(int a, type len = 1) {vec ret{}; ret[mod_ex(a,2)] = len; return ret;}
-            [[nodiscard]] constexpr vec keep_component(int a) {vec ret{}; a = mod_ex(a,2); ret[a] = (*this)[a]; return ret;}
+            [[nodiscard]] constexpr vec only_component(int a) {vec ret{}; a = mod_ex(a,2); ret[a] = (*this)[a]; return ret;}
             [[nodiscard]] static constexpr vec dir(type angle, type len = 1) requires is_floating_point {return vec(std::cos(angle) * len, std::sin(angle) * len);}
             template <scalar U = floating_point_t<type>> [[nodiscard]] constexpr U angle() const {return std::atan2(U(y), U(x));}
             [[nodiscard]] constexpr vec rot90(int steps = 1) const {switch (steps & 3) {default: return *this; case 1: return {-y,x}; case 2: return -*this; case 3: return {y,-x};}}
@@ -1724,7 +1724,7 @@ namespace Math
             [[nodiscard]] constexpr auto approx_inv_len() const {return 2 / floating_point_t<type>(len_sqr() + 1);}
             [[nodiscard]] constexpr auto approx_norm() const {return *this * approx_inv_len();} // Guaranteed to converge to `len()==1` eventually, when starting from any finite `len_sqr()`.
             [[nodiscard]] static constexpr vec axis(int a, type len = 1) {vec ret{}; ret[mod_ex(a,3)] = len; return ret;}
-            [[nodiscard]] constexpr vec keep_component(int a) {vec ret{}; a = mod_ex(a,3); ret[a] = (*this)[a]; return ret;}
+            [[nodiscard]] constexpr vec only_component(int a) {vec ret{}; a = mod_ex(a,3); ret[a] = (*this)[a]; return ret;}
             template <typename U> [[nodiscard]] constexpr auto dot(const vec3<U> &o) const {return x * o.x + y * o.y + z * o.z;}
             template <typename U> [[nodiscard]] constexpr auto cross(const vec3<U> &o) const -> vec3<decltype(x * o.x - x * o.x)> {return {y * o.z - z * o.y, z * o.x - x * o.z, x * o.y - y * o.x};}
             [[nodiscard]] constexpr auto tie() & {return std::tie(x,y,z);}
@@ -1789,7 +1789,7 @@ namespace Math
             [[nodiscard]] constexpr auto approx_inv_len() const {return 2 / floating_point_t<type>(len_sqr() + 1);}
             [[nodiscard]] constexpr auto approx_norm() const {return *this * approx_inv_len();} // Guaranteed to converge to `len()==1` eventually, when starting from any finite `len_sqr()`.
             [[nodiscard]] static constexpr vec axis(int a, type len = 1) {vec ret{}; ret[mod_ex(a,4)] = len; return ret;}
-            [[nodiscard]] constexpr vec keep_component(int a) {vec ret{}; a = mod_ex(a,4); ret[a] = (*this)[a]; return ret;}
+            [[nodiscard]] constexpr vec only_component(int a) {vec ret{}; a = mod_ex(a,4); ret[a] = (*this)[a]; return ret;}
             template <typename U> [[nodiscard]] constexpr auto dot(const vec4<U> &o) const {return x * o.x + y * o.y + z * o.z + w * o.w;}
             [[nodiscard]] constexpr auto tie() & {return std::tie(x,y,z,w);}
             [[nodiscard]] constexpr auto tie() const & {return std::tie(x,y,z,w);}

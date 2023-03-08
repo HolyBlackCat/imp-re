@@ -195,25 +195,29 @@ namespace Ent
                 }
 
                 // Find entity by id.
-                [[nodiscard]] Entity<Tag> &by_id(typename Tag::Id id)
+                [[nodiscard]] bool has_entity_with_id_opt(typename Tag::Id id) const
                 {
-                    auto ret = by_id_opt(id);
+                    return bool(entity_with_id(id));
+                }
+                [[nodiscard]] Entity<Tag> &entity_with_id(typename Tag::Id id)
+                {
+                    auto ret = entity_with_id_opt(id);
                     if (!ret)
                         throw std::runtime_error("No entity with this ID in this list.");
                     return *ret;
                 }
-                [[nodiscard]] const Entity<Tag> &by_id(typename Tag::Id id) const
+                [[nodiscard]] const Entity<Tag> &entity_with_id(typename Tag::Id id) const
                 {
-                    return const_cast<Type *>(this)->by_id(id);
+                    return const_cast<Type *>(this)->entity_with_id(id);
                 }
-                [[nodiscard]] Entity<Tag> *by_id_opt(typename Tag::Id id)
+                [[nodiscard]] Entity<Tag> *entity_with_id_opt(typename Tag::Id id)
                 {
                     auto it = set.find(id);
                     return it == set.end() ? nullptr : *it;
                 }
-                [[nodiscard]] const Entity<Tag> *by_id_opt(typename Tag::Id id) const
+                [[nodiscard]] const Entity<Tag> *entity_with_id_opt(typename Tag::Id id) const
                 {
-                    return const_cast<Type *>(this)->by_id_opt(id);
+                    return const_cast<Type *>(this)->entity_with_id_opt(id);
                 }
             };
         };

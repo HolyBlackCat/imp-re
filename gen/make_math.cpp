@@ -1847,7 +1847,7 @@ int main(int argc, char **argv)
                             // Construct axis of specific length.
                             output("[[nodiscard]] static constexpr vec axis(int a, type len = 1) {vec ret{}; ret[mod_ex(a,",w,")] = len; return ret;}\n");
                             // Zero all components except the specified one.
-                            output("[[nodiscard]] constexpr vec keep_component(int a) {vec ret{}; a = mod_ex(a,",w,"); ret[a] = (*this)[a]; return ret;}\n");
+                            output("[[nodiscard]] constexpr vec only_component(int a) {vec ret{}; a = mod_ex(a,",w,"); ret[a] = (*this)[a]; return ret;}\n");
 
                             if (w == 2)
                             {
