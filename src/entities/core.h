@@ -535,8 +535,9 @@ namespace Ent
 
               public:
                 constexpr Id() {}
+                constexpr Id(std::nullptr_t) {}
 
-                friend constexpr auto operator<=>(Id, Id) = default;
+                friend constexpr auto operator<=>(const Id &, const Id &) = default;
 
                 // This is a named function, as opposed to `operator bool`, because it doesn't guarantee that the ID is valid.
                 // Use `controller.valid(id)` for that (from `Mixins::GlobalEntityLists`).
