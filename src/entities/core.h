@@ -580,6 +580,23 @@ namespace Ent
             // Can't be overriden.
             using Entity = Ent::Entity<Tag>;
 
+            // A customizable base class for entities. Mostly for mixin authors.
+            struct CustomizedEntityBase : Entity {};
+
+            // The final entity type that can be created.
+            // Mostly for internal use.
+            template <EntityType<Tag> E>
+            struct FullEntity : Tag::CustomizedEntityBase, E
+            {
+                using E::E;
+                using Tag::CustomizedEntityBase::id; // Give preference to built-in `id()`, for convenience.
+
+                const std::vector<int> &EntityCategoryIndices() const override
+                {
+                    return EntityCategories<Tag, E>();
+                }
+            };
+
             // An entity controller.
             class Controller
             {
@@ -628,35 +645,20 @@ namespace Ent
                         throw std::runtime_error("Attempt to use a null entity controller.");
                 }
 
-                // The final entity type that can be created.
-                // Mostly for internal use.
-                template <EntityType<Tag> E>
-                struct FullEntity final : Entity, E
-                {
-                    using E::E;
+              protected:
+                // Those are for the mixin authors.
+                // They are called whenever an entity is created or destroyed.
+                template <EntityType<Tag> E> void OnEntityCreated(typename Tag::template FullEntity<E> &e) {(void)e;}
+                void OnEntityDestroyed(CustomizedEntityBase &e) {(void)e;}
 
-                    const std::vector<int> &EntityCategoryIndices() const override
-                    {
-                        return EntityCategories<Tag, E>();
-                    }
-                };
-
-                // `.create()` returns this.
-                // You can bind this to `auto [id, entity]`.
-                template <EntityType<Tag> E>
-                struct CreateResult
-                {
-                    Id id;
-                    E &ref;
-                };
-
+              public:
                 // Create an entity in this controller.
                 template <EntityType<Tag> E, typename ...P>
-                requires std::constructible_from<FullEntity<E>, P &&...>
-                CreateResult<E> create(P &&... params)
+                requires std::constructible_from<typename Tag::template FullEntity<E>, P &&...>
+                typename Tag::template FullEntity<E> &create(P &&... params)
                 {
                     ThrowIfNull();
-                    using full_entity_t = FullEntity<E>;
+                    using full_entity_t = typename Tag::template FullEntity<E>;
                     static_assert(std::derived_from<full_entity_t, Entity>, "Do not inherit from `Entity` manually.");
 
                     const auto &categories = EntityCategories<Tag, E>();
@@ -687,9 +689,12 @@ namespace Ent
                     for (; category_index < categories.size(); category_index++)
                         state.lists[categories[category_index]]->Insert(*ret);
 
+                    // Run the user callback.
+                    static_cast<typename Tag::Controller &>(*this).OnEntityCreated(*ret);
+
                     // Disarm the guard.
                     guard.func = nullptr;
-                    return {.id = static_cast<Entity *>(ret)->id(), .ref = *ret};
+                    return *ret;
                 }
 
                 // Destroy an entity in this controller.
@@ -697,13 +702,15 @@ namespace Ent
                 void destroy(E &entity_or_component) noexcept
                 {
                     ThrowIfNull();
-                    Entity &entity = dynamic_cast<Entity &>(entity_or_component);
+                    typename Tag::CustomizedEntityBase &entity = dynamic_cast<typename Tag::CustomizedEntityBase &>(entity_or_component);
+                    // Run the user callback.
+                    static_cast<typename Tag::Controller &>(*this).OnEntityDestroyed(entity);
                     // Remove from lists.
                     const auto &categories = entity.EntityCategoryIndices();
                     for (int list_index : categories)
                         state.lists[list_index]->Erase(entity);
                     // Destroy the entity.
-                    // `Entity` always has a virtual destructor, but a component might not have one.
+                    // `Entity` (and `CustomizedEntityBase`) always has a virtual destructor, but a component might not have one.
                     delete &entity;
                 }
 
