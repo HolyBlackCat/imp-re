@@ -79,6 +79,27 @@ namespace Meta
     concept specialization_of = impl::specialization_of<A, B>::value;
 
 
+    // Type traits for member pointers.
+
+    namespace impl
+    {
+        template <typename T>
+        struct MemPtrTraits {using type = T; using owner = void;};
+
+        template <typename T, typename C> struct MemPtrTraits<T C::*               > {using type = T; using owner = C;};
+        template <typename T, typename C> struct MemPtrTraits<T C::* const         > {using type = T; using owner = C;};
+        template <typename T, typename C> struct MemPtrTraits<T C::*       volatile> {using type = T; using owner = C;};
+        template <typename T, typename C> struct MemPtrTraits<T C::* const volatile> {using type = T; using owner = C;};
+    }
+
+    // Given `A B::*` (possible cv-qualified), returns A. Otherwise returns the type unchanged.
+    template <typename T>
+    using remove_member_pointer_t = typename impl::MemPtrTraits<T>::type;
+
+    // Given `A B::*` (possible cv-qualified), returns B. Otherwise returns `void`.
+    template <typename T>
+    using member_pointer_owner_t = typename impl::MemPtrTraits<T>::owner;
+
     // A helper function that invokes a callback.
     // If the callback returns void, the function returns `default_var` explicitly converted to `R`.
     // Otherwise returns the return value of of the callback, explicitly converted to `R` .
