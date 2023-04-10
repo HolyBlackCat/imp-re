@@ -9,7 +9,7 @@
 #include <imgui_freetype.h>
 #include <imgui_impl_opengl2.h>
 #include <imgui_impl_opengl3.h>
-#include <imgui_impl_sdl.h>
+#include <imgui_impl_sdl2.h>
 #include <imgui_stdlib.h>
 
 #include "interface/window.h"
@@ -229,7 +229,7 @@ namespace Interface
             }
 
             data.graphics_backend->NewFrame();
-            ImGui_ImplSDL2_NewFrame(Window::Get().Handle());
+            ImGui_ImplSDL2_NewFrame();
             ImGui::NewFrame();
 
             data.frame_started = true;
@@ -318,16 +318,6 @@ namespace Interface
             data.font_storage = {};
         }
 
-        // Replaces vanilla font renderer with freetype. Call this once, right after loading fonts. Use flags from `ImGuiFreeType::RasterizerFlags`.
-        void RenderFontsWithFreetype(unsigned int global_flags = 0)
-        {
-            ImGuiContext *old_context = ImGui::GetCurrentContext();
-            FINALLY{ImGui::SetCurrentContext(old_context);};
-            Activate();
-
-            ImGuiFreeType::BuildFontAtlas(ImGui::GetIO().Fonts, global_flags);
-        }
-
         // Returns UTF8 code for a zero-width space.
         static const char *ZeroWidthSpace()
         {
@@ -372,7 +362,6 @@ namespace Interface
         // Example callback:
         //     controller.LoadFont("assets/SourceSansPro-Regular.ttf", font_size, adjust(ImFontConfig{}, RasterizerFlags = freetype_flags));
         //     controller.LoadDefaultFont();
-        //     controller.RenderFontsWithFreetype();
         ImGuiFreetypeFontConfigurator(Interface::ImGuiController &controller_ref, int font_size, ImGuiFreeTypeBuilderFlags default_flags, load_fonts_func_t new_func)
             : controller(&controller_ref), font_size(font_size), freetype_flags(default_flags), load_fonts_func(std::move(new_func))
         {

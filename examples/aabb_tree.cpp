@@ -354,7 +354,6 @@ struct Application : Program::DefaultBasicState
 
         gui_controller.LoadFont(Program::ExeDir() + "assets/Monocat_6x12.ttf", 12.0f, adjust(ImFontConfig{}, .FontBuilderFlags = monochrome_font_flags));
         gui_controller.LoadDefaultFont();
-        gui_controller.RenderFontsWithFreetype();
 
         Graphics::Blending::Enable();
         Graphics::Blending::FuncNormalPre();
