@@ -41,19 +41,18 @@ using TheMapComp       = Game::Category<Ent::SingleComponent<Map>, Map>;
 
 IMP_MAIN(,)
 {
-    auto spike1 = game.create<Spike>();
-    auto [spike1_id, spike1_ref] = spike1; // Check that structured bindings work.
-    spike1_ref.pos = fvec2(10,100);
+    auto &spike1 = game.create<Spike>();
+    spike1.pos = fvec2(10,100);
 
-    Player &player1 = game.create<Player>().ref;
+    Player &player1 = game.create<Player>();
     player1.pos = fvec2(20,200);
     player1.vel = fvec2(0.2f,0.02f);
 
-    Player &player2 = game.create<Player>().ref;
+    Player &player2 = game.create<Player>();
     player2.pos = fvec2(30,300);
     player2.vel = fvec2(0.3f,0.03f);
 
-    game.create<Map>().ref.map = 42;
+    game.create<Map>().map = 42;
 
     auto test = [&](auto &game)
     {
@@ -106,18 +105,18 @@ IMP_MAIN(,)
         auto ByIdTest = [&](auto &list)
         {
             assert(Game::Id{}.get_value() == 0);
-            assert(spike1.id.get_value() == 1);
+            assert(spike1.id().get_value() == 1);
             assert(!game.valid(Game::Id{}));
-            assert(game.valid(spike1.id));
-            assert(list.entity_with_id_opt(spike1.id)->template get<Pos>().pos == fvec2(10,100));
-            assert(game.get_opt(spike1.id)->template get<Pos>().pos == fvec2(10,100));
+            assert(game.valid(spike1.id()));
+            assert(list.entity_with_id_opt(spike1.id())->template get<Pos>().pos == fvec2(10,100));
+            assert(game.get_opt(spike1.id())->template get<Pos>().pos == fvec2(10,100));
             assert(list.entity_with_id_opt(Game::Id{}) == nullptr);
             assert(game.get_opt(Game::Id{}) == nullptr);
-            assert(list.entity_with_id(spike1.id).template get<Pos>().pos == fvec2(10,100));
-            assert(game.get(spike1.id).template get<Pos>().pos == fvec2(10,100));
+            assert(list.entity_with_id(spike1.id()).template get<Pos>().pos == fvec2(10,100));
+            assert(game.get(spike1.id()).template get<Pos>().pos == fvec2(10,100));
             try {(void)list.entity_with_id(Game::Id{});} catch (...) {}
             try {(void)game.get(Game::Id{});} catch (...) {}
-            assert(game.template get<WithPosAndVel>().entity_with_id_opt(spike1.id) == nullptr); // Not in this list.
+            assert(game.template get<WithPosAndVel>().entity_with_id_opt(spike1.id()) == nullptr); // Not in this list.
         };
         ByIdTest(game.template get<WithPos>());
         ByIdTest(game.template get<WithPosUnordered>());

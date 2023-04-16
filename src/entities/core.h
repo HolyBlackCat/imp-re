@@ -36,7 +36,7 @@
  * - ENTITY - a struct that inherits from one or more components.
  *   If it's a component itself, it must use the `IMP_STANDALONE_COMPONENT` macro instead of `IMP_COMPONENT`.
  *
- *   - `Entity` - a base class that's automatically added to all entities, and which you can `dynamic_cast` to.
+ *   - `MyTag::Entity` - a base class that's automatically added to all entities, and which you can `dynamic_cast` to.
  *     It has a few methods to get entity components, but you can also `dynamic_cast` directly to components.
  *
  *   - `EntityDesc` - a type-erased class that describes what component an entity has.
@@ -200,86 +200,6 @@ namespace Ent
     using EntityComponents = impl::EntityComponentsIfAny<Tag, T>;
 
 
-    // Common entity state:
-
-    namespace impl
-    {
-        // The internal state of `Entity<Tag>`.
-        template <TagType Tag>
-        struct EntityState
-        {
-            // An incremental id.
-            typename Tag::entity_id_underlying_t id = 0;
-
-            // Takes an `Entity<Tag>` and returns its internal mutable state.
-            template <typename T>
-            [[nodiscard]] static auto &ModifyState(T &entity)
-            {
-                return entity.Entity::state;
-            }
-        };
-
-        // Use this to access internal state of `Tag::Id`, which is defined way below.
-        struct EntityIdFriend
-        {
-            EntityIdFriend() = delete;
-            ~EntityIdFriend() = delete;
-
-            template <typename T>
-            [[nodiscard]] static auto &Value(T &&object)
-            {
-                return object.value;
-            }
-        };
-    }
-
-    // Each entity automatically inherits from this, you can `dynamic_cast` to this type.
-    // Don't inherit from it manually.
-    template <TagType Tag>
-    class Entity
-    {
-      public:
-        Entity() {}
-
-        // We use this class to delete entities.
-        virtual ~Entity() = default;
-
-        // Prevent slicing.
-        Entity(const Entity &) = delete;
-        Entity& operator=(const Entity &) = delete;
-
-        // We provide a bunch of wrappers over `dynamic_cast`:
-
-        // Returns true if the entity has a component.
-        template <Component<Tag> Comp> [[nodiscard]] bool has() const {return dynamic_cast<const Comp *>(this);}
-
-        // Returns a component or throws.
-        template <Component<Tag> Comp> [[nodiscard]]       Comp &get()       {return dynamic_cast<      Comp &>(*this);}
-        template <Component<Tag> Comp> [[nodiscard]] const Comp &get() const {return dynamic_cast<const Comp &>(*this);}
-
-        // Returns a component or null.
-        template <Component<Tag> Comp> [[nodiscard]]       Comp *get_opt()       {return dynamic_cast<      Comp *>(this);}
-        template <Component<Tag> Comp> [[nodiscard]] const Comp *get_opt() const {return dynamic_cast<const Comp *>(this);}
-
-        // The incremental id of this entity.
-        [[nodiscard]] typename Tag::Id id() const
-        {
-            typename Tag::Id ret;
-            impl::EntityIdFriend::Value(ret) = state.id;
-            return ret;
-        }
-
-        // Mostly for internal use.
-        // A list of category indices this entity belongs to.
-        [[nodiscard]] virtual const std::vector<int> &EntityCategoryIndices() const = 0;
-
-      private:
-        impl::EntityState<Tag> state;
-
-        friend impl::EntityState<Tag>;
-    };
-
-
     // Lists:
 
     // An abstract base for entity lists.
@@ -295,10 +215,10 @@ namespace Ent
 
         virtual ~ListBase() {}
 
-        virtual void Insert(Entity<Tag> &entity) = 0;
-        virtual void Erase(Entity<Tag> &entity) noexcept = 0;
+        virtual void Insert(typename Tag::Entity &entity) = 0;
+        virtual void Erase(typename Tag::Entity &entity) noexcept = 0;
         // Return any entity in the list, or null if none.
-        [[nodiscard]] virtual Entity<Tag> *AnyEntity() noexcept = 0;
+        [[nodiscard]] virtual typename Tag::Entity *AnyEntity() noexcept = 0;
     };
 
     // Entity lists add this as a friend.
@@ -522,6 +442,9 @@ namespace Ent
             // Register `Tag` as a tag type.
             static_assert((void(impl::RegisterAsTag<Tag>{}), true));
 
+            class Controller;
+            class Entity;
+
             // Each entity gets an incremental ID of this type.
             // This is mostly a customization point. User code will use `Id` instead.
             // Inside of this class, use `typename Tag::entity_id_underlying_t` to refer to this type, to allow derived classes to override this.
@@ -530,7 +453,7 @@ namespace Ent
             // Stores unique entity IDs. Those are never reused.
             class Id
             {
-                friend EntityIdFriend;
+                friend Entity;
                 typename Tag::entity_id_underlying_t value = 0; // Actual IDs are always >0.
 
               public:
@@ -576,20 +499,55 @@ namespace Ent
             template <typename T>
             struct PrepareCategoryType {using type = T;};
 
-            // Each entity automatically inherits from this.
-            // Can't be overriden.
-            using Entity = Ent::Entity<Tag>;
+            // Each entity automatically inherits from this. Mixins can add extra stuff there.
+            class Entity
+            {
+                friend Controller;
+                typename Tag::entity_id_underlying_t entity_id = 0;
 
-            // A customizable base class for entities. Mostly for mixin authors.
-            struct CustomizedEntityBase : Entity {};
+              public:
+                Entity() {}
+
+                // We use this class to delete entities.
+                virtual ~Entity() = default;
+
+                // Prevent slicing.
+                Entity(const Entity &) = delete;
+                Entity& operator=(const Entity &) = delete;
+
+                // We provide a bunch of wrappers over `dynamic_cast`:
+
+                // Returns true if the entity has a component.
+                template <Component<Tag> Comp> [[nodiscard]] bool has() const {return dynamic_cast<const Comp *>(this);}
+
+                // Returns a component or throws.
+                template <Component<Tag> Comp> [[nodiscard]]       Comp &get()       {return dynamic_cast<      Comp &>(*this);}
+                template <Component<Tag> Comp> [[nodiscard]] const Comp &get() const {return dynamic_cast<const Comp &>(*this);}
+
+                // Returns a component or null.
+                template <Component<Tag> Comp> [[nodiscard]]       Comp *get_opt()       {return dynamic_cast<      Comp *>(this);}
+                template <Component<Tag> Comp> [[nodiscard]] const Comp *get_opt() const {return dynamic_cast<const Comp *>(this);}
+
+                // The incremental id of this entity.
+                [[nodiscard]] typename Tag::Id id() const
+                {
+                    typename Tag::Id ret;
+                    ret.value = entity_id;
+                    return ret;
+                }
+
+                // Mostly for internal use.
+                // A list of category indices this entity belongs to.
+                [[nodiscard]] virtual const std::vector<int> &EntityCategoryIndices() const = 0;
+            };
 
             // The final entity type that can be created.
             // Mostly for internal use.
             template <EntityType<Tag> E>
-            struct FullEntity : Tag::CustomizedEntityBase, E
+            struct FullEntity : Tag::Entity, E
             {
                 using E::E;
-                using Tag::CustomizedEntityBase::id; // Give preference to built-in `id()`, for convenience.
+                using Tag::Entity::id; // Give preference to built-in `id()`, for convenience.
 
                 const std::vector<int> &EntityCategoryIndices() const override
                 {
@@ -617,6 +575,9 @@ namespace Ent
                 {
                     ComponentRegistry<Tag>::Finalize();
                     CategoryRegistry<Tag>::Finalize();
+
+                    if (CategoryRegistry<Tag>::Count() == 0)
+                        throw std::runtime_error("Entity controller must have at least one category.");
 
                     state.lists.resize(CategoryRegistry<Tag>::Count());
                     for (int i = 0; i < CategoryRegistry<Tag>::Count(); i++)
@@ -649,7 +610,7 @@ namespace Ent
                 // Those are for the mixin authors.
                 // They are called whenever an entity is created or destroyed.
                 template <EntityType<Tag> E> void OnEntityCreated(typename Tag::template FullEntity<E> &e) {(void)e;}
-                void OnEntityDestroyed(CustomizedEntityBase &e) {(void)e;}
+                void OnEntityDestroyed(Entity &e) {(void)e;}
 
               public:
                 // Create an entity in this controller.
@@ -683,7 +644,8 @@ namespace Ent
 
                     // Assign a unique id.
                     // This has to be done before inserting to the lists, since they can use it.
-                    impl::EntityState<Tag>::ModifyState(*ret).id = state.id_counter++;
+                    // Note: not `typename Tag::Entity`, we don't want anybody to override the id member.
+                    static_cast<Entity &>(*ret).entity_id = state.id_counter++;
 
                     // Insert the entity to lists. This part can throw.
                     for (; category_index < categories.size(); category_index++)
@@ -698,11 +660,11 @@ namespace Ent
                 }
 
                 // Destroy an entity in this controller.
-                template <typename E> requires EntityType<E, Tag> || Component<E, Tag> || std::same_as<E, Entity>
+                template <typename E> requires EntityType<E, Tag> || Component<E, Tag> || std::same_as<E, typename Tag::Entity>
                 void destroy(E &entity_or_component) noexcept
                 {
                     ThrowIfNull();
-                    typename Tag::CustomizedEntityBase &entity = dynamic_cast<typename Tag::CustomizedEntityBase &>(entity_or_component);
+                    typename Tag::Entity &entity = dynamic_cast<typename Tag::Entity &>(entity_or_component);
                     // Run the user callback.
                     static_cast<typename Tag::Controller &>(*this).OnEntityDestroyed(entity);
                     // Remove from lists.
@@ -710,7 +672,7 @@ namespace Ent
                     for (int list_index : categories)
                         state.lists[list_index]->Erase(entity);
                     // Destroy the entity.
-                    // `Entity` (and `CustomizedEntityBase`) always has a virtual destructor, but a component might not have one.
+                    // `Entity` always has a virtual destructor, but a component might not have one.
                     delete &entity;
                 }
 
@@ -735,7 +697,7 @@ namespace Ent
                     // Since `EntityCategories()` errors on entities without categories, this doesn't leak.
                     for (const auto &list : state.lists)
                     {
-                        while (Entity *entity = list->AnyEntity())
+                        while (typename Tag::Entity *entity = list->AnyEntity())
                             destroy(*entity);
                     }
                 }

@@ -94,7 +94,7 @@ namespace Ent
                             if (auto d = a.address - b.address)
                                 return (d < 0) != Reverse;
                             // By is-base-of relation.
-                            if (int d = b.bases[a.index] - a.bases[b.index])
+                            if (int d = a.bases[b.index] - b.bases[a.index])
                                 return (d < 0) != Reverse;
                             // Identity.
                             if (&a == &b)
@@ -119,16 +119,23 @@ namespace Ent
             template <typename T> using FuncDeinit = Meta::value_tag<&T::_deinit>;
 
           public:
-            struct CustomizedEntityBase : NextBase::CustomizedEntityBase
+            struct Controller;
+
+            class Entity : public NextBase::Entity
             {
+                friend Controller;
                 virtual void OnCreated(typename Tag::Controller &controller) = 0;
                 virtual void OnDestroyed(typename Tag::Controller &controller) = 0;
             };
 
             template <EntityType<Tag> E>
-            struct FullEntity : NextBase::template FullEntity<E>
+            class FullEntity : public NextBase::template FullEntity<E>
             {
+              public:
                 using NextBase::template FullEntity<E>::FullEntity;
+
+              private:
+                friend Controller;
 
                 void OnCreated(typename Tag::Controller &controller) override
                 {
@@ -152,7 +159,7 @@ namespace Ent
                     NextBase::Controller::OnEntityCreated(e);
                 }
 
-                void OnEntityDestroyed(CustomizedEntityBase &e)
+                void OnEntityDestroyed(Entity &e)
                 {
                     NextBase::Controller::OnEntityDestroyed(e);
                     e.OnDestroyed(*this);

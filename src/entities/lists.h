@@ -33,15 +33,15 @@ namespace Ent
         {
             using is_transparent = void;
 
-            bool operator()(Entity<Tag> *a, Entity<Tag> *b) const
+            bool operator()(typename Tag::Entity *a, typename Tag::Entity *b) const
             {
                 return a->id() < b->id();
             }
-            bool operator()(Entity<Tag> *a, typename Tag::Id b) const
+            bool operator()(typename Tag::Entity *a, typename Tag::Id b) const
             {
                 return a->id() < b;
             }
-            bool operator()(typename Tag::Id a, Entity<Tag> *b) const
+            bool operator()(typename Tag::Id a, typename Tag::Entity *b) const
             {
                 return a < b->id();
             }
@@ -53,15 +53,15 @@ namespace Ent
         {
             using is_transparent = void;
 
-            bool operator()(Entity<Tag> *a, Entity<Tag> *b) const
+            bool operator()(typename Tag::Entity *a, typename Tag::Entity *b) const
             {
                 return a->id() == b->id();
             }
-            bool operator()(Entity<Tag> *a, typename Tag::Id b) const
+            bool operator()(typename Tag::Entity *a, typename Tag::Id b) const
             {
                 return a->id() == b;
             }
-            bool operator()(typename Tag::Id a, Entity<Tag> *b) const
+            bool operator()(typename Tag::Id a, typename Tag::Entity *b) const
             {
                 return a == b->id();
             }
@@ -74,7 +74,7 @@ namespace Ent
         {
             using is_transparent = void;
 
-            std::size_t operator()(Entity<Tag> *e) const
+            std::size_t operator()(typename Tag::Entity *e) const
             {
                 return operator()(e->id());
             }
@@ -93,8 +93,8 @@ namespace Ent
             {
                 friend ListFriend;
                 using set_t = std::conditional_t<Ordered,
-                    phmap::btree_set<Entity<Tag> *, UniqueIdLess<Tag>>,
-                    phmap::flat_hash_set<Entity<Tag> *, UniqueIdHash<Tag>, UniqueIdEq<Tag>>
+                    phmap::btree_set<typename Tag::Entity *, UniqueIdLess<Tag>>,
+                    phmap::flat_hash_set<typename Tag::Entity *, UniqueIdHash<Tag>, UniqueIdEq<Tag>>
                 >;
                 set_t set;
 
@@ -109,8 +109,8 @@ namespace Ent
                   public:
                     CustomIter(base_t base) : base_t(std::move(base)) {}
 
-                    using value_type = Entity<Tag>;
-                    using reference = std::conditional_t<IsConst, const Entity<Tag> &, Entity<Tag> &>;
+                    using value_type = typename Tag::Entity;
+                    using reference = std::conditional_t<IsConst, const typename Tag::Entity &, typename Tag::Entity &>;
                     using pointer = std::remove_reference_t<reference> *;
 
                     reference operator*() const
@@ -123,19 +123,19 @@ namespace Ent
                     }
                 };
 
-                void Insert(Entity<Tag> &value) override
+                void Insert(typename Tag::Entity &value) override
                 {
                     if constexpr (Ordered)
                         set.insert(set.end(), &value);
                     else
                         set.insert(&value);
                 }
-                void Erase(Entity<Tag> &value) noexcept override
+                void Erase(typename Tag::Entity &value) noexcept override
                 {
                     [[maybe_unused]] bool ok = set.erase(&value) > 0;
                     ASSERT(ok, "Attempt to erase a non-existent element from a list.");
                 }
-                Entity<Tag> *AnyEntity() noexcept override
+                typename Tag::Entity *AnyEntity() noexcept override
                 {
                     return set.empty() ? nullptr : *set.begin();
                 }
@@ -161,24 +161,24 @@ namespace Ent
                 [[nodiscard]] auto end() const {return CustomIter<true>(set.end());}
 
                 // Return one or zero elements, throw otherwise.
-                [[nodiscard]] Entity<Tag> *single_opt()
+                [[nodiscard]] typename Tag::Entity *single_opt()
                 {
                     if (set.size() > 1)
                         throw std::runtime_error(FMT("Expected at most one entity in this list, but got {}.", set.size()));
                     return set.empty() ? nullptr : *set.begin();
                 }
-                [[nodiscard]] const Entity<Tag> *single_opt() const
+                [[nodiscard]] const typename Tag::Entity *single_opt() const
                 {
                     return const_cast<Type *>(this)->single_opt();
                 }
                 // Return one element, throw otherwise.
-                [[nodiscard]] Entity<Tag> &single()
+                [[nodiscard]] typename Tag::Entity &single()
                 {
                     if (set.size() != 1)
                         throw std::runtime_error(FMT("Expected one entity in this list, but got {}.", set.size()));
                     return **set.begin();
                 }
-                [[nodiscard]] const Entity<Tag> &single() const
+                [[nodiscard]] const typename Tag::Entity &single() const
                 {
                     return const_cast<Type *>(this)->single();
                 }
@@ -199,23 +199,23 @@ namespace Ent
                 {
                     return bool(entity_with_id_opt(id));
                 }
-                [[nodiscard]] Entity<Tag> &entity_with_id(typename Tag::Id id)
+                [[nodiscard]] typename Tag::Entity &entity_with_id(typename Tag::Id id)
                 {
                     auto ret = entity_with_id_opt(id);
                     if (!ret)
                         throw std::runtime_error("No entity with this ID in this list.");
                     return *ret;
                 }
-                [[nodiscard]] const Entity<Tag> &entity_with_id(typename Tag::Id id) const
+                [[nodiscard]] const typename Tag::Entity &entity_with_id(typename Tag::Id id) const
                 {
                     return const_cast<Type *>(this)->entity_with_id(id);
                 }
-                [[nodiscard]] Entity<Tag> *entity_with_id_opt(typename Tag::Id id)
+                [[nodiscard]] typename Tag::Entity *entity_with_id_opt(typename Tag::Id id)
                 {
                     auto it = set.find(id);
                     return it == set.end() ? nullptr : *it;
                 }
-                [[nodiscard]] const Entity<Tag> *entity_with_id_opt(typename Tag::Id id) const
+                [[nodiscard]] const typename Tag::Entity *entity_with_id_opt(typename Tag::Id id) const
                 {
                     return const_cast<Type *>(this)->entity_with_id_opt(id);
                 }
@@ -243,25 +243,25 @@ namespace Ent
             {
                 friend ListFriend;
 
-                // If `IsSingleComponent` is false, returns `Entity<Tag>`.
+                // If `IsSingleComponent` is false, returns `typename Tag::Entity`.
                 // Otherwise returns the sole component that `Pred` requires (the `static_assert` above checks that we have one).
-                using elem_t = typename std::conditional_t<std::is_void_v<Comp>, Entity<Tag>, Comp>;
+                using elem_t = typename std::conditional_t<std::is_void_v<Comp>, typename Tag::Entity, Comp>;
 
-                Entity<Tag> *current = nullptr;
+                typename Tag::Entity *current = nullptr;
 
-                void Insert(Entity<Tag> &entity) override
+                void Insert(typename Tag::Entity &entity) override
                 {
                     if (current)
                         throw std::runtime_error("Expected at most one entity for this entity list.");
                     current = &entity;
                 }
-                void Erase(Entity<Tag> &entity) noexcept override
+                void Erase(typename Tag::Entity &entity) noexcept override
                 {
                     (void)entity;
                     ASSERT(current == &entity, "Internal error: Attempt to erase a wrong entity from a single-entity list.");
                     current = nullptr;
                 }
-                Entity<Tag> *AnyEntity() noexcept override
+                typename Tag::Entity *AnyEntity() noexcept override
                 {
                     return current;
                 }
