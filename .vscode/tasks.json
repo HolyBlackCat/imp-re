@@ -8,7 +8,7 @@
         {
             "label": "Build",
             "type": "shell",
-            "command": "make build-default",
+            "command": "make build-current",
             "presentation": {"echo": true, "reveal": "always", "focus": false, "panel": "shared", "showReuseMessage": false, "clear": true},
             "group": {"kind": "build", "isDefault": true},
         },
@@ -21,43 +21,63 @@
         {
             "label": "Run",
             "type": "shell",
-            "command": "make sync-libs-and-assets && make run-old-default",
+            "command": "make sync-libs-and-assets && make run-old-current",
             "presentation": {"echo": true, "reveal": "always", "focus": false, "panel": "shared", "showReuseMessage": false, "clear": true},
         },
         {
             "label": "↪ Debug",
             "type": "shell",
-            "command": "make remember-mode MODE=debug",
+            "command": "make remember MODE=debug",
             "presentation": {"echo": true, "reveal": "always", "focus": false, "panel": "shared", "showReuseMessage": false, "clear": true},
         },
         {
             "label": "↪ Debug (soft)",
             "type": "shell",
-            "command": "make remember-mode MODE=debug_soft",
+            "command": "make remember MODE=debug_soft",
             "presentation": {"echo": true, "reveal": "always", "focus": false, "panel": "shared", "showReuseMessage": false, "clear": true},
         },
         {
             "label": "↪ Release",
             "type": "shell",
-            "command": "make remember-mode MODE=release",
+            "command": "make remember MODE=release",
             "presentation": {"echo": true, "reveal": "always", "focus": false, "panel": "shared", "showReuseMessage": false, "clear": true},
         },
         {
             "label": "↪ Profile",
             "type": "shell",
-            "command": "make remember-mode MODE=profile",
+            "command": "make remember MODE=profile",
             "presentation": {"echo": true, "reveal": "always", "focus": false, "panel": "shared", "showReuseMessage": false, "clear": true},
         },
         {
             "label": "↪ Sanitize address",
             "type": "shell",
-            "command": "make remember-mode MODE=sanitize_address",
+            "command": "make remember MODE=sanitize_address",
             "presentation": {"echo": true, "reveal": "always", "focus": false, "panel": "shared", "showReuseMessage": false, "clear": true},
         },
         {
             "label": "↪ Sanitize UB",
             "type": "shell",
-            "command": "make remember-mode MODE=sanitize_ub",
+            "command": "make remember MODE=sanitize_ub",
+            "presentation": {"echo": true, "reveal": "always", "focus": false, "panel": "shared", "showReuseMessage": false, "clear": true},
+        },
+        {
+            "label": "▷ Game",
+            "type": "shell",
+            "command": "make remember APP=imp-re",
+            "presentation": {"echo": true, "reveal": "always", "focus": false, "panel": "shared", "showReuseMessage": false, "clear": true},
+        },
+        {
+            "label": "▷ Tests",
+            "type": "shell",
+            "command": "make remember APP=tests",
+            "presentation": {"echo": true, "reveal": "always", "focus": false, "panel": "shared", "showReuseMessage": false, "clear": true},
+        },
+        {
+            "label": "⋯ Set arguments",
+            "type": "shell",
+            // There's a log going on here. First we `make -pq` + `grep` for the existing value of flags. Then we replace $$->$ to counteract Make's escaping.
+            // We pass the result as the existing value to Zenity, run it, then pass the result back to `make remember ARGS=??`.
+            "command": "make remember ARGS=\"$(zenity --entry --text='Flags:' --entry-text=\"$(make -pq | grep -Po '(?<=^ARGS := ).*' | sed 's/\\$\\$/\\$/g')\")\"",
             "presentation": {"echo": true, "reveal": "always", "focus": false, "panel": "shared", "showReuseMessage": false, "clear": true},
         },
         {
@@ -67,15 +87,15 @@
             "presentation": {"echo": true, "reveal": "always", "focus": false, "panel": "shared", "showReuseMessage": false, "clear": true},
         },
         {
-            "label": "▶ Reset Autocompletion Cache",
+            "label": "⎚ Reset Autocompletion Cache",
             "type": "shell",
             "command": "rm -rf ./.cache",
             "presentation": {"echo": true, "reveal": "always", "focus": false, "panel": "shared", "showReuseMessage": false, "clear": true},
         },
         {
-            "label": "⦻ Rebuild",
+            "label": "⟳ Rebuild",
             "type": "shell",
-            "command": "make clean-this-os-this-mode && make build-default",
+            "command": "make clean && make build-current",
             "presentation": {"echo": true, "reveal": "always", "focus": false, "panel": "shared", "showReuseMessage": false, "clear": true},
         },
         {

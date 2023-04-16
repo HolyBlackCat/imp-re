@@ -46,19 +46,22 @@ After configuring the environment, running `make` will build and run the app.
 
 Do not add `-jN`, the number of threads is guessed automatically. Pass `JOBS=N` to override the number of threads. Pass `JOBS=` to disable the thread count override; then `-jN` will work normally.
 
-Add `MODE=??` to override the build mode (`release`, `debug`, etc). See `project.mk` for a full list, or pass an invalid mode to print the available modes.
-
-Run `make remember-mode MODE=??` to set the default mode.
+Settings:
+* You can add `MODE=??` to override the build mode (`release`, `debug`, etc). See `project.mk` for a full list, or pass an invalid mode to print the available modes.
+* You can add `APP=??` to choose the application. See `project.mk` for a full list, or pass an invalid app to print the available applications.
+* You can add `ARGS=??` to choose the flags for your application.<br/>
+  Use `make remember ...` described below to set the default `MODE`/`APP`/`ARGS`.
 
 The full list of commands:
 
 * Building and running:
-  * `make` or `make run-default` — build and run. You can use a project name instead of `default`, use tab completion for the current list.
-  * `make run-old-default` — run without rebuilding. You might want to run `make sync-libs-and-assets` before this to sync the assets.
-  * `make build-default` — build but don't run. You can use `all` or a project name instead of `default`, use tab completion for the current list.
+  * `make` or `make run-current` — build and run. You can use a project name instead of `current`, use tab completion for the current list.
+  * `make run-old-current` — run without rebuilding. You might want to run `make sync-libs-and-assets` before this to sync the assets.
+  * `make build-current` — build but don't run. You can use `all` or a project name instead of `current`, use tab completion for the current list.
 * Misc:
-  * `make remember-mode MODE=??` — set the default `MODE` and generate the debug configuration for VSC for it.
-  * `make commands` — generate `compile_commands.json`. Respects the current `MODE`.
+  * `make remember MODE=?? APP=?? ARGS=??` — set the current `MODE` and generate the debug configuration for VSC for it.
+  * `make remember APP=??` — set the current `APP` and generate the debug configuration for VSC for it.
+  * `make commands` — generate `compile_commands.json`. Respects the current `MODE` and `APP` (the latter is just a hint, which only matters if multiple apps use the same source files).
 * Packaging:
   * `make dist` — package the binaries.
   * `make repeat-build-number` — decrement the build number for the next `make dist` by one.

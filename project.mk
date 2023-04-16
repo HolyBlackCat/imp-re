@@ -31,7 +31,7 @@ $(call NewMode,sanitize_ub)
 $(Mode)COMMON_FLAGS := -g -fsanitize=undefined
 $(Mode)CXXFLAGS := -D_GLIBCXX_DEBUG
 
-DIST_NAME := *_$(TARGET_OS)_v1.^
+DIST_NAME := $(APP)_$(TARGET_OS)_v1.*
 ifneq ($(MODE),release)
 DIST_NAME := $(DIST_NAME)_$(MODE)
 endif
@@ -50,19 +50,25 @@ ifeq ($(TARGET_OS),windows)
 PROJ_LDFLAGS += $(_win_subsystem)
 endif
 
+# The common PCH rules for all projects.
+override _pch_rules := src/game/*->src/game/master.hpp
+
 $(call Project,exe,imp-re)
 $(call ProjectSetting,source_dirs,src)
 $(call ProjectSetting,cxxflags,-DDOCTEST_CONFIG_DISABLE)
-$(call ProjectSetting,pch,src/game/*->src/game/master.hpp)
+$(call ProjectSetting,pch,$(_pch_rules))
 $(call ProjectSetting,libs,*)
 $(call ProjectSetting,bad_lib_flags,-Dmain=%>>>-DIMP_ENTRY_POINT_OVERRIDE=%)
 
 $(call Project,exe,tests)
 $(call ProjectSetting,source_dirs,src)
 $(call ProjectSetting,cxxflags,-DIMP_ENTRY_POINT_OVERRIDE=unused_main)
-$(call ProjectSetting,pch,src/game/*->src/game/master.hpp)
+$(call ProjectSetting,pch,$(_pch_rules))
 $(call ProjectSetting,libs,*)
 $(call ProjectSetting,bad_lib_flags,-Dmain)
+ifeq ($(APP),tests)
+ALLOW_PCH := 0# Force disable PCH for tests, it doesn't make much sense there.
+endif
 
 
 # --- Codegen ---

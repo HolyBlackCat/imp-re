@@ -24,7 +24,7 @@ override LANG :=
 export LANG
 
 # Set the default target.
-.DEFAULT_GOAL :=  run-default
+.DEFAULT_GOAL :=  run-current
 
 
 # --- Define contants ---
@@ -393,6 +393,9 @@ override PKG_CONFIG_LIBDIR :=
 export PKG_CONFIG_LIBDIR
 
 MODE :=# Build mode.
+APP :=# Target project
+ARGS :=# Flags for running the application.
+
 COMMON_FLAGS :=# Used both when compiling and linking.
 LINKER := AUTO# E.g. `lld` or `lld-13`. Can be `AUTO` to guess LLD version, or empty to use the default one.
 ALLOW_PCH := 1# If 0 or empty, disable PCH.
@@ -445,7 +448,7 @@ KEEP_BUILD_TREES := 0
 BAD_LIB_FLAGS := -mwindows -Wl,-rpath%
 
 # The app name used for packaging. `*` = main project name, `^` = build number.
-DIST_NAME = *_$(TARGET_OS)_$(MODE)_^
+DIST_NAME = $(APP)_$(TARGET_OS)_$(MODE)_*
 # The build number is stored in this file.
 DIST_BUILD_NUMBER_FILE := $(proj_dir)/build_number.txt
 
@@ -501,8 +504,6 @@ else
 override abs_path_to_host = $1
 endif
 
-# This is prepended to the program name in the `run-*` targets. E.g. you can put `gdb` here.
-RUN_WITH :=
 
 # Extra files cleaned by the `clean-everything` and `prepare-for-storage` targets. Relative to `$(proj_dir)`.
 CLEAN_EXTRA_FILES := .cache
@@ -571,8 +572,8 @@ else
   # If we're running a tab completion and there is no mode, use the default mode, and don't check for errors.
   $(if $(MODE),,$(call var,MODE := generic))
  else
-  # Make sure the specified mode is listed in the list.
-  $(if $(filter 0,$(words $(MODE))),$(error Build mode is not set.$(lf)To set the mode once, add `MODE=...` to flags, one of: $(mode_list)$(lf)To set it permanently, use `make remember-mode MODE=...`))
+  # Make sure the specified mode is in the list.
+  $(if $(filter 0,$(words $(MODE))),$(error Build mode is not set.$(lf)To set the mode once, add `MODE=...` to flags, one of: $(mode_list)$(lf)To set it permanently, use `make remember MODE=...`))
   $(if $(filter-out 1,$(words $(MODE))),$(error MODE must be a single word))
   $(if $(filter $(MODE),$(mode_list)),,$(error MODE must be one of: $(mode_list)))
  endif
@@ -581,6 +582,25 @@ endif
 override MODE := $(strip $(MODE))
 # Load mode variables.
 $(foreach x,$(filter __modevar_$(MODE)_%,$(.VARIABLES)),$(call var,$(patsubst __modevar_$(MODE)_%,%,$x) := $($x)))
+
+# List all executable projects.
+override executable_projects := $(foreach x,$(proj_list),$(if $(filter exe,$(__proj_kind_$x)),$x))
+
+# Check app name, update it if necessary.
+ifneq ($(running_tab_completion),)
+ # If we're running a tab completion and there is no mode, use the default mode, and don't check for errors.
+ $(if $(APP),,$(call var,APP := $(firstword $(executable_projects))))
+else
+ # Make sure the specified app is in the list.
+ $(if $(filter 0,$(words $(APP))),$(error Active application is not set.$(lf)To set it once, add `APP=...` to flags, one of: $(executable_projects)$(lf)To set it permanently, use `make remember APP=...`))
+ $(if $(filter-out 1,$(words $(APP))),$(error APP must be a single word))
+ $(if $(filter $(APP),$(executable_projects)),,$(error APP must be one of: $(executable_projects)))
+endif
+# Strip, just in case.
+override APP := $(strip $(APP))
+
+# Stop ARGS from expanding stuff.
+override ARGS := $(value ARGS)
 
 
 # Note that we can't add the flags to CC, CXX.
@@ -618,9 +638,9 @@ override language_list := $(filter-out $(DISABLED_LANGS),$(language_list))
 # --- Print header ---
 
 ifeq ($(TARGET_OS),$(HOST_OS))
-$(info [Mode] $(MODE))
+$(info [Target] $(APP) ~ $(MODE))
 else
-$(info [Mode] $(HOST_OS)->$(TARGET_OS), $(MODE))
+$(info [Target] $(HOST_OS)->$(TARGET_OS), $(APP) ~ $(MODE))
 endif
 
 
@@ -981,20 +1001,15 @@ run-$(__proj): override __proj := $(__proj)
 run-$(__proj): override __filename := $(__filename)
 run-$(__proj): build-$(__proj)
 	$(call log_now,[Running] $(__proj))
-	@$(run_without_buffering)$(RUN_WITH) $(__filename)
+	@$(run_without_buffering)$(__filename) $(ARGS)
 
 # A target to run the project without compiling it.
 .PHONY: run-old-$(__proj)
 run-old-$(__proj): override __proj := $(__proj)
 run-old-$(__proj): override __filename := $(__filename)
 run-old-$(__proj):
-	$(call log_now,[Running old version] $(__proj))
-	@$(run_without_buffering)$(RUN_WITH) $(__filename)
-
-# If this is the first exe project, consider it to be the default.
-ifeq ($(default_exe_proj),)
-override default_exe_proj := $(__proj)
-endif
+	$(call log_now,[Running existing build] $(__proj))
+	@$(run_without_buffering)$(__filename) $(ARGS)
 endif
 
 # Target to clean the project.
@@ -1005,9 +1020,6 @@ clean-this-os-this-mode-$(__proj):
 	$(call safe_shell_exec,rm -rf $(call quote,$(OBJ_DIR)/$(os_mode_string)/$(__proj)))
 	@true
 endef
-
-# The first executable project if any, considered to be the default one.
-override default_exe_proj :=
 
 # Generate link targets.
 $(foreach x,$(proj_list),$(call var,__proj := $x)$(eval $(value codesnippet_link)))
@@ -1024,15 +1036,13 @@ override targets_needing_dirs += $(if $(ALLOW_PCH),$(foreach x,$(proj_list),$(ca
 $(foreach x,$(targets_needing_dirs),$(eval $x: | $(dir $x)))
 $(foreach x,$(sort $(dir $(targets_needing_dirs))),$(eval $x: ; @mkdir -p $(call quote,$x)))
 
-# If we have a default project, add some targets for it.
-ifneq ($(default_exe_proj),)
-.PHONY: build-default
-build-default: build-$(default_exe_proj)
-.PHONY: run-default
-run-default: run-$(default_exe_proj)
-.PHONY: run-old-default
-run-old-default: run-old-$(default_exe_proj)
-endif
+# Add targets for the current app.
+.PHONY: build-current
+build-current: build-$(APP)
+.PHONY: run-current
+run-current: run-$(APP)
+.PHONY: run-old-current
+run-old-current: run-old-$(APP)
 
 # "Build all" target.
 
@@ -1076,46 +1086,61 @@ clean-pch:
 # Double-quotes a string.
 override doublequote = "$(subst `,\\,$(subst ",\",$(subst \,`,$1)))"
 
+# Writes compile commands for project $1 to the COMMANDS_FILE.
+# If `__commands_first` is non-empty, doesn't write the comma (intended for the first element).
+# Consults `__commands_files` for the files that have been already generated. Ignores repeated files.
+override write_commands_for_project = \
+	$(foreach x,$(__proj_allsources_$1),\
+		$(if $(filter $x,$(__commands_files)),,\
+			$(call var,__commands_files += $x)\
+			$(call, ### Note the trick to set ALLOW_PCH to 0 just for this line.)\
+			$(file >>$(COMMANDS_FILE),   $(if $(__commands_first),$(call var,__commands_first :=) ,$(comma)){"directory": $(__curdir), "file": $(call doublequote,$(call abs_path_to_host,$(abspath $x))), "command": $(call doublequote,$(foreach ALLOW_PCH,0,$(call language_command-$(call guess_lang_from_filename,$x),$x,,$1)))})\
+		)\
+	)
+
 .PHONY: commands
 commands:
 	$(call var,__curdir := $(call doublequote,$(call abs_path_to_host,$(abspath $(proj_dir)))))
-	$(call var,__first := 1)
+	$(call var,__commands_first := 1)
+	$(call var,__commands_files := 1)
 	$(file >$(COMMANDS_FILE),[)
-	$(foreach x,$(proj_list),$(foreach y,$(__proj_allsources_$x),\
-		$(call, ### Note the trick to set ALLOW_PCH to 0 just for this line.)\
-		$(file >>$(COMMANDS_FILE),   $(if $(__first),$(call var,__first :=) ,$(comma)){"directory": $(__curdir), "file": $(call doublequote,$(call abs_path_to_host,$(abspath $y))), "command": $(call doublequote,$(foreach ALLOW_PCH,0,$(call language_command-$(call guess_lang_from_filename,$y),$y,,$x)))})\
-	))
+	$(call, ### Note that we generate commands for APP first, to give it priority. We deduplicate the commands ourselves.)
+	$(call write_commands_for_project,$(APP))
+	$(foreach x,$(filter-out $(APP),$(proj_list)),$(call write_commands_for_project,$x))
 	$(file >>$(COMMANDS_FILE),])
 	@true
 
 # --- Mode-switching target ---
 
 # Added before the current mode when saving it to the config.
-override mode_config_prefix := MODE :=
+override config_prefix_mode := MODE :=
+# Added before the current app when saving it to the config.
+override config_prefix_app := APP :=
 
-# Those files are regenerated on mode change. E.g. `foo.json` is generated from `foo.default.json`.
+# Those files are regenerated on mode and/or target change. E.g. `foo.json` is generated from `foo.default.json`.
 # In them, following replacements are made:
-# * `<MAIN_EXECUTABLE>` -> the output executable of the default project
-GENERATE_ON_MODE_CHANGE := $(proj_dir)/.vscode/launch.json
+# * `<EXECUTABLE>` -> the output executable of the current project
+# * `<ARGS>` -> the executable flags chosen by the user
+GENERATE_ON_TARGET_CHANGE := $(proj_dir)/.vscode/launch.json
 # Remove files with missing original files.
-override GENERATE_ON_MODE_CHANGE := $(foreach x,$(GENERATE_ON_MODE_CHANGE),$(if $(wildcard $(call generation_source_for_file,$x)),$x))
+override GENERATE_ON_TARGET_CHANGE := $(foreach x,$(GENERATE_ON_TARGET_CHANGE),$(if $(wildcard $(call generation_source_for_file,$x)),$x))
 
-# Writes the current MODE to the local config.
-.PHONY: remember-mode
-remember-mode:
-	$(call, Check if the local config already has a mode assignment.)
-	$(if $(filter-out 0,$(call shell_status,grep 2>/dev/null $(call quote,$(mode_config_prefix)) $(call quote,$(LOCAL_CONFIG)))),\
-		$(call, No mode assignment in the local config, create it.)\
-		$(file >>$(LOCAL_CONFIG),)\
-		$(file >>$(LOCAL_CONFIG),$(mode_config_prefix) $(MODE))\
-	,\
-		$(call, Already have a mode assignment in the local config, modify it.)\
-		$(call safe_shell_exec,sed -i 's/.*$(mode_config_prefix).*/$(mode_config_prefix) $(MODE)/' $(call quote,$(LOCAL_CONFIG)))\
-	)
-	$(call, Regenerate some files.)
-	$(foreach x,$(GENERATE_ON_MODE_CHANGE),\
+# Writes the current MODE and APP to the local config.
+.PHONY: remember
+remember:
+	$(call, ### Filter out existing stuff from the local config.)
+	$(call safe_shell_exec,awk -i inplace '/MODE :=/ {next} /APP :=/ {next} /ARGS :=/ {next} {print}' $(call quote,$(LOCAL_CONFIG)))
+	$(call, ### Write new values.)
+	$(call, ### We used to have some clever code that used `sed` to replace the existing values, if any, but that made it harder to handle wonky flags.)
+	$(file >>$(LOCAL_CONFIG),MODE := $(MODE))\
+	$(file >>$(LOCAL_CONFIG),APP := $(APP))\
+	$(file >>$(LOCAL_CONFIG),ARGS := $(subst $,$$$$,$(ARGS)))\
+	$(call, ### Regenerate some files.)
+	$(foreach x,$(GENERATE_ON_TARGET_CHANGE),\
 		$(call safe_shell_exec,cp $(call quote,$(call generation_source_for_file,$x)) $(call quote,$x))\
-		$(call safe_shell_exec,sed -i 's|<MAIN_EXECUTABLE>|$(call proj_output_filename,$(default_exe_proj))|' $(call quote,$x))\
+		$(call safe_shell_exec,sed -i 's|<EXECUTABLE>|$(call proj_output_filename,$(APP))|' $(call quote,$x))\
+		$(call, ### Note that we replace \->\\ twice. The first replacement is for JSON, and the second is for Sed.)\
+		$(call safe_shell_exec,sed -i 's|<ARGS>|'$(call quote,$(subst \,\\,$(subst ",\",$(subst \,\\,$(ARGS)))))'|' $(call quote,$x))\
 	)
 	@true
 
@@ -1166,12 +1191,12 @@ dist-deps:
 
 # Build and package the app, using the current mode. Then increment the build number.
 .PHONY: dist
-dist: build-default
-	$(call var,__main_exe := $(call proj_output_filename,$(default_exe_proj)))
+dist: build-current
+	$(call var,__main_exe := $(call proj_output_filename,$(APP)))
 	$(call var,__libs_copied :=)
 	$(call, ### Run LDD.)
 	$(call, ### Note abspath on the executable. Without it, the returned paths can contain `.`, which messes with our library classification.)
-	$(call var,__libs := $(call safe_shell,$(call proj_library_path_prefix,$(default_exe_proj)) $(LDD) $(call quote,$(abspath $(__main_exe))) | sed -E 's/^\s*([^ =]*)( => ([^ ]*))? .0x.*$$/###\1=>\3/g' | grep -Po '(?<=^###).*$$'))
+	$(call var,__libs := $(call safe_shell,$(call proj_library_path_prefix,$(APP)) $(LDD) $(call quote,$(abspath $(__main_exe))) | sed -E 's/^\s*([^ =]*)( => ([^ ]*))? .0x.*$$/###\1=>\3/g' | grep -Po '(?<=^###).*$$'))
 	$(info [Dist] Parsed LDD output: $(__libs))
 	$(call, ### Remove library names from output, leave only paths.)
 	$(call var,__libs := $(foreach x,$(__libs),$(word 2,$(subst =>, ,$x))))
@@ -1209,7 +1234,7 @@ dist: build-default
 	$(if $(__buildnumber),,$(call var,__buildnumber := 0))
 	$(call, ### Clean target dir.)
 	$(call safe_shell_exec,rm -rf $(call quote,$(DIST_TMP_DIR)))
-	$(call var,__target_name := $(subst *,$(default_exe_proj),$(subst ^,$(__buildnumber),$(DIST_NAME))))
+	$(call var,__target_name := $(subst *,$(__buildnumber),$(DIST_NAME)))
 	$(call var,__target_dir := $(DIST_TMP_DIR)/$(__target_name))
 	$(call safe_shell_exec,mkdir -p $(call quote,$(__target_dir)))
 	$(call, ### Copy assets. This must be first, because the command will erase some other files from target directory.)

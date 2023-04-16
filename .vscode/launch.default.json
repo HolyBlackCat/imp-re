@@ -8,7 +8,8 @@
             "name": "Debug (LLDB)",
             "type": "lldb",
             "request": "launch",
-            "program": "${workspaceRoot}/<MAIN_EXECUTABLE>",
+            "program": "${workspaceRoot}/<EXECUTABLE>",
+            "args": "<ARGS>",
             "cwd": "${workspaceRoot}",
             "internalConsoleOptions": "openOnSessionStart",
             "preLaunchTask": "Build",
@@ -21,7 +22,8 @@
             "name": "Debug (GDB)",
             "type": "gdb",
             "request": "launch",
-            "target": "${workspaceRoot}/<MAIN_EXECUTABLE>",
+            "target": "${workspaceRoot}/<EXECUTABLE>",
+            "arguments": "<ARGS>",
             // The `"terminal": ""` part creates a separate terminal on Windows. We need it to be able to Ctrl+C it to update the breakpoints after placing them.
             // On Linux breakpoints work properly without this trick. And also, on Linux it causes a new terminal to spawn each time you debug, which is bad, so we don't use it.
             "windows": {"terminal": ""},
