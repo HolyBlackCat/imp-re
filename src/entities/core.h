@@ -509,6 +509,11 @@ namespace Ent
               public:
                 Entity() {}
 
+                Entity(const Entity &) = default;
+                Entity(Entity &&) = default;
+                Entity &operator=(const Entity &) = default;
+                Entity &operator=(Entity &&) = default;
+
                 // We use this class to delete entities.
                 // We also want it to be abstract to prevent slicing.
                 virtual ~Entity() = 0;
