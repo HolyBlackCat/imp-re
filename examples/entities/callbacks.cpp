@@ -8,11 +8,11 @@ struct A
     // Empty components and callbacks don't play well together, see `entities/mixin_entity_callbacks.h` for details.
     int a{};
 
-    void _init(Game::Controller &con)
+    void _init(Game::Controller &con, Game::Entity &)
     {
         std::cout << "A::_init(this=" << this << ", con=" << &con << ")\n";
     }
-    void _deinit(Game::Controller &con)
+    void _deinit(Game::Controller &con, Game::Entity &)
     {
         std::cout << "A::_deinit(this=" << this << ", con=" << &con << ")\n";
     }
@@ -24,11 +24,11 @@ struct B
 
     int b{};
 
-    void _init(Game::Controller &con)
+    void _init(Game::Controller &con, Game::Entity &)
     {
         std::cout << "B::_init(this=" << this << ", con=" << &con << ")\n";
     }
-    void _deinit(Game::Controller &con)
+    void _deinit(Game::Controller &con, Game::Entity &)
     {
         std::cout << "B::_deinit(this=" << this << ", con=" << &con << ")\n";
     }
@@ -38,11 +38,11 @@ struct AB : A, B
 {
     IMP_STANDALONE_COMPONENT(Game)
 
-    void _init(Game::Controller &con)
+    void _init(Game::Controller &con, Game::Entity &)
     {
         std::cout << "AB::_init(this=" << this << ", con=" << &con << ")\n";
     }
-    void _deinit(Game::Controller &con)
+    void _deinit(Game::Controller &con, Game::Entity &)
     {
         std::cout << "AB::_deinit(this=" << this << ", con=" << &con << ")\n";
     }

@@ -25,6 +25,22 @@ namespace Meta
     template <typename T> concept cvref_unqualified = std::is_same_v<std::remove_cvref_t<T>, T>;
 
 
+    // Conditional constness.
+    // `maybe_const<true, T>` is `const T`, and `maybe_const<false, T>` is just `T`.
+
+    namespace impl
+    {
+        template <bool Const, typename T>
+        struct maybe_const {using type = T;};
+
+        template <typename T>
+        struct maybe_const<true, T> {using type = const T;};
+    }
+
+    template <bool Const, typename T>
+    using maybe_const = typename impl::maybe_const<Const, T>::type;
+
+
     // Dependent values and types, good for `static_assert`s and SFINAE.
 
     namespace impl

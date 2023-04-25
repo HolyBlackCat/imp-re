@@ -499,7 +499,8 @@ namespace Ent
             template <typename T>
             struct PrepareCategoryType {using type = T;};
 
-            // Each entity automatically inherits from this. Mixins can add extra stuff there.
+            // Each entity automatically inherits from this.
+            // Mixins can add extra stuff there, but they should keep the class abstract.
             class Entity
             {
                 friend Controller;
@@ -509,11 +510,8 @@ namespace Ent
                 Entity() {}
 
                 // We use this class to delete entities.
-                virtual ~Entity() = default;
-
-                // Prevent slicing.
-                Entity(const Entity &) = delete;
-                Entity& operator=(const Entity &) = delete;
+                // We also want it to be abstract to prevent slicing.
+                virtual ~Entity() = 0;
 
                 // We provide a bunch of wrappers over `dynamic_cast`:
 
@@ -541,13 +539,30 @@ namespace Ent
                 [[nodiscard]] virtual const std::vector<int> &EntityCategoryIndices() const = 0;
             };
 
+            // A helper class that stores an id, and can be constructed either from an entity or from an id.
+            struct EntityOrId
+            {
+                typename Tag::Id value;
+                constexpr EntityOrId() {}
+                constexpr EntityOrId(std::nullptr_t) {}
+                constexpr EntityOrId(typename Tag::Id value) : value(std::move(value)) {}
+                constexpr EntityOrId(Entity &e) : value(e.id()) {} // I don't think I need `typename Tag::Entity` here.
+            };
+            struct ConstEntityOrId
+            {
+                typename Tag::Id value;
+                constexpr ConstEntityOrId() {}
+                constexpr ConstEntityOrId(std::nullptr_t) {}
+                constexpr ConstEntityOrId(typename Tag::Id value) : value(std::move(value)) {}
+                constexpr ConstEntityOrId(const Entity &e) : value(e.id()) {} // I don't think I need `typename Tag::Entity` here.
+            };
+
             // The final entity type that can be created.
             // Mostly for internal use.
             template <EntityType<Tag> E>
             struct FullEntity : Tag::Entity, E
             {
                 using E::E;
-                using Tag::Entity::id; // Give preference to built-in `id()`, for convenience.
 
                 const std::vector<int> &EntityCategoryIndices() const override
                 {
@@ -704,6 +719,9 @@ namespace Ent
             };
         };
 
+        template <typename Tag>
+        DefaultTag<Tag>::Entity::~Entity() {}
+
         // Returns `M0<Derived,M1<Derived,...Mn<Derived,Base>>>`.
         // `Derived` is the assumed most-derived class in the chain. It's gived to each mixin as a template parameter.
         // Each mixin must inherit from its second template parameter. The last mixin receives `Base`.
@@ -737,15 +755,17 @@ namespace Ent
 
 // Component classes must include this macro. `tag_` is the tag type.
 // You can have several of those per entity, with different tags.
-#define IMP_COMPONENT(tag_) IMP_COMPONENT_LOW(tag_, false, MA_CAT(_imp_ComponentSelfType, __COUNTER__))
+#define IMP_COMPONENT(tag_) IMP_COMPONENT_LOW(tag_, __COUNTER__, false, MA_CAT(_imp_ComponentSelfType, __COUNTER__))
 // A variation of `IMP_COMPONENT` that can be created directly as an entity, without inheriting from it.
-#define IMP_STANDALONE_COMPONENT(tag_) IMP_COMPONENT_LOW(tag_, true, MA_CAT(_imp_ComponentSelfType, __COUNTER__))
+#define IMP_STANDALONE_COMPONENT(tag_) IMP_COMPONENT_LOW(tag_, __COUNTER__, true, MA_CAT(_imp_ComponentSelfType, __COUNTER__))
 
 // A low-level version of `IMP_COMPONENT`.
 // `is_standalone_` is a constexpr boolean, true if this component should be standalone.
 // `self_type_name_` is the name for the "own type" typedef, that's otherwise unspecified.
-#define IMP_COMPONENT_LOW(tag_, is_standalone_, self_type_name_) \
+#define IMP_COMPONENT_LOW(tag_, counter_, is_standalone_, self_type_name_) \
     /* The own type. */\
     IMP_DETECTABLE_BASE_SELFTYPE(::Ent::impl::ComponentBaseTag<tag_>, self_type_name_) \
     /* This is called to check if a type is a component. */\
-    constexpr friend bool _imp_ComponentMarker(tag_, ::std::same_as<self_type_name_> auto *) {return is_standalone_;}
+    /* Note: I tried to use `same_as<self_type_name_> auto` instead of the classical SFINAE, but it caused redefinition errors on Clang 16. Not sure if it's a bug. */\
+    template <typename MA_CAT(_entity_T,counter_), ::std::enable_if_t<::std::is_same_v<MA_CAT(_entity_T,counter_), self_type_name_>, ::std::nullptr_t> = nullptr> \
+    constexpr friend bool _imp_ComponentMarker(tag_, MA_CAT(_entity_T,counter_) *) {return is_standalone_;}

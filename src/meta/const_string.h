@@ -10,7 +10,7 @@
 //     template <Meta::ConstString Name> void foo() {std::cout << Name.str << '\n';}
 //     foo<"123">();
 // Example 2:
-//     template <Meta::ConstString Name> void foo(Meta::ConstStringParam<Name>) {std::cout << Name.str << '\n';}
+//     template <Meta::ConstString Name> void foo(Meta::ConstStringTag<Name>) {std::cout << Name.str << '\n';}
 //     foo("123"_const);
 
 namespace Meta
@@ -29,17 +29,17 @@ namespace Meta
 
         static constexpr std::size_t size = N - 1;
 
-        [[nodiscard]] std::string_view view() const
-        {
-            return {str, str + size};
-        }
-
         consteval ConstString() {}
         consteval ConstString(const char (&new_str)[N])
         {
             if (new_str[N-1] != '\0')
                 impl::ExpectedNullTerminatedArray();
             std::copy_n(new_str, size, str);
+        }
+
+        [[nodiscard]] constexpr std::string_view view() const
+        {
+            return {str, str + size};
         }
     };
 
@@ -67,11 +67,14 @@ namespace Meta
 
     // A tag structure returned by `operator""_const` below.
     template <Meta::ConstString S>
-    struct ConstStringParam {};
+    struct ConstStringTag
+    {
+        static constexpr Meta::ConstString value = S;
+    };
 
-    // Returns a string encoded into a template parameter of a tag structure `ConstStringParam`.
+    // Returns a string encoded into a template parameter of a tag structure `ConstStringTag`.
     template <Meta::ConstString S>
-    [[nodiscard]] constexpr ConstStringParam<S> operator""_const()
+    [[nodiscard]] constexpr ConstStringTag<S> operator""_const()
     {
         return {};
     }

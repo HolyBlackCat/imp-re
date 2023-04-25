@@ -1,6 +1,11 @@
 #pragma once
 
-struct Game : Ent::BasicTag<Game, Ent::Mixins::ComponentsAsCategories> {};
+struct Game : Ent::BasicTag<Game,
+    Ent::Mixins::ComponentsAsCategories,
+    Ent::Mixins::GlobalEntityLists,
+    Ent::Mixins::EntityCallbacks,
+    Ent::Mixins::EntityLinks
+> {};
 
 extern Game::Controller game;
 
