@@ -126,30 +126,18 @@ namespace Stream
         // Character categories corresponding to the functions from `<cctype>`:
 
         #define CHAR_CATEGORY_STD(class_name_, func_, string_) CHAR_CATEGORY(class_name_, string_, std::func_((unsigned char)ch))
-        // 0-31, 127
-        CHAR_CATEGORY_STD( IsControl      , iscntrl  , "a control character"     )
-        // !IsControl
-        CHAR_CATEGORY_STD( IsNotControl   , isprint  , "a non-control character" )
-        // space, \r, \n, \t, \v (vertical tab), \f (form feed)
-        CHAR_CATEGORY_STD( IsWhitespace   , isspace  , "a whitespace"            )
-        // space, \t
-        CHAR_CATEGORY_STD( IsSpaceOrTab   , isblank  , "a space or a tab"        )
-        // !IsControl and not a space
-        CHAR_CATEGORY_STD( IsVisible      , isgraph  , "a visible character"     )
-        // a-z,A-Z
-        CHAR_CATEGORY_STD( IsAlpha        , isalpha  , "a letter"                )
-        // 0-9
-        CHAR_CATEGORY_STD( IsDigit        , isdigit  , "a digit"                 )
-        // 0-9,a-f,A-F
-        CHAR_CATEGORY_STD( IsHexDigit     , isxdigit , "a hexadecimal digit"     )
-        // IsAlpha || IsDigit
-        CHAR_CATEGORY_STD( IsAlphaOrDigit , isalnum  , "a letter or a digit"     )
-        // IsVisible && !IsAlphaOrDigit
-        CHAR_CATEGORY_STD( IsPunctuation  , ispunct  , "a punctuation character" )
-        // A-Z
-        CHAR_CATEGORY_STD( IsUppercase    , isupper  , "an uppercase letter"     )
-        // a-z
-        CHAR_CATEGORY_STD( IsLowercase    , islower  , "a lowercase letter"      )
+        CHAR_CATEGORY_STD( IsControl      , iscntrl  , "a control character"     ) // 0-31, 127
+        CHAR_CATEGORY_STD( IsNotControl   , isprint  , "a non-control character" ) // !IsControl
+        CHAR_CATEGORY_STD( IsWhitespace   , isspace  , "a whitespace"            ) // space, \r, \n, \t, \v (vertical tab), \f (form feed)
+        CHAR_CATEGORY_STD( IsSpaceOrTab   , isblank  , "a space or a tab"        ) // space, \t
+        CHAR_CATEGORY_STD( IsVisible      , isgraph  , "a visible character"     ) // !IsControl and not a space
+        CHAR_CATEGORY_STD( IsAlpha        , isalpha  , "a letter"                ) // a-z,A-Z
+        CHAR_CATEGORY_STD( IsDigit        , isdigit  , "a digit"                 ) // 0-9
+        CHAR_CATEGORY_STD( IsHexDigit     , isxdigit , "a hexadecimal digit"     ) // 0-9,a-f,A-F
+        CHAR_CATEGORY_STD( IsAlphaOrDigit , isalnum  , "a letter or a digit"     ) // IsAlpha || IsDigit
+        CHAR_CATEGORY_STD( IsPunctuation  , ispunct  , "a punctuation character" ) // IsVisible && !IsAlphaOrDigit
+        CHAR_CATEGORY_STD( IsUppercase    , isupper  , "an uppercase letter"     ) // A-Z
+        CHAR_CATEGORY_STD( IsLowercase    , islower  , "a lowercase letter"      ) // a-z
         #undef CHAR_CATEGORY_STD
 
         #undef CHAR_CATEGORY
