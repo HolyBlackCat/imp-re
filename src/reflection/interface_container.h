@@ -8,7 +8,6 @@
 #include <utility>
 
 #include "meta/common.h"
-#include "program/errors.h"
 #include "reflection/interface_basic.h"
 #include "utils/robust_math.h"
 
@@ -125,7 +124,7 @@ namespace Refl
                 }
                 catch (std::exception &e)
                 {
-                    Program::Error(input.GetExceptionPrefix() + e.what());
+                    throw std::runtime_error(input.GetExceptionPrefix() + e.what());
                 }
 
                 Utils::SkipWhitespaceAndComments(input);
@@ -142,7 +141,7 @@ namespace Refl
         {
             impl::container_length_binary_t len;
             if (Robust::conversion_fails(object.size(), len))
-                Program::Error(output.GetExceptionPrefix() + "The container is too long.");
+                throw std::runtime_error(output.GetExceptionPrefix() + "The container is too long.");
             output.WriteWithByteOrder<impl::container_length_binary_t>(impl::container_length_byte_order, len);
 
             auto next_state = state.MemberOrElem(options);
@@ -157,7 +156,7 @@ namespace Refl
         {
             std::size_t len;
             if (Robust::conversion_fails(input.ReadWithByteOrder<impl::container_length_binary_t>(impl::container_length_byte_order), len))
-                Program::Error(input.GetExceptionPrefix() + "The string is too long.");
+                throw std::runtime_error(input.GetExceptionPrefix() + "The string is too long.");
 
             std::size_t max_reserved_elems = options.max_reserved_size / sizeof(elem_t);
 
@@ -177,7 +176,7 @@ namespace Refl
                 }
                 catch (std::exception &e)
                 {
-                    Program::Error(input.GetExceptionPrefix() + e.what());
+                    throw std::runtime_error(input.GetExceptionPrefix() + e.what());
                 }
             }
         }

@@ -3,7 +3,6 @@
 #include <cglfl/cglfl.hpp>
 
 #include "macros/finally.h"
-#include "program/errors.h"
 #include "program/platform.h"
 #include "strings/format.h"
 
@@ -137,7 +136,7 @@ namespace Interface
         // Stop if a window already exists.
         // This is probably not thread-safe.
         if (global_data.lock())
-            Program::Error("Attempt to create multiple windows.");
+            throw std::runtime_error("Attempt to create multiple windows.");
 
         // Allocate state
         global_data = data = std::make_shared<Data>();
@@ -146,7 +145,7 @@ namespace Interface
 
         // Initialize SDL
         if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS))
-            Program::Error(STR("Unable to initialize SDL.\nMessage: ", (SDL_GetError())));
+            throw std::runtime_error(STR("Unable to initialize SDL.\nMessage: ", (SDL_GetError())));
         FINALLY_ON_THROW{SDL_Quit();};
 
         // Position
@@ -225,7 +224,7 @@ namespace Interface
         // Create the window
         data->handle = SDL_CreateWindow(title.c_str(), pos.x, pos.y, size.x, size.y, window_flags);
         if (!data->handle)
-            Program::Error("Unable to create a window with following properties:\n", settings.Summary(), extra_error_details);
+            throw std::runtime_error(FMT("Unable to create a window with following properties:\n{}{}", settings.Summary(), extra_error_details));
         FINALLY_ON_THROW{SDL_DestroyWindow(data->handle);};
 
         // Get an appropriate display mode for fullscreen.
@@ -251,7 +250,7 @@ namespace Interface
         // Create the context
         data->context = SDL_GL_CreateContext(data->handle);
         if (!data->context)
-            Program::Error("Unable to create an OpenGL context with following properties:\n", settings.Summary(), extra_error_details);
+            throw std::runtime_error(FMT("Unable to create an OpenGL context with following properties:\n{}{}", settings.Summary(), extra_error_details));
         FINALLY_ON_THROW{SDL_GL_DeleteContext(data->context);};
 
         // Set the minimal size
@@ -305,7 +304,7 @@ namespace Interface
         }
         else
         {
-            Program::Error("Attempt to use the window before it was created.");
+            throw std::runtime_error("Attempt to use the window before it was created.");
         }
     }
 

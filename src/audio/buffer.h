@@ -25,7 +25,7 @@ namespace Audio
         {
             alGenBuffers(1, &data.handle);
             if (!data.handle)
-                Program::Error("Unable to create an audio buffer.");
+                throw std::runtime_error("Unable to create an audio buffer.");
             // Not needed because there is no code below this point:
             // FINALLY_ON_THROW{alDeleteBuffers(1, &value);};
         }

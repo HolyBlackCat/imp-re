@@ -4,6 +4,7 @@
 #include <limits>
 #include <ostream>
 
+#include "strings/format.h"
 #include "strings/symbol_position.h"
 
 void Json::ParseSkipWhitespace(const char *&cur)
@@ -17,7 +18,7 @@ std::string Json::ParseStringLow(const char *&cur)
     ParseSkipWhitespace(cur);
 
     if (*cur != '"')
-        Program::Error("Expected `\"`.");
+        throw std::runtime_error("Expected `\"`.");
     cur++;
 
     const char *begin = cur;
@@ -36,12 +37,12 @@ std::string Json::ParseStringLow(const char *&cur)
         if (*cur == '\0')
         {
             cur = begin; // We do this to get a better error message.
-            Program::Error("This string lacks a terminating `\"` character.");
+            throw std::runtime_error("This string lacks a terminating `\"` character.");
         }
 
         // Error on non-printable character.
         if (*cur > '\0' && *cur < ' ')
-            Program::Error("Invalid character in a string: 0x", STR(((unsigned char)*cur)"02x"), "."); // Writing `0x` manually instead of with `#` because I want a lowercase `x`.
+            throw std::runtime_error(STR("Invalid character in a string: 0x", ((unsigned char)*cur)"02x", "."));
 
         cur++;
     }
@@ -59,7 +60,7 @@ std::string Json::ParseStringLow(const char *&cur)
         {
             cur++;
             if (cur == end)
-                Program::Error("Expected an escape character before `\"`.");
+                throw std::runtime_error("Expected an escape character before `\"`.");
             switch (*cur)
             {
               case '\\':
@@ -86,7 +87,7 @@ std::string Json::ParseStringLow(const char *&cur)
                 {
                     cur++;
                     if (end - cur < 4)
-                        Program::Error("Expected four hex digits after `\\u`.");
+                        throw std::runtime_error("Expected four hex digits after `\\u`.");
                     int value = 0;
                     for (int i = 0; i < 4; i++)
                     {
@@ -98,7 +99,7 @@ std::string Json::ParseStringLow(const char *&cur)
                         else if (*cur >= 'A' && *cur <= 'F')
                             digit = *cur - 'A' + 10;
                         else
-                            Program::Error("Expected four hex digits after `\\u`.");
+                            throw std::runtime_error("Expected four hex digits after `\\u`.");
                         value = value * 16 + digit;
                         cur++;
                     }
@@ -130,7 +131,7 @@ std::string Json::ParseStringLow(const char *&cur)
 Json Json::ParseLow(const char *&cur, int allowed_depth)
 {
     if (allowed_depth < 0)
-        Program::Error("Too many nested elements.");
+        throw std::runtime_error("Too many nested elements.");
 
     auto TryGetString = [&](std::string string) -> bool
     {
@@ -192,7 +193,7 @@ Json Json::ParseLow(const char *&cur, int allowed_depth)
                     str += *cur++;
 
                 if (str.back() == '.')
-                    Program::Error("Expected a digit after decimal point.");
+                    throw std::runtime_error("Expected a digit after decimal point.");
             }
 
             if (*cur == 'e' || *cur == 'E')
@@ -209,7 +210,7 @@ Json Json::ParseLow(const char *&cur, int allowed_depth)
                     str += *cur++;
 
                 if (str.back() == 'e' || str.back() == '+' || str.back() == '-')
-                    Program::Error("Expected a digit after `e`, possibly after a sign.");
+                    throw std::runtime_error("Expected a digit after `e`, possibly after a sign.");
             }
 
             if (real)
@@ -217,7 +218,7 @@ Json Json::ParseLow(const char *&cur, int allowed_depth)
                 char *end = 0;
                 double num = std::strtod(str.c_str(), &end);
                 if (end == str.c_str())
-                    Program::Error("Unable to parse a number.");
+                    throw std::runtime_error("Unable to parse a number.");
 
                 return FromVariant(num);
             }
@@ -226,11 +227,11 @@ Json Json::ParseLow(const char *&cur, int allowed_depth)
                 char *end = 0;
                 long num = std::strtol(str.c_str(), &end, 10);
                 if (end == str.c_str())
-                    Program::Error("Unable to parse a number.");
+                    throw std::runtime_error("Unable to parse a number.");
 
                 if constexpr (sizeof(int) < sizeof(long))
                     if (num < std::numeric_limits<int>::min() || num > std::numeric_limits<int>::max())
-                        Program::Error("Overflow in integral constant.");
+                        throw std::runtime_error("Overflow in integral constant.");
 
                 return FromVariant(int(num));
             }
@@ -263,7 +264,7 @@ Json Json::ParseLow(const char *&cur, int allowed_depth)
                 else
                 {
                     if (*cur != ',')
-                        Program::Error("Expected `,`.");
+                        throw std::runtime_error("Expected `,`.");
                     cur++;
                     ParseSkipWhitespace(cur);
 
@@ -274,7 +275,7 @@ Json Json::ParseLow(const char *&cur, int allowed_depth)
                 if (*cur == '\0')
                 {
                     cur = begin; // We do this to get a better error message.
-                    Program::Error("This array lacks a terminating `]` character.");
+                    throw std::runtime_error("This array lacks a terminating `]` character.");
                 }
 
                 vec.push_back(ParseLow(cur, allowed_depth-1));
@@ -307,7 +308,7 @@ Json Json::ParseLow(const char *&cur, int allowed_depth)
                 else
                 {
                     if (*cur != ',')
-                        Program::Error("Expected `,`.");
+                        throw std::runtime_error("Expected `,`.");
                     cur++;
                     ParseSkipWhitespace(cur);
 
@@ -318,7 +319,7 @@ Json Json::ParseLow(const char *&cur, int allowed_depth)
                 if (*cur == '\0')
                 {
                     cur = begin; // We do this to get a better error message.
-                    Program::Error("This array lacks a terminating `]` character.");
+                    throw std::runtime_error("This array lacks a terminating `]` character.");
                 }
 
                 std::string name = ParseStringLow(cur);
@@ -326,7 +327,7 @@ Json Json::ParseLow(const char *&cur, int allowed_depth)
                 ParseSkipWhitespace(cur);
 
                 if (*cur != ':')
-                    Program::Error("Expected `:`.");
+                    throw std::runtime_error("Expected `:`.");
                 cur++;
 
                 // No need to skip whitespace here, nested ParseLow() will do that.
@@ -340,7 +341,7 @@ Json Json::ParseLow(const char *&cur, int allowed_depth)
         break;
     }
 
-    Program::Error("Unknown entity.");
+    throw std::runtime_error("Unknown entity.");
 }
 
 Json::Json(const char *string, int allowed_depth)
@@ -351,12 +352,12 @@ Json::Json(const char *string, int allowed_depth)
         *this = ParseLow(string, allowed_depth);
         ParseSkipWhitespace(string);
         if (*string != '\0')
-            Program::Error("Unexpected data after JSON.");
+            throw std::runtime_error("Unexpected data after JSON.");
     }
     catch (std::exception &e)
     {
         auto pos = Strings::GetSymbolPosition(begin, string);
-        Program::Error("JSON parsing failed, at ", pos.ToString(), ": ", e.what());
+        throw std::runtime_error(FMT("JSON parsing failed, at {}: {}", pos.ToString(), e.what()));
     }
 }
 

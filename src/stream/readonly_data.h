@@ -12,7 +12,6 @@
 #include <utility>
 
 #include "macros/finally.h"
-#include "program/errors.h"
 #include "stream/better_fopen.h"
 #include "stream/utils.h"
 #include "strings/format.h"
@@ -137,7 +136,7 @@ namespace Stream
 
             FILE *file = better_fopen(file_name.c_str(), "rb");
             if (!file)
-                Program::Error("Unable to open file `", file_name, "`.");
+                throw std::runtime_error(FMT("Unable to open file `{}`.", file_name));
             FINALLY{std::fclose(file);};
 
             std::setbuf(file, 0); // This can fail, but we don't care about it.
@@ -147,11 +146,11 @@ namespace Stream
             std::fseek(file, 0, SEEK_SET);
 
             if (std::ferror(file) || size == EOF)
-                Program::Error("Unable to get size of file `", file_name, "`.");
+                throw std::runtime_error(FMT("Unable to get size of file `{}`.", file_name));
 
             ret.ref->storage = std::make_unique<std::uint8_t[]>(size+1); // 1 extra byte for the null-terminator.
             if (size > 1 && !std::fread(ret.ref->storage.get(), size, 1, file))
-                Program::Error("Unable to read from file `", file_name, "`.");
+                throw std::runtime_error(FMT("Unable to read from file `{}`.", file_name));
             ret.ref->storage[size] = '\0';
 
             ret.ref->begin = ret.ref->storage.get();
@@ -247,7 +246,7 @@ namespace Stream
             }
             catch (...)
             {
-                Program::Error("Unable to uncompress: ", ref->name);
+                throw std::runtime_error(FMT("Unable to uncompress: {}", ref->name));
             }
 
             return ret;

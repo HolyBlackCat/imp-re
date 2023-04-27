@@ -102,7 +102,7 @@ namespace Stream
 
             std::unique_ptr<FILE, decltype(deleter)> handle(better_fopen(file_name.c_str(), SaveModeStringRepresentation(mode)));
             if (!handle)
-                Program::Error("Unable to open `" + file_name + "` for writing.");
+                throw std::runtime_error("Unable to open `" + file_name + "` for writing.");
 
             // This function can fail, but it doesn't report errors in any way.
             // Even if it did, we would still ignore it.
@@ -112,7 +112,7 @@ namespace Stream
                 Meta::fake_copyable([handle = std::move(handle)](const Output &object, const std::uint8_t *data, std::size_t size)
                 {
                     if (!std::fwrite(data, size, 1, handle.get()))
-                        Program::Error(object.GetExceptionPrefix() + "Unable to write to file.");
+                        throw std::runtime_error(object.GetExceptionPrefix() + "Unable to write to file.");
                 }),
                 capacity);
         }
@@ -125,7 +125,7 @@ namespace Stream
                 [handle](const Output &object, const std::uint8_t *data, std::size_t size)
                 {
                     if (!std::fwrite(data, size, 1, handle))
-                        Program::Error(object.GetExceptionPrefix() + "Unable to write to file.");
+                        throw std::runtime_error(object.GetExceptionPrefix() + "Unable to write to file.");
                 },
                 capacity);
         }
@@ -210,7 +210,7 @@ namespace Stream
             }
             else if (!*this)
             {
-                Program::Error(GetExceptionPrefix() + "Attempt to flush a null stream.");
+                throw std::runtime_error(GetExceptionPrefix() + "Attempt to flush a null stream.");
             }
         }
 

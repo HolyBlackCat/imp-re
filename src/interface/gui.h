@@ -17,6 +17,7 @@
 #include "meta/common.h"
 #include "program/errors.h"
 #include "stream/readonly_data.h"
+#include "strings/format.h"
 #include "utils/poly_storage.h"
 
 namespace Interface
@@ -123,15 +124,15 @@ namespace Interface
 
             data.context = ImGui::CreateContext();
             if (!data.context)
-                Program::Error("Unable to create an ImGui context.");
+                throw std::runtime_error("Unable to create an ImGui context.");
             FINALLY_ON_THROW{ImGui::DestroyContext(data.context);};
 
             if (!ImGui_ImplSDL2_InitForOpenGL(Window::Get().Handle(), Window::Get().Context()))
-                Program::Error("Unable to initialize ImGui SDL2 backend.");
+                throw std::runtime_error("Unable to initialize ImGui SDL2 backend.");
             FINALLY_ON_THROW{ImGui_ImplSDL2_Shutdown();};
 
             if (!data.graphics_backend->Init(config))
-                Program::Error("Unable to initialize ImGui OpenGL backend.");
+                throw std::runtime_error("Unable to initialize ImGui OpenGL backend.");
             FINALLY_ON_THROW{data.graphics_backend->Shutdown();};
 
             // Activate context.
@@ -176,7 +177,7 @@ namespace Interface
         void Activate()
         {
             if (!*this)
-                Program::Error("Attempt to use a null ImGui controller.");
+                throw std::runtime_error("Attempt to use a null ImGui controller.");
             ImGui::SetCurrentContext(data.context);
         }
 
@@ -268,13 +269,13 @@ namespace Interface
         void ReloadGraphics()
         {
             if (!*this)
-                Program::Error("Attempt to use a null ImGui controller.");
+                throw std::runtime_error("Attempt to use a null ImGui controller.");
 
             if (data.frame_started)
-                Program::Error("Unable to reload ImGui graphics backend now, frame rendering is in process.");
+                throw std::runtime_error("Unable to reload ImGui graphics backend now, frame rendering is in process.");
 
             if (!data.graphics_backend->Reload())
-                Program::Error("Unable to reload ImGui graphics backend.");
+                throw std::runtime_error("Unable to reload ImGui graphics backend.");
         }
 
         // Load the default font.
@@ -286,7 +287,7 @@ namespace Interface
 
             ImFont *ret = ImGui::GetIO().Fonts->AddFontDefault(&config);
             if (!ret)
-                Program::Error("ImGui is unable to load the default font.");
+                throw std::runtime_error("ImGui is unable to load the default font.");
 
             return ret;
         }
@@ -301,7 +302,7 @@ namespace Interface
             config.FontDataOwnedByAtlas = 0;
             ImFont *ret = ImGui::GetIO().Fonts->AddFontFromMemoryTTF(const_cast<std::uint8_t *>(file.data()), file.size(), size, &config, glyph_ranges);
             if (!ret)
-                Program::Error("ImGui is unable to load font: `", file.name(), "`.");
+                throw std::runtime_error(FMT("ImGui is unable to load font: `{}`.", file.name()));
 
             data.font_storage.push_back(std::move(file));
             return ret;

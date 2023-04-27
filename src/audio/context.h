@@ -7,7 +7,6 @@
 
 #include "audio/openal.h"
 #include "macros/finally.h"
-#include "program/errors.h"
 
 namespace Audio
 {
@@ -62,12 +61,12 @@ namespace Audio
 
             // Stop if a context already exists.
             if (instance)
-                Program::Error("Attempt to create multiple OpenAL contexts.");
+                throw std::runtime_error("Attempt to create multiple OpenAL contexts.");
 
             // Open device.
             data.device = alcOpenDevice(nullptr);
             if (!data.device)
-                Program::Error("Unable to create an OpenAL device.");
+                throw std::runtime_error("Unable to create an OpenAL device.");
             FINALLY_ON_THROW{alcCloseDevice(data.device);};
 
             // Get dynamic library version, stop if it's too old.
@@ -75,7 +74,7 @@ namespace Audio
             alcGetIntegerv(data.device, ALC_MAJOR_VERSION, 1, &lib_major);
             alcGetIntegerv(data.device, ALC_MINOR_VERSION, 1, &lib_minor);
             if (std::tie(lib_major, lib_minor) < std::tie(required_major, required_minor))
-                Program::Error(FMT("The OpenAL dynamic library is too old. Expected at least version {}.{}.", required_major, required_minor));
+                throw std::runtime_error(FMT("The OpenAL dynamic library is too old. Expected at least version {}.{}.", required_major, required_minor));
 
             // Append a terminating zero to the list of attributes.
             if (!attributes.empty())
@@ -84,12 +83,12 @@ namespace Audio
             // Create context.
             data.context = alcCreateContext(data.device, attributes.empty() ? nullptr : &attributes.front().key);
             if (!data.context)
-                Program::Error("Unable to create an OpenAL context.\nMake sure your speakers or headphones are connected.");
+                throw std::runtime_error("Unable to create an OpenAL context.\nMake sure your speakers or headphones are connected.");
             FINALLY_ON_THROW{alcDestroyContext(data.context);};
 
             // Activate the context.
             if (!alcMakeContextCurrent(data.context))
-                Program::Error("Unable to activate the OpenAL context.");
+                throw std::runtime_error("Unable to activate the OpenAL context.");
 
             // Save the instance pointer.
             instance = this;
@@ -131,7 +130,7 @@ namespace Audio
         [[nodiscard]] static Context &Get() // This will throw if the context doesn't exist.
         {
             if (!instance)
-                Program::Error("Attempt to use an OpenAL context before it was created.");
+                throw std::runtime_error("Attempt to use an OpenAL context before it was created.");
             return *instance;
         }
 
@@ -154,7 +153,7 @@ namespace Audio
                 attributes.emplace_back().key = 0;
 
             if (alcResetDeviceSOFT(data.device, attributes.empty() ? nullptr : &attributes.front().key))
-                Program::Error("Unable to change an audio device configuration.");
+                throw std::runtime_error("Unable to change an audio device configuration.");
         }
         #endif
     };

@@ -12,7 +12,6 @@
 #include "macros/named_macro_parameters.h"
 #include "meta/common.h"
 #include "meta/lists.h"
-#include "program/errors.h"
 #include "reflection/interface_basic.h"
 #include "reflection/interface_std_string.h"
 #include "strings/common.h"

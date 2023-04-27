@@ -67,7 +67,7 @@ namespace Graphics
         {
             glGenFramebuffers(1, &data.handle);
             if (!data.handle)
-                Program::Error("Unable to create a framebuffer.");
+                throw std::runtime_error("Unable to create a framebuffer.");
             // Not needed because there is no code below this point:
             // FINALLY_ON_THROW{glDeleteFramebuffers(1, &data.handle);};
         }
@@ -201,33 +201,33 @@ namespace Graphics
               case GL_FRAMEBUFFER_COMPLETE:
                 return std::move(*this);
               case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
-                Program::Error("Bad framebuffer status: Incomplete (attachment).");
+                throw std::runtime_error("Bad framebuffer status: Incomplete (attachment).");
               case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
-                Program::Error("Bad framebuffer status: Incomplete (missing attachment).");
+                throw std::runtime_error("Bad framebuffer status: Incomplete (missing attachment).");
               case GL_FRAMEBUFFER_UNSUPPORTED:
-                Program::Error("Bad framebuffer status: Incomplete (unsupported).");
+                throw std::runtime_error("Bad framebuffer status: Incomplete (unsupported).");
                 #ifdef GL_FRAMEBUFFER_UNDEFINED
               case GL_FRAMEBUFFER_UNDEFINED:
-                Program::Error("Bad framebuffer status: Undefined.");
+                throw std::runtime_error("Bad framebuffer status: Undefined.");
                 #endif
                 #ifdef GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER
               case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER:
-                Program::Error("Bad framebuffer status: Incomplete (draw buffer).");
+                throw std::runtime_error("Bad framebuffer status: Incomplete (draw buffer).");
                 #endif
                 #ifdef GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER
               case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER:
-                Program::Error("Bad framebuffer status: Incomplete (read buffer).");
+                throw std::runtime_error("Bad framebuffer status: Incomplete (read buffer).");
                 #endif
                 #ifdef GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE
               case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE:
-                Program::Error("Bad framebuffer status: Incomplete (multisample).");
+                throw std::runtime_error("Bad framebuffer status: Incomplete (multisample).");
                 #endif
                 #ifdef GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS
               case GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS:
-                Program::Error("Bad framebuffer status: Incomplete (layer targets).");
+                throw std::runtime_error("Bad framebuffer status: Incomplete (layer targets).");
                 #endif
               default:
-                Program::Error("Bad framebuffer status: Unknown.");
+                throw std::runtime_error("Bad framebuffer status: Unknown.");
             }
         }
     };

@@ -4,7 +4,6 @@
 
 #include <zlib.h>
 
-#include "program/errors.h"
 #include "utils/robust_math.h"
 
 namespace Archive
@@ -21,7 +20,7 @@ namespace Archive
             uLong dst_size = dst_end - dst_begin; // compress() changes this value.
             int status = compress(dst_begin, &dst_size, src_begin, src_end - src_begin);
             if (status != Z_OK)
-                Program::Error("Compression failure.");
+                throw std::runtime_error("Compression failure.");
             return dst_begin + dst_size;
         }
 
@@ -30,7 +29,7 @@ namespace Archive
             uLong dst_size = dst_end - dst_begin; // uncompress() changes this value.
             int status = uncompress(dst_begin, &dst_size, src_begin, src_end - src_begin);
             if (status != Z_OK || dst_size != uLong(dst_end - dst_begin))
-                Program::Error("Uncompression failure.");
+                throw std::runtime_error("Uncompression failure.");
         }
     }
 
@@ -46,7 +45,7 @@ namespace Archive
     [[nodiscard]] uint8_t *Compress(const uint8_t *src_begin, const uint8_t *src_end, uint8_t *dst_begin, uint8_t *dst_end)
     {
         if (dst_end - dst_begin < std::ptrdiff_t(sizeof(size_type)))
-            Program::Error("Compression failure.");
+            throw std::runtime_error("Compression failure.");
 
         std::size_t size = src_end - src_begin;
 
@@ -56,7 +55,7 @@ namespace Archive
          * We can't leave it uncommented now, because clang complains about comparison being always false.
          *
          *     if (size > std::numeric_limits<size_type>::max())
-         *         Program::Error("Compression failure.");
+         *         throw std::runtime_error("Compression failure.");
          */
 
         for (std::size_t i = 0; i < sizeof(size_type); i++)
@@ -68,7 +67,7 @@ namespace Archive
     [[nodiscard]] std::size_t UncompressedSize(const uint8_t *src_begin, const uint8_t *src_end)
     {
         if (src_end - src_begin < std::ptrdiff_t(sizeof(size_type)))
-            Program::Error("Uncompression failure.");
+            throw std::runtime_error("Uncompression failure.");
 
         size_type size = 0;
         for (std::size_t i = 0; i < sizeof(size_type); i++)
@@ -76,7 +75,7 @@ namespace Archive
 
         std::size_t ret;
         if (Robust::conversion_fails(size, ret))
-            Program::Error("Unable to uncompress: The object is too large.");
+            throw std::runtime_error("Unable to uncompress: The object is too large.");
 
         return ret;
     }

@@ -4,7 +4,6 @@
 
 #include <cglfl/cglfl.hpp>
 
-#include "program/errors.h"
 #include "macros/finally.h"
 
 namespace Graphics
@@ -21,7 +20,7 @@ namespace Graphics
             #ifdef GL_VERTEX_ARRAY_BINDING
             glGenVertexArrays(1, &handle);
             if (!handle)
-                Program::Error("Unable to create a dummy vertex array object.");
+                throw std::runtime_error("Unable to create a dummy vertex array object.");
             // Not needed because nothing can throw below this point:
             // FINALLY_ON_THROW{glDeleteVertexArrays(1, &handle);};
             glBindVertexArray(handle);

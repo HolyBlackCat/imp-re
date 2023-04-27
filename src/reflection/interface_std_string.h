@@ -6,7 +6,6 @@
 #include <string>
 #include <type_traits>
 
-#include "program/errors.h"
 #include "reflection/interface_basic.h"
 #include "reflection/interface_container.h"
 #include "strings/escape.h"
@@ -54,7 +53,7 @@ namespace Refl
             }
             catch (std::exception &e)
             {
-                Program::Error(input.GetExceptionPrefix() + e.what());
+                throw std::runtime_error(input.GetExceptionPrefix() + e.what());
             }
         }
 
@@ -65,7 +64,7 @@ namespace Refl
 
             impl::container_length_binary_t len;
             if (Robust::conversion_fails(object.size(), len))
-                Program::Error(output.GetExceptionPrefix() + "The string is too long.");
+                throw std::runtime_error(output.GetExceptionPrefix() + "The string is too long.");
 
             output.WriteWithByteOrder<impl::container_length_binary_t>(impl::container_length_byte_order, len);
             output.WriteString(object);
@@ -77,7 +76,7 @@ namespace Refl
 
             std::size_t len;
             if (Robust::conversion_fails(input.ReadWithByteOrder<impl::container_length_binary_t>(impl::container_length_byte_order), len))
-                Program::Error(input.GetExceptionPrefix() + "The string is too long.");
+                throw std::runtime_error(input.GetExceptionPrefix() + "The string is too long.");
 
             object = {};
             object.reserve(len < options.max_reserved_size ? len : options.max_reserved_size);

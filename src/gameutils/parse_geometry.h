@@ -58,13 +58,13 @@ namespace GameUtils
                 else if (input.DiscardChars<Stream::if_present>("uchar "))
                     new_property.is_uint8 = true;
                 else
-                    Program::Error(input.GetExceptionPrefix() + "Unknown property type, expected `float` or `uchar`.");
+                    throw std::runtime_error(input.GetExceptionPrefix() + "Unknown property type, expected `float` or `uchar`.");
                 std::string property_name = input.Extract(Stream::Char::IsAlpha());
                 input.Discard('\n');
 
                 // Note that it's safe to move `property_name` even though we use it in the error message. If the element fails to insert, it's not moved from.
                 if (!ret.properties.try_emplace(std::move(property_name), std::move(new_property)).second)
-                    Program::Error(STR((input.GetExceptionPrefix()),"Duplicate property name: `",(property_name),"`."));
+                    throw std::runtime_error(STR((input.GetExceptionPrefix()),"Duplicate property name: `",(property_name),"`."));
             }
             input.DiscardChars("element face ");
             Refl::InterfaceFor(ret.face_count).FromString(ret.face_count, input, {}, Refl::initial_state);
@@ -90,7 +90,7 @@ namespace GameUtils
             if (auto it = properties.find(name); it != properties.end())
                 return it->second;
             else
-                Program::Error(FMT("No vertex property named `{}`.", name));
+                throw std::runtime_error(FMT("No vertex property named `{}`.", name));
         }
 
 
@@ -239,9 +239,9 @@ namespace GameUtils
                 std::uint8_t list_size; // This type is selected intentionally, to match the `property list ...` line in the files.
                 Refl::InterfaceFor(list_size).FromString(list_size, input, {}, Refl::initial_state);
                 if (format.allow_triangle_faces_only && list_size != 3)
-                    Program::Error(input.GetExceptionPrefix() + STR("Expected exactly three elements in the list."));
+                    throw std::runtime_error(input.GetExceptionPrefix() + STR("Expected exactly three elements in the list."));
                 else if (!format.allow_triangle_faces_only && list_size < 2)
-                    Program::Error(input.GetExceptionPrefix() + STR("Expected at least three elements in the list."));
+                    throw std::runtime_error(input.GetExceptionPrefix() + STR("Expected at least three elements in the list."));
 
                 using tmp_index_t = std::uint32_t; // Should be the largest supported index type.
                 tmp_index_t prev_indices[2];
@@ -251,7 +251,7 @@ namespace GameUtils
                     tmp_index_t this_index;
                     Refl::InterfaceFor(this_index).FromString(this_index, input, {}, Refl::initial_state);
                     if (!Robust::representable_as<IndexType>(this_index))
-                        Program::Error(input.GetExceptionPrefix() + "The index is not representable in the target type.");
+                        throw std::runtime_error(input.GetExceptionPrefix() + "The index is not representable in the target type.");
 
                     if (j > 1)
                     {

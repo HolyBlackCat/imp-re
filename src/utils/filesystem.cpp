@@ -6,7 +6,7 @@
 #include <sys/stat.h>
 
 #include "macros/finally.h"
-#include "program/errors.h"
+#include "strings/format.h"
 
 namespace Filesystem
 {
@@ -20,7 +20,7 @@ namespace Filesystem
         {
             if (ok)
                 return {};
-            Program::Error("Unable to access file or directory `", entry_name, "`.");
+            throw std::runtime_error(FMT("Unable to access file or directory `{}`.", entry_name));
         }
 
         ObjInfo ret;
@@ -54,7 +54,7 @@ namespace Filesystem
         {
             if (ok)
                 return {};
-            Program::Error("Unable to access directory `", dir_name, "`.");
+            throw std::runtime_error(FMT("Unable to access directory `{}`.", dir_name));
         }
         FINALLY{closedir(dir);};
 

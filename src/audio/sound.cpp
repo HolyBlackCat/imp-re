@@ -16,7 +16,7 @@ namespace Audio
         {
             if (expected_channel_count && *expected_channel_count != channel_count)
             {
-                Program::Error(FMT("{}Expected a {} sound, but got {}.", input.GetExceptionPrefix(),
+                throw std::runtime_error(FMT("{}Expected a {} sound, but got {}.", input.GetExceptionPrefix(),
                     (*expected_channel_count == mono ? "mono" : "stereo"), (channel_count == mono ? "mono" : "stereo")));
             }
         };
@@ -32,7 +32,7 @@ namespace Audio
                 input.DiscardChars("RIFF");
 
                 if (auto val = input.ReadLittle<std::uint32_t>(); val + val % 2 != input.RemainingBytes())
-                    Program::Error(input.GetExceptionPrefix() + "Incorrect size specified in the RIFF header.");
+                    throw std::runtime_error(input.GetExceptionPrefix() + "Incorrect size specified in the RIFF header.");
 
                 input.DiscardChars("WAVE");
 
@@ -48,38 +48,38 @@ namespace Audio
 
                     auto chunk_size = input.ReadLittle<std::uint32_t>();
                     if (chunk_size > input.RemainingBytes())
-                        Program::Error(input.GetExceptionPrefix() + "Chunk size is too large.");
+                        throw std::runtime_error(input.GetExceptionPrefix() + "Chunk size is too large.");
 
                     if (chunk_name == "fmt ") // Note the space.
                     {
                         if (got_format_chunk)
-                            Program::Error(input.GetExceptionPrefix() + "A repeated format chunk.");
+                            throw std::runtime_error(input.GetExceptionPrefix() + "A repeated format chunk.");
                         // `got_data_chunk` will be false here, no need to check.
                         got_format_chunk = true;
 
                         if (input.ReadLittle<std::uint16_t>() != 1)
-                            Program::Error(input.GetExceptionPrefix() + "Compressed files are not supported.");
+                            throw std::runtime_error(input.GetExceptionPrefix() + "Compressed files are not supported.");
 
                         // We check chunk size after checking the data format, to give user a prettier error message.
                         if (chunk_size != 16 && chunk_size != 18)
-                            Program::Error(input.GetExceptionPrefix() + "Invalid format chunk size.");
+                            throw std::runtime_error(input.GetExceptionPrefix() + "Invalid format chunk size.");
 
                         auto channels = input.ReadLittle<std::uint16_t>();
                         if (channels != 1 && channels != 2)
-                            Program::Error(input.GetExceptionPrefix() + "Only mono and stereo sound is supported.");
+                            throw std::runtime_error(input.GetExceptionPrefix() + "Only mono and stereo sound is supported.");
                         channel_count = Channels(channels);
                         CheckChannelCount();
 
                         sampling_rate = input.ReadLittle<std::uint32_t>();
                         if (sampling_rate <= 0)
-                            Program::Error(input.GetExceptionPrefix() + "Invalid sample rate.");
+                            throw std::runtime_error(input.GetExceptionPrefix() + "Invalid sample rate.");
 
                         input.Skip(4); // Bytes per second (possibly average). We don't care about that.
                         input.Skip(2); // Bytes per sample for all channels combined. We don't need this value.
 
                         auto bits_per_sample_per_channel = input.ReadLittle<std::uint16_t>();
                         if (bits_per_sample_per_channel != 8 && bits_per_sample_per_channel != 16)
-                            Program::Error(input.GetExceptionPrefix() + "Unsupported resolution, expected 8 or 16 bits per sample.");
+                            throw std::runtime_error(input.GetExceptionPrefix() + "Unsupported resolution, expected 8 or 16 bits per sample.");
                         resolution = BitResolution(bits_per_sample_per_channel);
 
                         if (chunk_size == 18)
@@ -88,13 +88,13 @@ namespace Audio
                     else if (chunk_name == "data")
                     {
                         if (!got_format_chunk)
-                            Program::Error(input.GetExceptionPrefix() + "No format chunk found before a data chunk.");
+                            throw std::runtime_error(input.GetExceptionPrefix() + "No format chunk found before a data chunk.");
                         if (got_data_chunk)
-                            Program::Error(input.GetExceptionPrefix() + "A repeated data chunk.");
+                            throw std::runtime_error(input.GetExceptionPrefix() + "A repeated data chunk.");
                         got_data_chunk = true;
 
                         if (chunk_size % BytesPerBlock() != 0)
-                            Program::Error(input.GetExceptionPrefix() + "Data size is not a multiple of block size.");
+                            throw std::runtime_error(input.GetExceptionPrefix() + "Data size is not a multiple of block size.");
 
                         data.resize(chunk_size);
                         switch (resolution)
@@ -122,11 +122,11 @@ namespace Audio
                 // Check if got the necessary chunks.
                 // We don't need to check `got_format_chunk` because it's implied by `got_data_chunk`.
                 if (!got_data_chunk)
-                    Program::Error("The data chunk is missing.");
+                    throw std::runtime_error("The data chunk is missing.");
             }
             catch (std::exception &e)
             {
-                Program::Error(FMT("While reading a wav sound from `{}`:\n{}", input.GetTarget(), e.what()));
+                throw std::runtime_error(FMT("While reading a wav sound from `{}`:\n{}", input.GetTarget(), e.what()));
             }
             break;
           case ogg:
@@ -225,22 +225,22 @@ namespace Audio
                   case 0:
                     break;
                   case OV_EREAD:
-                    Program::Error("Unable to read data from the stream.");
+                    throw std::runtime_error("Unable to read data from the stream.");
                     break;
                   case OV_ENOTVORBIS:
-                    Program::Error("This is not a vorbis sound.");
+                    throw std::runtime_error("This is not a vorbis sound.");
                     break;
                   case OV_EVERSION:
-                    Program::Error("Vorbis version mismatch.");
+                    throw std::runtime_error("Vorbis version mismatch.");
                     break;
                   case OV_EBADHEADER:
-                    Program::Error("Invalid header.");
+                    throw std::runtime_error("Invalid header.");
                     break;
                   case OV_EFAULT:
-                    Program::Error("Internal vorbis error.");
+                    throw std::runtime_error("Internal vorbis error.");
                     break;
                   default:
-                    Program::Error("Unknown vorbis error.");
+                    throw std::runtime_error("Unknown vorbis error.");
                     break;
                 }
                 FINALLY{ov_clear(&ogg_file_handle);};
@@ -249,22 +249,22 @@ namespace Audio
                 // Get some info about the file. No cleanup appears to be necessary.
                 vorbis_info *info = ov_info(&ogg_file_handle, -1);
                 if (!info)
-                    Program::Error("Unable to get information about the file.");
+                    throw std::runtime_error("Unable to get information about the file.");
 
                 // Get channel count.
                 if (info->channels != 1 && info->channels != 2)
-                    Program::Error("The file has too many channels. Only mono and stereo are supported.");
+                    throw std::runtime_error("The file has too many channels. Only mono and stereo are supported.");
                 channel_count = Channels(info->channels);
                 CheckChannelCount();
 
                 // Get frequency.
                 if (Robust::conversion_fails(info->rate, sampling_rate))
-                    Program::Error("The sample rate is too high.");
+                    throw std::runtime_error("The sample rate is too high.");
 
                 // Get the block count.
                 auto total_block_count = ov_pcm_total(&ogg_file_handle, -1);
                 if (total_block_count == OV_EINVAL)
-                    Program::Error("Unable to determine the file length.");
+                    throw std::runtime_error("Unable to determine the file length.");
 
                 // Copy bit resolution from the parameter.
                 resolution = preferred_resolution;
@@ -272,7 +272,7 @@ namespace Audio
                 // Compute the necessary storage size.
                 std::size_t storage_size;
                 if (Robust::value(total_block_count).cast_to<std::size_t>() * Robust::value(BytesPerBlock()).weakly_typed() >>= storage_size)
-                    Program::Error("The file is too long.");
+                    throw std::runtime_error("The file is too long.");
 
                 data.resize(storage_size);
 
@@ -291,16 +291,16 @@ namespace Audio
                     switch (segment_size)
                     {
                       case 0:
-                        Program::Error("Unexpected end of file.");
+                        throw std::runtime_error("Unexpected end of file.");
                         break;
                       case OV_HOLE:
-                        Program::Error("The file is corrupted.");
+                        throw std::runtime_error("The file is corrupted.");
                         break;
                       case OV_EBADLINK:
-                        Program::Error("Bad link.");
+                        throw std::runtime_error("Bad link.");
                         break;
                       case OV_EINVAL:
-                        Program::Error("Invalid header.");
+                        throw std::runtime_error("Invalid header.");
                         break;
                     }
                     current_offset += segment_size;
@@ -311,18 +311,18 @@ namespace Audio
 
                         info = ov_info(&ogg_file_handle, -1); // `-1` means the current bitstream, we could also use `bitstream_index` here.
                         if (!info)
-                            Program::Error("Unable to get information about a section of the file.");
+                            throw std::runtime_error("Unable to get information about a section of the file.");
                         if (Robust::not_equal(info->channels, int(channel_count)))
-                            Program::Error("Channel count has changed in the middle of the file.");
+                            throw std::runtime_error("Channel count has changed in the middle of the file.");
                         if (Robust::not_equal(info->rate, sampling_rate))
-                            Program::Error("Sampling rate has changed in the middle of the file.");
+                            throw std::runtime_error("Sampling rate has changed in the middle of the file.");
                     }
                 }
 
             }
             catch (std::exception &e)
             {
-                Program::Error(FMT("While reading a vorbis sound from `{}`:\n{}", input.GetTarget(), e.what()));
+                throw std::runtime_error(FMT("While reading a vorbis sound from `{}`:\n{}", input.GetTarget(), e.what()));
             }
             break;
         }

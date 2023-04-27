@@ -9,9 +9,9 @@
 #include "macros/generated.h"
 #include "macros/named_macro_parameters.h"
 #include "meta/common.h"
-#include "program/errors.h"
 #include "reflection/interface_basic.h"
 #include "reflection/interface_scalar.h"
+#include "strings/format.h"
 #include "strings/lexical_cast.h"
 
 namespace Refl
@@ -131,7 +131,7 @@ namespace Refl
             if (!name)
             {
                 if (!helper.IsRelaxed())
-                    Program::Error(output.GetExceptionPrefix(), "Unable to serialize enum: Invalid value: ", underlying(object), ".");
+                    throw std::runtime_error(FMT("{}Unable to serialize enum: Invalid value: {}.", output.GetExceptionPrefix(), underlying(object)));
                 Interface<underlying>().ToString(underlying(object), output, options, state.PartOfRepresentation(options));
                 return;
             }
@@ -161,7 +161,7 @@ namespace Refl
             bool name_ok = false;
             T result = helper.NameToValue(name.c_str(), &name_ok);
             if (!name_ok)
-                Program::Error(input.GetExceptionPrefix(), "Unknown enumerator: `", name, "`.");
+                throw std::runtime_error(FMT("{}Unknown enumerator: `{}`.", input.GetExceptionPrefix(), name));
             object = result;
         }
 
@@ -171,7 +171,7 @@ namespace Refl
 
             const auto &helper = impl::Enum::GetHelper<T>();
             if (!helper.IsRelaxed() && helper.ValueToName(object) == nullptr)
-                Program::Error(output.GetExceptionPrefix(), "Unable to serialize enum: Invalid value: ", underlying(object), ".");
+                throw std::runtime_error(FMT("{}Unable to serialize enum: Invalid value: {}.", output.GetExceptionPrefix(), underlying(object)));
 
             Interface<underlying>().ToBinary(underlying(object), output, options, state.PartOfRepresentation(options));
         }
@@ -186,7 +186,7 @@ namespace Refl
             Interface<underlying>().FromBinary(result, input, options, state.PartOfRepresentation(options));
 
             if (!helper.IsRelaxed() && helper.ValueToName(T(result)) == nullptr)
-                Program::Error(input.GetExceptionPrefix(), "Invalid enum value: ", result, ".");
+                throw std::runtime_error(FMT("{}Invalid enum value: {}.", input.GetExceptionPrefix(), result));
 
             object = T(result);
         }

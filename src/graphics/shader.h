@@ -236,7 +236,7 @@ namespace Graphics
         {
             data.handle = glCreateProgram();
             if (!data.handle)
-                Program::Error("Unable to create shader program: `", name, "`.");
+                throw std::runtime_error(FMT("Unable to create shader program: `{}`.", name));
             FINALLY_ON_THROW{glDeleteProgram(data.handle);};
 
             for (std::string *source_ptr : {&vert_source, &frag_source})
@@ -252,7 +252,7 @@ namespace Graphics
 
                 GLuint object = glCreateShader(is_vertex ? GL_VERTEX_SHADER : GL_FRAGMENT_SHADER);
                 if (!object)
-                    Program::Error("Unable to create ", is_vertex ? "vertex" : "fragment", " shader object: `", name, "`.");
+                    throw std::runtime_error(FMT("Unable to create {} shader object: `{}`.", is_vertex ? "vertex" : "fragment", name));
                 FINALLY{glDeleteShader(object);}; // Note that we unconditionally delete the shader. GL keeps it alive as long as it's attached to a program.
 
                 const char *source_bytes = source.c_str();
@@ -279,7 +279,7 @@ namespace Graphics
                         glGetShaderInfoLog(object, log_len, nullptr, log.data());
                     }
 
-                    Program::Error("Unable to compile ", is_vertex ? "vertex" : "fragment", " shader: `", name, "`.\nLog:\n", Strings::Trim(log));
+                    throw std::runtime_error(FMT("Unable to compile {} shader: `{}`.\nLog:\n{}", is_vertex ? "vertex" : "fragment", name, Strings::Trim(log)));
                 }
 
                 glAttachShader(data.handle, object);
@@ -309,7 +309,7 @@ namespace Graphics
                     glGetProgramInfoLog(data.handle, log_len, nullptr, log.data());
                 }
 
-                Program::Error("Unable to link shader program: `", name, "`.\nLog:\n", Strings::Trim(log));
+                throw std::runtime_error(FMT("Unable to link shader program: `{}`.\nLog:\n{}", name, Strings::Trim(log)));
             }
         }
 
@@ -469,7 +469,7 @@ namespace Graphics
         void set_no_bind(const effective_type *ptr, int count, int offset = 0) const
         {
             if (count < 0 || offset < 0 || offset + count > array_elements)
-                Program::Error("Invalid shader uniform array range.");
+                throw std::runtime_error("Invalid shader uniform array range.");
             int l = location + offset;
             if      constexpr (std::is_same_v<effective_type, float       >) glUniform1fv (l, count, reinterpret_cast<const base_type *>(ptr));
             else if constexpr (std::is_same_v<effective_type, fvec2       >) glUniform2fv (l, count, reinterpret_cast<const base_type *>(ptr));

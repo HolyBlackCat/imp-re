@@ -1,6 +1,6 @@
 #include "tiled_map.h"
 
-#include "program/errors.h"
+#include "strings/format.h"
 #include "utils/mat.h"
 
 namespace Tiled
@@ -9,7 +9,7 @@ namespace Tiled
     {
         Json::View ret = FindLayerOpt(map, name);
         if (!ret)
-            Program::Error(FMT("Map layer `{}` is missing.", name));
+            throw std::runtime_error(FMT("Map layer `{}` is missing.", name));
         return ret;
     }
 
@@ -24,7 +24,7 @@ namespace Tiled
                 if (!ret)
                     ret = elem;
                 else
-                    Program::Error("More than one layer is named `", name, "`.");
+                    throw std::runtime_error(FMT("More than one layer is named `{}`.", name));
             }
         });
 
@@ -34,16 +34,16 @@ namespace Tiled
     TileLayer LoadTileLayer(Json::View source)
     {
         if (!source)
-            Program::Error("Attempt to load a null tile layer.");
+            throw std::runtime_error("Attempt to load a null tile layer.");
 
         if (source["type"].GetString() != "tilelayer")
-            Program::Error("Expected `", source["name"].GetString(), "` to be a tile layer.");
+            throw std::runtime_error(FMT("Expected `{}` to be a tile layer.", source["name"].GetString()));
 
         ivec2 size(source["width"].GetInt(), source["height"].GetInt());
 
         Json::View array_view = source["data"];
         if (array_view.GetArraySize() != size.prod())
-            Program::Error("Expected the layer of size ", size, " to have exactly " , size.prod(), " tiles.");
+            throw std::runtime_error(FMT("Expected the layer of size {} to have exactly {} tiles.", size, size.prod()));
 
         TileLayer ret(size);
         int index = 0;
@@ -58,17 +58,17 @@ namespace Tiled
     PointLayer LoadPointLayer(Json::View source)
     {
         if (!source)
-            Program::Error("Attempt to load a null point layer.");
+            throw std::runtime_error("Attempt to load a null point layer.");
 
         if (source["type"].GetString() != "objectgroup")
-            Program::Error("Expected `", source["name"].GetString(), "` to be an object layer.");
+            throw std::runtime_error(FMT("Expected `{}` to be an object layer.", source["name"].GetString()));
 
         PointLayer ret;
 
         source["objects"].ForEachArrayElement([&](Json::View elem)
         {
             if (!elem.HasElement("point") || elem["point"].GetBool() != true)
-                Program::Error("Expected every object on layer `", source["name"].GetString(), "` to be a point.");
+                throw std::runtime_error(FMT("Expected every object on layer `{}` to be a point.", source["name"].GetString()));
 
             ret.points.insert({elem["name"].GetString(), fvec2(elem["x"].GetReal(), elem["y"].GetReal())});
         });

@@ -46,7 +46,7 @@ namespace Graphics
         {
             glGenTextures(1, &data.handle);
             if (!data.handle)
-                Program::Error("Unable to create a texture.");
+                throw std::runtime_error("Unable to create a texture.");
             // Not needed because there is no code below this point:
             // FINALLY_ON_THROW{glDeleteTextures(1, &data.handle);};
         }
@@ -106,7 +106,7 @@ namespace Graphics
         TexUnit(decltype(nullptr))
         {
             if (Allocator().IsFull())
-                Program::Error("No free texture units.");
+                throw std::runtime_error("No free texture units.");
             data.index = Allocator().InsertAny();
         }
         explicit TexUnit(GLuint handle) : TexUnit(nullptr)

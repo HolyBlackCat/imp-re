@@ -4,7 +4,6 @@
 #include <optional>
 #include <type_traits>
 
-#include "program/errors.h"
 #include "reflection/interface_basic.h"
 #include "reflection/interface_scalar.h"
 
@@ -45,7 +44,7 @@ namespace Refl
             }
             catch (std::exception &e)
             {
-                Program::Error(input.GetExceptionPrefix() + e.what());
+                throw std::runtime_error(input.GetExceptionPrefix() + e.what());
             }
 
             Interface<elem_t>().FromString(*object, input, options, state.PartOfRepresentation(options));
@@ -79,7 +78,7 @@ namespace Refl
             }
             catch (std::exception &e)
             {
-                Program::Error(input.GetExceptionPrefix() + e.what());
+                throw std::runtime_error(input.GetExceptionPrefix() + e.what());
             }
 
             Interface<elem_t>().FromBinary(*object, input, options, next_state);

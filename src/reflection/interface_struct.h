@@ -13,10 +13,10 @@
 #include "macros/named_macro_parameters.h"
 #include "meta/common.h"
 #include "meta/lists.h"
-#include "program/errors.h"
 #include "reflection/interface_basic.h"
 #include "reflection/structs.h"
 #include "strings/common.h"
+#include "strings/format.h"
 
 namespace Refl
 {
@@ -89,7 +89,7 @@ namespace Refl
             }
             catch (std::exception &e)
             {
-                Program::Error(output.GetExceptionPrefix() + e.what());
+                throw std::runtime_error(output.GetExceptionPrefix() + e.what());
             }
 
             constexpr bool named_members = Class::member_names_known<T>;
@@ -223,7 +223,7 @@ namespace Refl
             }
             catch (std::exception &e)
             {
-                Program::Error(output.GetExceptionPrefix() + e.what());
+                throw std::runtime_error(output.GetExceptionPrefix() + e.what());
             }
         }
 
@@ -238,7 +238,7 @@ namespace Refl
             }
             catch (std::exception &e)
             {
-                Program::Error(input.GetExceptionPrefix() + e.what());
+                throw std::runtime_error(input.GetExceptionPrefix() + e.what());
             }
 
             constexpr bool named_members = Class::member_names_known<T>;
@@ -280,22 +280,22 @@ namespace Refl
                         // We got a base class.
                         std::size_t base_index = Class::CombinedBaseIndex<T>(name);
                         if (base_index == std::size_t(-1))
-                            Program::Error(input.GetExceptionPrefix() + "Unknown base class: `" + name + "`.");
+                            throw std::runtime_error(input.GetExceptionPrefix() + "Unknown base class: `" + name + "`.");
 
                         Meta::with_cexpr_value<combined_base_count>(base_index, [&](auto index)
                         {
                             constexpr auto i = index.value;
                             if (!state.NeedVirtualBases() && i >= Meta::list_size<Class::regular_bases<T>>)
-                                Program::Error(input.GetExceptionPrefix() + "Virtual base class `" + name + "` must be mentioned in the most derived class, not here.");
+                                throw std::runtime_error(input.GetExceptionPrefix() + "Virtual base class `" + name + "` must be mentioned in the most derived class, not here.");
 
                             if (obtained_bases[i])
-                                Program::Error(input.GetExceptionPrefix() + "Base class mentioned more than once: `" + name + "`.");
+                                throw std::runtime_error(input.GetExceptionPrefix() + "Base class mentioned more than once: `" + name + "`.");
 
                             using this_base = Meta::list_type_at<combined_bases, i>;
 
                             if constexpr (impl::Class::skip_base<this_base>)
                             {
-                                Program::Error(input.GetExceptionPrefix() + "Empty base class is mentioned: `" + name + "`.");
+                                throw std::runtime_error(input.GetExceptionPrefix() + "Empty base class is mentioned: `" + name + "`.");
                             }
                             else
                             {
@@ -315,17 +315,17 @@ namespace Refl
 
                         std::size_t member_index = Class::MemberIndex<T>(name);
                         if (member_index == std::size_t(-1))
-                            Program::Error(input.GetExceptionPrefix() + "Unknown field: `" + name + "`.");
+                            throw std::runtime_error(input.GetExceptionPrefix() + "Unknown field: `" + name + "`.");
 
                         Meta::with_cexpr_value<Class::member_count<T>>(member_index, [&](auto index)
                         {
                             constexpr auto i = index.value;
                             if (obtained_members[i])
-                                Program::Error(input.GetExceptionPrefix() + "Field mentioned more than once: `" + name + "`.");
+                                throw std::runtime_error(input.GetExceptionPrefix() + "Field mentioned more than once: `" + name + "`.");
 
                             if constexpr (impl::Class::skip_member<Class::member_type<T, i>>)
                             {
-                                Program::Error(input.GetExceptionPrefix() + "Empty field is mentioned: `" + name + "`.");
+                                throw std::runtime_error(input.GetExceptionPrefix() + "Empty field is mentioned: `" + name + "`.");
                             }
                             else
                             {
@@ -359,7 +359,7 @@ namespace Refl
                         if constexpr (!Class::member_has_attrib<T, i, Optional> && !impl::Class::skip_member<Class::member_type<T, i>>)
                         {
                             if (!obtained_members[i])
-                                Program::Error(input.GetExceptionPrefix() + "Field `" + Class::MemberName<T>(i) + "` is missing.");
+                                throw std::runtime_error(input.GetExceptionPrefix() + "Field `" + Class::MemberName<T>(i) + "` is missing.");
                         }
                     });
 
@@ -374,7 +374,7 @@ namespace Refl
                                 return;
 
                             if (!obtained_bases[i])
-                                Program::Error(input.GetExceptionPrefix() + "Base class `" + Class::name<this_base> + "` is missing.");
+                                throw std::runtime_error(input.GetExceptionPrefix() + "Base class `" + Class::name<this_base> + "` is missing.");
                         }
                     });
                 }
@@ -447,7 +447,7 @@ namespace Refl
             }
             catch (std::exception &e)
             {
-                Program::Error(input.GetExceptionPrefix() + e.what());
+                throw std::runtime_error(input.GetExceptionPrefix() + e.what());
             }
         }
 
@@ -460,7 +460,7 @@ namespace Refl
             }
             catch (std::exception &e)
             {
-                Program::Error(output.GetExceptionPrefix() + e.what());
+                throw std::runtime_error(output.GetExceptionPrefix() + e.what());
             }
 
             auto next_member_state = state.MemberOrElem(options);
@@ -510,7 +510,7 @@ namespace Refl
             }
             catch (std::exception &e)
             {
-                Program::Error(output.GetExceptionPrefix() + e.what());
+                throw std::runtime_error(output.GetExceptionPrefix() + e.what());
             }
         }
 
@@ -523,7 +523,7 @@ namespace Refl
             }
             catch (std::exception &e)
             {
-                Program::Error(input.GetExceptionPrefix() + e.what());
+                throw std::runtime_error(input.GetExceptionPrefix() + e.what());
             }
 
             auto next_member_state = state.MemberOrElem(options);
@@ -573,7 +573,7 @@ namespace Refl
             }
             catch (std::exception &e)
             {
-                Program::Error(input.GetExceptionPrefix() + e.what());
+                throw std::runtime_error(input.GetExceptionPrefix() + e.what());
             }
         }
     };

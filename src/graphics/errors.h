@@ -4,7 +4,7 @@
 
 #include <cglfl/cglfl.hpp>
 
-#include "program/errors.h"
+#include "strings/format.h"
 
 namespace Graphics
 {
@@ -41,7 +41,7 @@ namespace Graphics
                 }
             }
             while ((err = glGetError()));
-            Program::Error("OpenGL error: ", msg, ".");
+            throw std::runtime_error(FMT("OpenGL error: {}.", msg));
         }
     }
 }

@@ -3,7 +3,6 @@
 #include <exception>
 #include <type_traits>
 
-#include "program/errors.h"
 #include "reflection/interface_basic.h"
 #include "strings/lexical_cast.h"
 
@@ -50,7 +49,7 @@ namespace Refl
             }
             catch (std::exception &e)
             {
-                Program::Error(input.GetExceptionPrefix() + e.what());
+                throw std::runtime_error(input.GetExceptionPrefix() + e.what());
             }
         }
 

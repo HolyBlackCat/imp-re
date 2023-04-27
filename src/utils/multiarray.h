@@ -88,13 +88,13 @@ class MultiArray
     [[nodiscard]] type &safe_throwing_at(index_vec_t pos)
     {
         if (!pos_in_range(pos))
-            Program::Error("Multiarray index ", pos, " is out of range. The array size is ", size_vec, ".");
+            throw std::runtime_error(FMT("Multiarray index {} is out of range. The array size is {}.", pos, size_vec));
         return unsafe_at(pos);
     }
     [[nodiscard]] type &safe_nonthrowing_at(index_vec_t pos)
     {
         if (!pos_in_range(pos))
-            Program::HardError("Multiarray index ", pos, " is out of range. The array size is ", size_vec, ".");
+            Program::HardError(FMT("Multiarray index {} is out of range. The array size is {}.", pos, size_vec));
         return unsafe_at(pos);
     }
     [[nodiscard]] type &clamped_at(index_vec_t pos)

@@ -9,7 +9,7 @@
 #include <type_traits>
 #include <utility>
 
-#include "program/errors.h"
+#include "strings/format.h"
 #include "utils/unicode.h"
 
 namespace Strings
@@ -149,7 +149,7 @@ namespace Strings
             {
                 cur++; // Skip `\`.
                 if (cur == end)
-                    Program::Error("Unfinished escape sequence at the end of string.");
+                    throw std::runtime_error("Unfinished escape sequence at the end of string.");
 
                 switch (*cur++)
                 {
@@ -169,14 +169,14 @@ namespace Strings
                     {
                         cur--;
                         if (!IsOctalDigit(*cur))
-                            Program::Error("Invalid escape sequence: `\\", *cur, "`.");
+                            throw std::runtime_error(FMT("Invalid escape sequence: `\\{}`.", *cur));
 
                         ReadSeveralSymbols(3, IsOctalDigit);
 
                         unsigned int value = 0;
                         std::sscanf(buffer.data(), "%o", &value);
                         if (value > 255)
-                            Program::Error("Octal escape sequence with a value larger than 255.");
+                            throw std::runtime_error("Octal escape sequence with a value larger than 255.");
 
                         *output_iter++ = char(value);
                     }
@@ -185,7 +185,7 @@ namespace Strings
                   case 'x':
                     {
                         if (ReadSeveralSymbols(2, IsHexDigit) == 0)
-                            Program::Error("Expected at least one hex digit after `\\x`");
+                            throw std::runtime_error("Expected at least one hex digit after `\\x`");
 
                         unsigned int value = 0;
                         std::sscanf(buffer.data(), "%x", &value);
@@ -197,7 +197,7 @@ namespace Strings
                   case 'u':
                     {
                         if (ReadSeveralSymbols(4, IsHexDigit) != 4)
-                            Program::Error("Expected 4 hex digits after `\\u`");
+                            throw std::runtime_error("Expected 4 hex digits after `\\u`");
 
                         unsigned int value = 0;
                         std::sscanf(buffer.data(), "%x", &value);
@@ -211,13 +211,13 @@ namespace Strings
                   case 'U':
                     {
                         if (ReadSeveralSymbols(8, IsHexDigit) != 8)
-                            Program::Error("Expected 8 hex digits after `\\U`");
+                            throw std::runtime_error("Expected 8 hex digits after `\\U`");
 
                         unsigned int value = 0;
                         std::sscanf(buffer.data(), "%x", &value);
 
                         if (!Unicode::IsValidCharacterCode(value))
-                            Program::Error("Unicode codepoint specified in the escape sequence is too large.");
+                            throw std::runtime_error("Unicode codepoint specified in the escape sequence is too large.");
 
                         char output_buf[Unicode::max_char_len];
                         int output_len = Unicode::Encode(value, output_buf);

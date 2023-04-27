@@ -6,6 +6,7 @@
 #include "meta/lists.h"
 #include "meta/type_info.h"
 #include "reflection/full.h"
+#include "strings/format.h"
 #include "utils/poly_storage.h"
 
 namespace Refl
@@ -176,7 +177,7 @@ namespace Refl
                     {
                         [[maybe_unused]] static int dummy = []{
                             if (finalized)
-                                Program::HardError("Attempt to register polymorphic base `", Meta::TypeName<Base>(), "` after class lists were finalized.");
+                                Program::HardError(FMT("Attempt to register polymorphic base `{}` after class lists were finalized.", Meta::TypeName<Base>()));
                             BaseFinalizationFuncs().push_back(Finalize);
                             return 0;
                         }();
@@ -190,7 +191,7 @@ namespace Refl
                         std::sort(list.begin(), list.end());
                         auto dupe_it = std::adjacent_find(list.begin(), list.end());
                         if (dupe_it != list.end())
-                            Program::HardError("Duplicate derived class `", dupe_it->name, "` registered for base `", Meta::TypeName<Base>(), "`.");
+                            Program::HardError(FMT("Duplicate derived class `{}` registered for base `{}`.", dupe_it->name, Meta::TypeName<Base>()));
                         for (std::size_t i = 0; i < list.size(); i++)
                             *list[i].index_location = i;
                     }
@@ -209,14 +210,14 @@ namespace Refl
                         [[maybe_unused]] Registration::touch_to_register<Base, Derived> registration_helper;
 
                         if (finalized)
-                            Program::HardError("Attempt to register polymorphic class `", Meta::TypeName<Derived>(), "` (derived from `", Meta::TypeName<Base>(), "`) after class lists were finalized.");
+                            Program::HardError(FMT("Attempt to register polymorphic class `{}` (derived from `{}`) after class lists were finalized.", Meta::TypeName<Derived>(), Meta::TypeName<Base>()));
 
                         auto &list = NameToFuncList();
                         // Make sure we don't have too many objects.
                         // One `-1` is because we need one more position for the new element.
                         // Another `-1` is because one position is used to represent null objects.
                         if (list.size() >= std::numeric_limits<Refl::impl::polymorphic_index_binary_t>::max() - 2)
-                            Program::HardError("Attempt to register too many polymorphic classes for base `", Meta::TypeName<Base>(), "`.");
+                            Program::HardError(FMT("Attempt to register too many polymorphic classes for base `{}`.", Meta::TypeName<Base>()));
 
                         static_assert(Class::name_known<Derived>, "Name of the derived class is not known.");
                         list.push_back({Class::name<Derived>, []() -> PolyStorage {return Poly::derived<Derived>;}, &derived_class_index<Derived>});
@@ -242,7 +243,7 @@ namespace Refl
                     {
                         std::size_t ret = ClassNameToIndexIfValid(name);
                         if (ret == std::size_t(-1))
-                            Program::Error("Unknown polymorphic class name: `", name, "`.");
+                            throw std::runtime_error(FMT("Unknown polymorphic class name: `{}`.", name));
                         return ret;
                     }
 
@@ -253,7 +254,7 @@ namespace Refl
                     {
                         auto &list = NameToFuncList();
                         if (index >= list.size())
-                            Program::Error("Polymorphic class index is invalid: ", index, ".");
+                            throw std::runtime_error(FMT("Polymorphic class index is invalid: {}.", index));
                         return list[index].func();
                     }
                 };
@@ -484,7 +485,7 @@ namespace Refl
             }
             catch (std::exception &e)
             {
-                Program::Error(input.GetExceptionPrefix() + e.what());
+                throw std::runtime_error(input.GetExceptionPrefix() + e.what());
             }
 
             Utils::SkipWhitespaceAndComments(input);
@@ -519,7 +520,7 @@ namespace Refl
             }
             catch (std::exception &e)
             {
-                Program::Error(input.GetExceptionPrefix() + e.what());
+                throw std::runtime_error(input.GetExceptionPrefix() + e.what());
             }
 
             object.dynamic().zrefl_FromBinary(object, input, options, state.PartOfRepresentation(options));

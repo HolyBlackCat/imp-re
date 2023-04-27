@@ -263,23 +263,23 @@ namespace Stream
             {
                 file_pos_raw = std::ftell(handle);
                 if (file_pos_raw < 0)
-                    Program::Error("Unable to get current position in the file.");
+                    throw std::runtime_error("Unable to get current position in the file.");
             }
 
             if (std::fseek(handle, 0, SEEK_END))
-                Program::Error("Unable to seek in the file.");
+                throw std::runtime_error("Unable to seek in the file.");
 
             auto file_size_raw = std::ftell(handle);
             if (file_size_raw < 0)
-                Program::Error("Unable to get the size of the file.");
+                throw std::runtime_error("Unable to get the size of the file.");
             if (Robust::conversion_fails(file_size_raw, ret.size))
-                Program::Error("File is too large.");
+                throw std::runtime_error("File is too large.");
 
             // We don't need to check representability here, since we already did it for `file_size_raw`.
             ret.pos = std::min(file_pos_raw, file_size_raw);
 
             if (std::fseek(handle, file_pos_raw, SEEK_SET))
-                Program::Error("Unable to seek in the file.");
+                throw std::runtime_error("Unable to seek in the file.");
 
             return ret;
         }
@@ -289,14 +289,14 @@ namespace Stream
         static void FileHandleReader(FILE *handle, std::size_t &last_offset, Input &stream, std::size_t offset, std::size_t size, std::uint8_t *dst)
         {
             if (last_offset != offset && std::fseek(handle, offset, SEEK_SET))
-                Program::Error(stream.GetExceptionPrefix(), "Unable to seek in the file.");
+                throw std::runtime_error(FMT("{}Unable to seek in the file.", stream.GetExceptionPrefix()));
 
             if (std::fread(dst, size, 1, handle) != 1)
             {
                 if (std::feof(handle))
-                    Program::Error(stream.GetExceptionPrefix(), "Unable to read from the file: EOF was reported.");
+                    throw std::runtime_error(FMT("{}Unable to read from the file: EOF was reported.", stream.GetExceptionPrefix()));
                 else
-                    Program::Error(stream.GetExceptionPrefix(), "Unable to read from the file: ", std::strerror(errno));
+                    throw std::runtime_error(FMT("{}Unable to read from the file: {}", stream.GetExceptionPrefix(), std::strerror(errno)));
             }
 
             last_offset = offset + size;
@@ -352,7 +352,7 @@ namespace Stream
         void ThrowIfNoData(std::size_t bytes)
         {
             if (data.position + bytes > data.size)
-                Program::Error(GetExceptionPrefix() + "Unexpected end of input.");
+                throw std::runtime_error(GetExceptionPrefix() + "Unexpected end of input.");
         }
 
       public:
@@ -364,7 +364,7 @@ namespace Stream
         Input(std::string name, std::size_t size, read_func_t read_func, capacity_t buffer_capacity = default_capacity)
         {
             if (Robust::not_representable_as<std::ptrdiff_t>(size))
-                Program::Error("Unable to create an input stream `", name, "`: the specified size is too large.");
+                throw std::runtime_error(FMT("Unable to create an input stream `{}`: the specified size is too large.", name));
 
             data.name = std::move(name);
             data.size = size;
@@ -379,7 +379,7 @@ namespace Stream
         Input(ReadOnlyData source)
         {
             if (!source)
-                Program::Error("Attempt to bind an input stream to a null ReadOnlyData.");
+                throw std::runtime_error("Attempt to bind an input stream to a null ReadOnlyData.");
 
             data.name = source.name();
             data.size = source.size();
@@ -405,7 +405,7 @@ namespace Stream
             }
             catch (std::exception &e)
             {
-                Program::Error("Unable to attach an input stream `", name, "` to a file handle ", (void *)handle, ":\n", e.what());
+                throw std::runtime_error(FMT("Unable to attach an input stream `{}` to a file handle {}:\n{}", name, (void *)handle, e.what()));
             }
 
             auto lambda = [handle, last_offset = info.pos](Input &stream, std::size_t offset, std::size_t size, std::uint8_t *dst) mutable
@@ -430,7 +430,7 @@ namespace Stream
 
             std::unique_ptr<FILE, decltype(deleter)> handle(better_fopen(file_name.c_str(), "rb"));
             if (!handle)
-                Program::Error("Unable to open `", file_name, "` for reading.");
+                throw std::runtime_error(FMT("Unable to open `{}` for reading.", file_name));
 
             // This function can fail, but it doesn't report errors in any way.
             // Even if it did, we would still ignore it.
@@ -444,7 +444,7 @@ namespace Stream
             }
             catch (std::exception &e)
             {
-                Program::Error("Unable to attach an input stream to `", file_name, "`:\n", e.what());
+                throw std::runtime_error(FMT("Unable to attach an input stream to `{}`:\n{}", file_name, e.what()));
             }
 
             auto lambda = Meta::fake_copyable([handle = std::move(handle), last_offset = (std::size_t)0](Input &stream, std::size_t offset, std::size_t size, std::uint8_t *dst) mutable
@@ -649,7 +649,7 @@ namespace Stream
             // Note that we don't check for an overflow here. It shouldn't be necessary,
             // since we require `data.size` to be representable as `ptrdiff_t`.
             if (new_pos > data.size)
-                Program::Error(GetExceptionPrefix() + "Cursor position is out of bounds.");
+                throw std::runtime_error(GetExceptionPrefix() + "Cursor position is out of bounds.");
 
             data.position = new_pos;
         }
@@ -676,7 +676,7 @@ namespace Stream
         void ExpectEnd()
         {
             if (MoreData())
-                Program::Error(GetExceptionPrefix() + "Unexpected junk at the end of input.");
+                throw std::runtime_error(GetExceptionPrefix() + "Unexpected junk at the end of input.");
         }
 
         // Returns the next byte, without advancing the cursor.
@@ -871,7 +871,7 @@ namespace Stream
             while (several);
 
             if (throw_if_none && count == 0)
-                Program::Error(GetExceptionPrefix() + "Expected " + category.name() + ".");
+                throw std::runtime_error(GetExceptionPrefix() + "Expected " + category.name() + ".");
 
             return count;
         }
@@ -905,7 +905,7 @@ namespace Stream
         {
             char ch = ReadChar();
             if (!category(ch))
-                Program::Error(GetExceptionPrefix() + "Expected " + category.name() + ".");
+                throw std::runtime_error(GetExceptionPrefix() + "Expected " + category.name() + ".");
             return ch;
         }
         template <ExtractMode mode> requires (mode == if_present)
@@ -949,9 +949,9 @@ namespace Stream
                     {
                         // If the amount of characters is small, include them in the exception message.
                         if (count <= 16)
-                            Program::Error(GetExceptionPrefix() + "Expected \"" + Strings::Escape(std::string_view(reinterpret_cast<const char *>(bytes), count)) + "\".");
+                            throw std::runtime_error(GetExceptionPrefix() + "Expected \"" + Strings::Escape(std::string_view(reinterpret_cast<const char *>(bytes), count)) + "\".");
                         else
-                            Program::Error(GetExceptionPrefix() + "Unexpected sequence of bytes.");
+                            throw std::runtime_error(GetExceptionPrefix() + "Unexpected sequence of bytes.");
                     }
                     return false;
                 }

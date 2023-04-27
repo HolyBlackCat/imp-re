@@ -12,7 +12,6 @@
 #include "graphics/image.h"
 #include "macros/enum_flag_operators.h"
 #include "macros/finally.h"
-#include "program/errors.h"
 #include "stream/readonly_data.h"
 #include "strings/format.h"
 #include "utils/mat.h"
@@ -54,7 +53,7 @@ namespace Graphics
             {
                 ft_initialized = !FT_Init_FreeType(&ft_context);
                 if (!ft_initialized)
-                    Program::Error("Unable to initialize FreeType.");
+                    throw std::runtime_error("Unable to initialize FreeType.");
                 // We don't unload the library if this constructor throws after this point.
             }
 
@@ -66,7 +65,7 @@ namespace Graphics
             args.memory_size = data.file.size();
 
             if (FT_Open_Face(ft_context, &args, index, &data.ft_font))
-                Program::Error("Unable to load font `", data.file.name(), "`.");
+                throw std::runtime_error(FMT("Unable to load font `{}`.", data.file.name()));
             FINALLY_ON_THROW{FT_Done_Face(data.ft_font);};
 
             if (FT_Set_Pixel_Sizes(data.ft_font, size.x, size.y))
@@ -99,7 +98,7 @@ namespace Graphics
                         size_list += STR((this_size.x), "x", (this_size.y));
                 }
 
-                Program::Error(STR("Bitmap font `", (data.file.name()), "`", (index != 0 ? STR("[",(index),"]") : ""), " doesn't support size ", (requested_size), ".",
+                throw std::runtime_error(STR("Bitmap font `", (data.file.name()), "`", (index != 0 ? STR("[",(index),"]") : ""), " doesn't support size ", (requested_size), ".",
                                (size_list.empty() ? "" : STR("\nAvailable sizes are: ", (size_list), "."))));
             }
 
@@ -125,7 +124,7 @@ namespace Graphics
         static void UnloadLibrary() // Use this to unload freetype. This function throws if you have opened fonts.
         {
             if (open_font_count > 0)
-                Program::Error("Unable to unload FreeType: ", open_font_count, " fonts are still in use.");
+                throw std::runtime_error(FMT("Unable to unload FreeType: {} fonts are still in use.", open_font_count));
             if (ft_initialized)
                 return;
             FT_Done_FreeType(ft_context);
@@ -221,7 +220,7 @@ namespace Graphics
             try
             {
                 if (!HasGlyph(ch))
-                    Program::Error("No such glyph.");
+                    throw std::runtime_error("No such glyph.");
 
                 long loading_flags = 0;
                 if (flags & avoid_bitmaps             ) loading_flags |= FT_LOAD_NO_BITMAP;
@@ -236,7 +235,7 @@ namespace Graphics
                 if (FT_Load_Char(data.ft_font, ch, loading_flags) != 0 || FT_Render_Glyph(data.ft_font->glyph, render_mode) != 0)
                 {
                     if (ch != Unicode::default_char)
-                        Program::Error("Unknown error.");
+                        throw std::runtime_error("Unknown error.");
 
                     // We can't render the default character (aka [?]), try the plain question mark instead.
                     if (HasGlyph('?'))
@@ -262,7 +261,7 @@ namespace Graphics
                     is_antialiased = 1;
                     break;
                   default:
-                    Program::Error("Bitmap format ", bitmap.pixel_mode, " is not supported.");
+                    throw std::runtime_error(FMT("Bitmap format {} is not supported.", bitmap.pixel_mode));
                     break;
                 }
 
@@ -298,7 +297,7 @@ namespace Graphics
             }
             catch (std::exception &e)
             {
-                Program::Error("Unable to render glyph ", ch, " for font `", data.file.name(), "`:\n", e.what());
+                throw std::runtime_error(FMT("Unable to render glyph {} for font `{}`:\n{}", ch, data.file.name(), e.what()));
             }
         }
     };
@@ -328,7 +327,7 @@ namespace Graphics
     inline void MakeFontAtlas(Image &image, irect2 rect, const std::vector<FontAtlasEntry> &entries, bool add_gaps = true) // Throws on failure.
     {
         if (!image.Bounds().contains(rect))
-            Program::Error("Invalid target rectangle for a font atlas.");
+            throw std::runtime_error("Invalid target rectangle for a font atlas.");
 
         struct Glyph
         {
@@ -377,7 +376,7 @@ namespace Graphics
 
         // Pack rectangles.
         if (Packing::PackRects(rect.size(), rects.data(), rects.size(), add_gaps))
-            Program::Error("Unable to fit the font atlas for into ", rect.size().x, 'x', rect.size().y, " rectangle.");
+            throw std::runtime_error(FMT("Unable to fit the font atlas for into a {}x{} rectangle.", rect.size().x, rect.size().y));
 
         // Fill target area with transparent black.
         image.UnsafeFill(rect, u8vec4(0));

@@ -6,7 +6,6 @@
 #include <optional>
 #include <string>
 
-#include "program/errors.h"
 #include "strings/common.h"
 #include "utils/json.h"
 #include "utils/mat.h"
@@ -52,7 +51,7 @@ namespace Tiled
             if (begin == end)
                 return {};
             if (std::next(begin) != end)
-                Program::Error("Expected the map to contain one or less points named `", name, "`.");
+                throw std::runtime_error(FMT("Expected the map to contain at most one point named `{}`.", name));
             return begin->second;
         }
 
@@ -60,7 +59,7 @@ namespace Tiled
         {
             auto [begin, end] = points.equal_range(name);
             if (begin == points.end() || std::next(begin) != end)
-                Program::Error("Expected the map to contain exactly one point named `", name, "`.");
+                throw std::runtime_error(FMT("Expected the map to contain exactly one point named `{}`.", name));
             return begin->second;
         }
 
@@ -88,7 +87,7 @@ namespace Tiled
         {
             auto it = strings.find(name);
             if (it == strings.end())
-                Program::Error("Invalid map property string name: `", name, "`.");
+                throw std::runtime_error(FMT("Invalid map property string name: `{}`.", name));
             return it->second;
         }
     };

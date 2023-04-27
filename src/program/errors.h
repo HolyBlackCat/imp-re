@@ -31,23 +31,6 @@ namespace Program
 
     [[noreturn]] void HardError(const std::string &message);
 
-    [[noreturn]] inline void Error(const std::string &message) // Throws std::runtime_error.
-    {
-        throw std::runtime_error(message);
-    }
-
-    template <typename ...P>
-    [[noreturn]] void HardError(const P &... params)
-    {
-        HardError(Strings::Concat(params...));
-    }
-
-    template <typename ...P>
-    [[noreturn]] void Error(const P &... params)
-    {
-        Error(Strings::Concat(params...));
-    }
-
     void SetErrorHandlers(bool replace_even_if_already_set = false);
 
 

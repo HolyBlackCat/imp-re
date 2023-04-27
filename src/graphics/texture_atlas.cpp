@@ -42,7 +42,7 @@ namespace Graphics
 
         // Try packing the rectangles.
         if (Packing::PackRects(target_size, rect_list.data(), rect_list.size(), bool(flags & AtlasFlags::add_gaps)))
-            Program::Error(FMT("Unable to fit texture atlas into a {}x{} texture.", target_size.x, target_size.y));
+            throw std::runtime_error(FMT("Unable to fit texture atlas into a {}x{} texture.", target_size.x, target_size.y));
 
         // Construct the final image, and output the texture coords.
         Image ret = Image(target_size, u8vec4(0));

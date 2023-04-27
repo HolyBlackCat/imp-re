@@ -4,13 +4,13 @@
 #include <vector>
 #include <utility>
 
-#include "program/errors.h"
-#include "macros/finally.h"
-#include "utils/mat.h"
-#include "stream/readonly_data.h"
-
 #include <stb_image.h>
 #include <stb_image_write.h>
+
+#include "macros/finally.h"
+#include "stream/readonly_data.h"
+#include "strings/format.h"
+#include "utils/mat.h"
 
 namespace Graphics
 {
@@ -43,7 +43,7 @@ namespace Graphics
             ivec2 img_size;
             uint8_t *bytes = stbi_load_from_memory(file.data(), file.size(), &img_size.x, &img_size.y, 0, 4);
             if (!bytes)
-                Program::Error("Unable to parse image: ", file.name());
+                throw std::runtime_error(FMT("Unable to parse image: {}", file.name()));
             FINALLY{stbi_image_free(bytes);};
             *this = Image(img_size, bytes);
         }
@@ -59,7 +59,7 @@ namespace Graphics
         void Save(std::string file_name, Format format = png) const
         {
             if (!*this)
-                Program::Error("Attempt to save an empty image to a file.");
+                throw std::runtime_error("Attempt to save an empty image to a file.");
 
             int ok = 0;
             switch (format)
@@ -73,7 +73,7 @@ namespace Graphics
             }
 
             if (!ok)
-                Program::Error("Unable to write image to file: ", file_name);
+                throw std::runtime_error(FMT("Unable to write image to file: {}", file_name));
         }
 
         u8vec4 &UnsafeAt(ivec2 pos)

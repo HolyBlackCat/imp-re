@@ -2,7 +2,6 @@
 
 #include "audio/context.h"
 #include "audio/openal.h"
-#include "program/errors.h"
 
 namespace Audio
 {
@@ -14,12 +13,12 @@ namespace Audio
         switch (alcGetError(Context::Get().DeviceHandle()))
         {
             case 0:                   return;
-            case ALC_INVALID_DEVICE:  Program::Error("OpenAL error: Invalid device.");
-            case ALC_INVALID_CONTEXT: Program::Error("OpenAL error: Invalid context.");
-            case ALC_INVALID_ENUM:    Program::Error("OpenAL error: Invalid enum.");
-            case ALC_INVALID_VALUE:   Program::Error("OpenAL error: Invalid value.");
-            case ALC_OUT_OF_MEMORY:   Program::Error("OpenAL error: Out of memory.");
-            default:                  Program::Error("OpenAL error: Unknown error.");
+            case ALC_INVALID_DEVICE:  throw std::runtime_error("OpenAL error: Invalid device.");
+            case ALC_INVALID_CONTEXT: throw std::runtime_error("OpenAL error: Invalid context.");
+            case ALC_INVALID_ENUM:    throw std::runtime_error("OpenAL error: Invalid enum.");
+            case ALC_INVALID_VALUE:   throw std::runtime_error("OpenAL error: Invalid value.");
+            case ALC_OUT_OF_MEMORY:   throw std::runtime_error("OpenAL error: Out of memory.");
+            default:                  throw std::runtime_error("OpenAL error: Unknown error.");
         }
     }
 }

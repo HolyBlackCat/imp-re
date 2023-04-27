@@ -2,7 +2,6 @@
 
 #include <cstddef>
 
-#include "program/errors.h"
 #include "reflection/interface_struct.h"
 #include "utils/multiarray.h"
 
@@ -21,10 +20,10 @@ template <int D, typename T, typename Index> struct MultiArray<D, T, Index>::Ref
     static void CheckInvariant(const MultiArray<D, T> &object)
     {
         if ((object.size_vec < 0).any())
-            Program::Error("Multiarray can't have a negative size.");
+            throw std::runtime_error("Multiarray can't have a negative size.");
 
         if (std::size_t(object.size_vec.prod()) != object.storage.size())
-            Program::Error("Multiarray size doesn't match the number of elements in the storage.");
+            throw std::runtime_error("Multiarray size doesn't match the number of elements in the storage.");
     }
 };
 

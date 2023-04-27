@@ -179,7 +179,7 @@ namespace TransitiveClosure
                     std::cout << "NOT OK\n";
                     std::cout << "EXPECTED: " << target << "\n";
                     std::cout << "GOT:      " << result << "\n";
-                    Program::Error("Transitive closure test failed.");
+                    throw std::runtime_error("Transitive closure test failed.");
                 }
             };
 

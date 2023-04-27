@@ -11,6 +11,7 @@
 #include "program/errors.h"
 #include "stream/better_fopen.h"
 #include "stream/utils.h"
+#include "strings/format.h"
 #include "utils/archive.h"
 
 namespace Stream
@@ -44,10 +45,10 @@ namespace Stream
     {
         FILE *file = better_fopen(file_name.c_str(), SaveModeStringRepresentation(mode));
         if (!file)
-            Program::Error("Unable to open file `", file_name, "` for writing.");
+            throw std::runtime_error(FMT("Unable to open file `{}` for writing.", file_name));
         FINALLY{std::fclose(file);};
         if (!std::fwrite(begin, end - begin, 1, file))
-            Program::Error("Unable to write to file `", file_name, "`.");
+            throw std::runtime_error(FMT("Unable to write to file `{}`.", file_name));
     }
 
     // Saves a block of memory to a file. Throws on failure.

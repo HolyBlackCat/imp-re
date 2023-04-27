@@ -63,7 +63,7 @@ namespace Graphics
         {
             glGenBuffers(1, &data.handle);
             if (!data.handle)
-                Program::Error("Unable to create an index buffer.");
+                throw std::runtime_error("Unable to create an index buffer.");
             // Not needed because there is no code below this point:
             // FINALLY_ON_THROW{glDeleteBuffers(1, &handle);};
         }

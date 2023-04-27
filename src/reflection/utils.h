@@ -5,7 +5,6 @@
 #include <cstddef>
 #include <string>
 
-#include "program/errors.h"
 #include "stream/input.h"
 
 namespace Refl::Utils
@@ -65,7 +64,7 @@ namespace Refl::Utils
                             if (!input.MoreData())
                             {
                                 input.Seek(pos-2, Stream::absolute); // Move cursor to the beginning of the comment, for better error reporting.
-                                Program::Error(input.GetExceptionPrefix() + "Unterminated comment.");
+                                throw std::runtime_error(input.GetExceptionPrefix() + "Unterminated comment.");
                             }
                             char ch = input.PeekChar();
                             if (ch == '/' && prev == '*')

@@ -168,7 +168,7 @@ class SparseSet
     [[nodiscard]] elem_t GetElem(elem_t index) const
     {
         if (index < 0 || index >= Capacity())
-            Program::Error("Out of range index for an `SparseSet` element.");
+            throw std::runtime_error("Out of range index for an `SparseSet` element.");
         return values[index];
     }
 
@@ -178,7 +178,7 @@ class SparseSet
     elem_t GetElemIndex(elem_t elem) const
     {
         if (elem < 0 || elem >= Capacity())
-            Program::Error("Out of range elem for an `SparseSet` index search.");
+            throw std::runtime_error("Out of range elem for an `SparseSet` index search.");
         return indices[elem];
     }
 
