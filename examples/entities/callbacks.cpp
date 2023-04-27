@@ -66,4 +66,6 @@ IMP_MAIN(,)
     std::cout << "---\n";
 
     (void)game.get<DummyCategory>();
+
+    return 0;
 }
