@@ -7,22 +7,33 @@
 
 class Metronome
 {
-    uint64_t tick_len;
-    int max_ticks;
+    // Desired tick length, measured in clock ticks.
+    std::uint64_t tick_len = 0;
+    // Max ticks per frame. 0 = no limit.
+    int max_ticks = 0;
 
-    uint64_t accumulator;
-    bool new_frame;
-    bool lag;
+    // Accumulates clock ticks, which we then spend on our own ticks.
+    std::uint64_t accumulator = 0;
+    // If this is true, we're between frames now.
+    bool new_frame = false;
+    // This is set to true whenever the `max_ticks` limit is reached.
+    bool lag = false;
 
-    float comp_th = 0, comp_amount = 0;
-    int comp_dir = 0; // Internal. 1 means forward, -1 means backwards, 0 means whatever is better.
+    // Compensation logic. This makes the clock run more smooth.
+    // When `accumulator` is very close to `tick_len` (absolute difference less than `comp_th * tick_len`),
+    // it's adjusted by offsetting it by `+-comp_amount * tick_len`.
+    // The adjustement direction is determined by `comp_dir`.
+    float comp_th = 0;
+    float comp_amount = 0;
+    int comp_dir = 0; // 1 = forward, -1 = backward, 0 = away from `tick_len`.
 
   public:
-    uint64_t ticks = 0;
+    // Tick counter.
+    std::uint64_t ticks = 0;
 
     Metronome() {} // For any other constructor to work, the clock has to be initialized first.
 
-    Metronome(double freq, int max_ticks_per_frame = 8, float compensation_threshold = 0.01, float compensation_amount = 0.5)
+    Metronome(double freq, int max_ticks_per_frame = 8, float compensation_threshold = 0.01f, float compensation_amount = 0.5f)
     {
         SetFrequency(freq);
         SetMaxTicksPerFrame(max_ticks_per_frame);
@@ -50,42 +61,45 @@ class Metronome
     void Reset()
     {
         accumulator = 0;
-        new_frame = 1;
-        lag = 0;
+        new_frame = true;
+        lag = false;
         comp_dir = 0;
         ticks = 0;
     }
 
-    bool Lag() // Flag resets after this function is called. The flag is set to 1 if the amount of ticks per last frame is at maximum value.
+    [[nodiscard]] bool Lag() // Flag resets after this function is called. The flag is set to 1 if the amount of ticks per last frame is at maximum value.
     {
         if (lag)
         {
-            lag = 0;
-            return 1;
+            lag = false;
+            return true;
         }
-        return 0;
+        return false;
     }
 
-    double Frequency() const
+    [[nodiscard]] double Frequency() const
     {
         return Clock::TicksPerSecond() / double(tick_len);
     }
 
-    uint64_t ClockTicksPerTick() const
+    [[nodiscard]] std::uint64_t ClockTicksPerTick() const
     {
         return tick_len;
     }
 
-    int MaxTicksPerFrame() const
+    [[nodiscard]] int MaxTicksPerFrame() const
     {
         return max_ticks;
     }
 
-    bool Tick(uint64_t delta)
+    // Usage: `while (Tick(...)) {...}` during each frame.
+    // The `delta` is the frame delta. It's only used on the first iteration.
+    bool Tick(std::uint64_t delta)
     {
         if (new_frame)
             accumulator += delta;
 
+        // Compensate.
         if (std::abs(int64_t(accumulator - tick_len)) < tick_len * comp_th)
         {
             int dir;
@@ -98,26 +112,30 @@ class Metronome
             accumulator += tick_len * comp_amount * dir;
         }
 
+        // Decide whether to tick.
         if (accumulator >= tick_len)
         {
+            // Do tick.
             if (max_ticks && accumulator > tick_len * max_ticks)
             {
                 accumulator = tick_len * max_ticks;
-                lag = 1;
+                lag = true;
             }
             accumulator -= tick_len;
-            new_frame = 0;
+            new_frame = false;
             ticks++;
-            return 1;
+            return true;
         }
         else
         {
-            new_frame = 1;
-            return 0;
+            // Don't need more ticks.
+            new_frame = true;
+            return false;
         }
     }
 
-    double Time() const
+    // The fractional time point inside of the current tick. Updated by `Tick()`.
+    [[nodiscard]] double Time() const
     {
         return accumulator / double(tick_len);
     }
