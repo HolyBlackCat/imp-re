@@ -49,14 +49,8 @@ namespace Archive
 
         std::size_t size = src_end - src_begin;
 
-        static_assert(sizeof(std::size_t) <= sizeof(size_type), "Read comments here.");
-        /*
-         * If the static_assert above fires, you need to uncomment following code.
-         * We can't leave it uncommented now, because clang complains about comparison being always false.
-         *
-         *     if (size > std::numeric_limits<size_type>::max())
-         *         throw std::runtime_error("Compression failure.");
-         */
+        if (size > std::numeric_limits<size_type>::max())
+            throw std::runtime_error("Compression failure.");
 
         for (std::size_t i = 0; i < sizeof(size_type); i++)
             dst_begin[i] = (size >> (i * 8)) & 0xff;
