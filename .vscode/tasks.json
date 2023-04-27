@@ -49,15 +49,9 @@
             "presentation": {"echo": true, "reveal": "always", "focus": false, "panel": "shared", "showReuseMessage": false, "clear": true},
         },
         {
-            "label": "↪ Sanitize address",
+            "label": "↪ Sanitize (address and UB)",
             "type": "shell",
-            "command": "make remember MODE=sanitize_address",
-            "presentation": {"echo": true, "reveal": "always", "focus": false, "panel": "shared", "showReuseMessage": false, "clear": true},
-        },
-        {
-            "label": "↪ Sanitize UB",
-            "type": "shell",
-            "command": "make remember MODE=sanitize_ub",
+            "command": "make remember MODE=sanitize_address_ub",
             "presentation": {"echo": true, "reveal": "always", "focus": false, "panel": "shared", "showReuseMessage": false, "clear": true},
         },
         {

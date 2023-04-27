@@ -23,12 +23,8 @@ $(Mode)COMMON_FLAGS := -O3 -pg
 $(Mode)CXXFLAGS := -DNDEBUG
 $(Mode)_win_subsystem := -mwindows
 
-$(call NewMode,sanitize_address)
-$(Mode)COMMON_FLAGS := -g -fsanitize=address
-$(Mode)CXXFLAGS := -D_GLIBCXX_DEBUG
-
-$(call NewMode,sanitize_ub)
-$(Mode)COMMON_FLAGS := -g -fsanitize=undefined
+$(call NewMode,sanitize_address_ub)
+$(Mode)COMMON_FLAGS := -g -fsanitize=address -fsanitize=undefined
 $(Mode)CXXFLAGS := -D_GLIBCXX_DEBUG
 
 DIST_NAME := $(APP)_$(TARGET_OS)_v1.*
