@@ -89,14 +89,17 @@ class Render
             float alpha[4] = {1,1,1,1};
             float beta[4] = {1,1,1,1};
 
+            bool abs_pos = false;
+            bool abs_tex_pos = false;
+
             bool flip_x = false, flip_y = false;
         };
         Data data;
 
-        Quad_t(void *queue, frect2 rect) : queue(queue)
+        Quad_t(void *queue, fvec2 pos, fvec2 size) : queue(queue)
         {
-            data.pos = rect.a;
-            data.size = rect.size();
+            data.pos = pos;
+            data.size = size;
         }
       public:
         Quad_t(Quad_t &&other) noexcept : queue(std::exchange(other.queue, {})), data(std::move(other.data)) {}
@@ -109,19 +112,23 @@ class Render
 
         ~Quad_t();
 
-        ref tex(frect2 rect)
+        ref tex(fvec2 pos, fvec2 size)
         {
             ASSERT(!data.has_texture, "2D poly renderer: Quad_t texture specified twice.");
             data.has_texture = 1;
 
-            data.tex_pos = rect.a;
-            data.tex_size = rect.size();
+            data.tex_pos = pos;
+            data.tex_size = size;
             return (ref)*this;
         }
         ref tex(fvec2 pos)
         {
-            tex(pos.rect_size(data.size));
+            tex(pos, data.size);
             return (ref)*this;
+        }
+        ref tex(frect2 rect)
+        {
+            return tex(rect.a, rect.b).absolute_tex();
         }
         ref center(fvec2 c)
         {
@@ -252,12 +259,22 @@ class Render
             data.beta[3] = d;
             return (ref)*this;
         }
-        ref flip_x(bool f = 1) // Flips texture horizontally if it was specified. Updates the center accordingly if it was specified.
+        ref absolute(bool x = true) // Interpret size as a position of the second corner
+        {
+            data.abs_pos = x;
+            return (ref)*this;
+        }
+        ref absolute_tex(bool x = true) // Interpret texture size as a position of the second corner
+        {
+            data.abs_tex_pos = x;
+            return (ref)*this;
+        }
+        ref flip_x(bool f = true) // Flips texture horizontally if it was specified. Updates the center accordingly if it was specified.
         {
             data.flip_x = f;
             return (ref)*this;
         }
-        ref flip_y(bool f = 1) // Flips texture vertically if it was specified. Updates the center accordingly if it was specified.
+        ref flip_y(bool f = true) // Flips texture vertically if it was specified. Updates the center accordingly if it was specified.
         {
             data.flip_y = f;
             return (ref)*this;
@@ -537,26 +554,33 @@ class Render
         ~Text_t();
     };
 
-    Quad_t fquad(frect2 rect)
+    Quad_t fquad(fvec2 pos, fvec2 size)
     {
-        return Quad_t(GetRenderQueuePtr(), rect);
+        return Quad_t(GetRenderQueuePtr(), pos, size);
     }
-
-    Quad_t iquad(irect2 rect)
+    Quad_t iquad(ivec2 pos, ivec2 size)
     {
-        return Quad_t(GetRenderQueuePtr(), rect);
+        return Quad_t(GetRenderQueuePtr(), pos, size);
     }
 
     Quad_t fquad(fvec2 pos, const Graphics::Region &image)
     {
         ExpectAtlas(image.atlas);
-        return fquad(pos.rect_size(image.size())).tex(image);
+        return fquad(pos, image.size()).tex(image);
     }
-
     Quad_t iquad(ivec2 pos, const Graphics::Region &image)
     {
         ExpectAtlas(image.atlas);
         return fquad(pos, image);
+    }
+
+    Quad_t fquad(frect2 rect)
+    {
+        return fquad(rect.a, rect.b).absolute();
+    }
+    Quad_t iquad(irect2 rect)
+    {
+        return iquad(rect.a, rect.b).absolute();
     }
 
     Triangle_t ftriangle(fvec2 a, fvec2 b, fvec2 c)

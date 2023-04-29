@@ -29,7 +29,7 @@ struct TestEntity : Tickable, Renderable
     void Render() const override
     {
         r.iquad(game.get<Camera>()->pos, "dummy"_image).center().rotate(angle);
-        r.iquad(game.get<Camera>()->pos.rect_size(32)).center().rotate(angle).color(mouse.left.down() ? fvec3(1,0.5,0) : fvec3(0,0.5,1));
+        r.iquad(game.get<Camera>()->pos, ivec2(32)).center().rotate(angle).color(mouse.left.down() ? fvec3(1,0.5,0) : fvec3(0,0.5,1));
         r.itext(game.get<Camera>()->pos, Graphics::Text(Fonts::main, STR((audio.ActiveSources())))).color(fvec3(1));
     }
 };
