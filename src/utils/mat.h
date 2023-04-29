@@ -1,6 +1,6 @@
 // mat.h
 // Vector and matrix math
-// Version 3.14.3
+// Version 3.14.4
 // Generated, don't touch.
 
 #pragma once
@@ -936,7 +936,7 @@ namespace Math
 
         struct vector_range_factory
         {
-            template <vector_or_scalar T> vector_range_t<T> operator()(T size) const
+            template <integral_vector_or_scalar T> vector_range_t<T> operator()(T size) const
             {
                 return vector_range_t<T>(T(0), size);
             }
@@ -946,11 +946,11 @@ namespace Math
                 return vector_range_t<vec<D,T>>(r.a, r.size());
             }
 
-            template <vector_or_scalar T> friend vector_range_halfbound<T> operator<=(T point, vector_range_factory)
+            template <integral_vector_or_scalar T> friend vector_range_halfbound<T> operator<=(T point, vector_range_factory)
             {
                 return {point};
             }
-            template <vector_or_scalar T> friend vector_range_halfbound<T> operator<(T point, vector_range_factory)
+            template <integral_vector_or_scalar T> friend vector_range_halfbound<T> operator<(T point, vector_range_factory)
             {
                 return point+1 <= vector_range_factory{};
             }
