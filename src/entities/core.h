@@ -65,23 +65,23 @@ namespace Ent
         template <typename T>
         struct TestTag
         {
-            friend constexpr void _imp_adl_IsComponentSystemTag(TestTag<T>);
+            friend constexpr void _adl_imp_IsComponentSystemTag(TestTag<T>);
         };
 
         template <typename T>
         struct RegisterAsTag
         {
-            friend constexpr void _imp_adl_IsComponentSystemTag(TestTag<T>) {}
+            friend constexpr void _adl_imp_IsComponentSystemTag(TestTag<T>) {}
         };
 
-        constexpr void _imp_adl_IsComponentSystemTag() {} // A dummy ADL base.
+        constexpr void _adl_imp_IsComponentSystemTag() {} // A dummy ADL base.
 
         template <typename T>
         concept RegisteredAsTag = requires
         {
             // This pattern tests if the function is callable at compile-time.
             // The `bool_constant` trick turns the lack of compile-time callability into a soft error instead of a hard error.
-            requires std::bool_constant<(void(_imp_adl_IsComponentSystemTag(TestTag<T>{})), true)>::value;
+            requires std::bool_constant<(void(_adl_imp_IsComponentSystemTag(TestTag<T>{})), true)>::value;
         };
     }
 
@@ -98,7 +98,7 @@ namespace Ent
         template <TagType Tag>
         struct ComponentBaseTag {};
 
-        constexpr void _imp_ComponentMarker() {} // A dummy ADL target.
+        constexpr void _adl_imp_ComponentMarker() {} // A dummy ADL target.
 
         // Components add this as a friend.
         struct ComponentFriend
@@ -110,14 +110,14 @@ namespace Ent
             template <TagType Tag, typename T>
             static constexpr bool IsComponent = requires(Tag tag, T &t)
             {
-                _imp_ComponentMarker(tag, &t);
+                _adl_imp_ComponentMarker(tag, &t);
             };
 
             // Whether `T` is a component that can be constructed directly as an entity.
             template <TagType Tag, typename T>
             static constexpr bool IsStandaloneComponent = requires
             {
-                requires _imp_ComponentMarker(Tag{}, (T *)nullptr);
+                requires _adl_imp_ComponentMarker(Tag{}, (T *)nullptr);
             };
         };
     }
@@ -760,9 +760,9 @@ namespace Ent
 
 // Component classes must include this macro. `tag_` is the tag type.
 // You can have several of those per entity, with different tags.
-#define IMP_COMPONENT(tag_) IMP_COMPONENT_LOW(tag_, __COUNTER__, false, MA_CAT(_imp_ComponentSelfType, __COUNTER__))
+#define IMP_COMPONENT(tag_) IMP_COMPONENT_LOW(tag_, __COUNTER__, false, MA_CAT(_adl_imp_ComponentSelfType, __COUNTER__))
 // A variation of `IMP_COMPONENT` that can be created directly as an entity, without inheriting from it.
-#define IMP_STANDALONE_COMPONENT(tag_) IMP_COMPONENT_LOW(tag_, __COUNTER__, true, MA_CAT(_imp_ComponentSelfType, __COUNTER__))
+#define IMP_STANDALONE_COMPONENT(tag_) IMP_COMPONENT_LOW(tag_, __COUNTER__, true, MA_CAT(_adl_imp_ComponentSelfType, __COUNTER__))
 
 // A low-level version of `IMP_COMPONENT`.
 // `is_standalone_` is a constexpr boolean, true if this component should be standalone.
@@ -773,4 +773,4 @@ namespace Ent
     /* This is called to check if a type is a component. */\
     /* Note: I tried to use `same_as<self_type_name_> auto` instead of the classical SFINAE, but it caused redefinition errors on Clang 16. Not sure if it's a bug. */\
     template <typename MA_CAT(_entity_T,counter_), ::std::enable_if_t<::std::is_same_v<MA_CAT(_entity_T,counter_), self_type_name_>, ::std::nullptr_t> = nullptr> \
-    constexpr friend bool _imp_ComponentMarker(tag_, MA_CAT(_entity_T,counter_) *) {return is_standalone_;}
+    constexpr friend bool _adl_imp_ComponentMarker(tag_, MA_CAT(_entity_T,counter_) *) {return is_standalone_;}

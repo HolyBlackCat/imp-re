@@ -17,7 +17,7 @@ namespace Macro::DetectBases
         struct BasesTag {};
 
         template <typename Tag, typename T, template <typename/*base*/, typename/*derived*/> typename Pred>
-        constexpr void _imp_adl_DetectBase(void *) {} // A dummy ADL target.
+        constexpr void _adl_imp_DetectBase(void *) {} // A dummy ADL target.
 
         // We need a struct to conveniently `friend` it.
         struct Helper
@@ -26,7 +26,7 @@ namespace Macro::DetectBases
             ~Helper() = delete;
 
             template <typename Tag, typename T, template <typename/*base*/, typename/*derived*/> typename Pred>
-            static auto Detect() -> decltype(void(_imp_adl_DetectBase<Tag, T, Pred>((T *)nullptr))) {}
+            static auto Detect() -> decltype(void(_adl_imp_DetectBase<Tag, T, Pred>((T *)nullptr))) {}
         };
     }
 
@@ -51,7 +51,7 @@ namespace Macro::DetectBases
 // Place this in a class to make it detectable as a base.
 // `tag_` is a tag struct. You can have multiple macros in the same class, if the tags are different.
 #define IMP_DETECTABLE_BASE(tag_) \
-    IMP_DETECTABLE_BASE_SELFTYPE(tag_, IMPL_IMP_DETECTABLE_BASE_cat(_imp_BaseSelfType, __COUNTER__))
+    IMP_DETECTABLE_BASE_SELFTYPE(tag_, IMPL_IMP_DETECTABLE_BASE_cat(_adl_imp_BaseSelfType, __COUNTER__))
 
 // A version of `IMP_DETECTABLE_BASE` that lets you specify the name of the "own type" typedef.
 // `IMP_DETECTABLE_BASE` generates a name automatically.
@@ -61,22 +61,22 @@ namespace Macro::DetectBases
     IMP_SELF_TYPE(self_type_name_) \
     template < \
         /* The tag. */\
-        typename _imp_Tag, \
+        typename _adl_imp_Tag, \
         /* The derived type we're finding the bases for. */\
-        typename _imp_Derived, \
+        typename _adl_imp_Derived, \
         /* If true, use `std::is_base_of` instead of `std::derived_from` . */\
-        template <typename, typename> typename _imp_Pred, \
+        template <typename, typename> typename _adl_imp_Pred, \
         /* Stop if the tag is wrong. */\
-        ::std::enable_if_t<std::is_same_v<_imp_Tag, tag_>, std::nullptr_t> = nullptr, \
+        ::std::enable_if_t<std::is_same_v<_adl_imp_Tag, tag_>, std::nullptr_t> = nullptr, \
         /* Check the predicate. */\
-        ::std::enable_if_t<_imp_Pred<self_type_name_, _imp_Derived>::value, ::std::nullptr_t> = nullptr, \
+        ::std::enable_if_t<_adl_imp_Pred<self_type_name_, _adl_imp_Derived>::value, ::std::nullptr_t> = nullptr, \
         /* Write the base to the list. */\
         /* Note `decltype`, unsure why it's necessary. */\
-        typename = decltype(::Meta::Stateful::List::PushBack<::Macro::DetectBases::impl::BasesTag<_imp_Derived, _imp_Pred>, self_type_name_>{}), \
+        typename = decltype(::Meta::Stateful::List::PushBack<::Macro::DetectBases::impl::BasesTag<_adl_imp_Derived, _adl_imp_Pred>, self_type_name_>{}), \
         /* Finally, disable this overload. */\
-        ::std::enable_if_t<::Meta::value<false, _imp_Derived>, ::std::nullptr_t> = nullptr \
+        ::std::enable_if_t<::Meta::value<false, _adl_imp_Derived>, ::std::nullptr_t> = nullptr \
     > \
-    friend constexpr void _imp_adl_DetectBase(void *) {}
+    friend constexpr void _adl_imp_DetectBase(void *) {}
 
 
 #define IMPL_IMP_DETECTABLE_BASE_cat(x, y) IMPL_IMP_DETECTABLE_BASE_cat_(x, y)
