@@ -24,16 +24,16 @@ namespace Memory
         return Read<T>(ptr, ByteOrder::big);
     }
 
-    template <typename T> void Write(std::uint8_t *ptr, const std::enable_if_t<1, T> &object, ByteOrder::Order order = ByteOrder::native)
+    template <typename T> void Write(std::uint8_t *ptr, const std::type_identity_t<T> &object, ByteOrder::Order order = ByteOrder::native)
     {
         std::memcpy(ptr, &object, sizeof(T));
         ByteOrder::ConvertBytes(ptr, sizeof(T), order);
     }
-    template <typename T> void WriteLittle(const std::uint8_t *ptr, const std::enable_if_t<1, T> &object)
+    template <typename T> void WriteLittle(const std::uint8_t *ptr, const std::type_identity_t<T> &object)
     {
         Write<T>(ptr, object, ByteOrder::little);
     }
-    template <typename T> void WriteBig(const std::uint8_t *ptr, const std::enable_if_t<1, T> &object)
+    template <typename T> void WriteBig(const std::uint8_t *ptr, const std::type_identity_t<T> &object)
     {
         Write<T>(ptr, object, ByteOrder::big);
     }
