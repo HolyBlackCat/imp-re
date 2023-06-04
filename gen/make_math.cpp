@@ -7,7 +7,7 @@
 #include <sstream>
 #include <type_traits>
 
-#define VERSION "3.14.4"
+#define VERSION "3.14.5"
 
 #pragma GCC diagnostic ignored "-Wpragmas" // Silence GCC warning about the next line disabling a warning that GCC doesn't have.
 #pragma GCC diagnostic ignored "-Wstring-plus-int" // Silence clang warning about `1+R"()"` paUern.
@@ -342,7 +342,7 @@ int main(int argc, char **argv)
         {
             output(1+R"(
                 // Specializing this adds corresponding constructors and conversion operators to vectors and matrices.
-                template <scalar From, scalar To>
+                template <typename From, typename To>
                 struct Convert
                 {
                     // To operator()(const From &) const {...}

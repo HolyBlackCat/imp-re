@@ -1,6 +1,6 @@
 // mat.h
 // Vector and matrix math
-// Version 3.14.4
+// Version 3.14.5
 // Generated, don't touch.
 
 #pragma once
@@ -329,7 +329,7 @@ namespace Math
     namespace Custom // Customization points
     {
         // Specializing this adds corresponding constructors and conversion operators to vectors and matrices.
-        template <scalar From, scalar To>
+        template <typename From, typename To>
         struct Convert
         {
             // To operator()(const From &) const {...}
