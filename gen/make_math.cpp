@@ -7,7 +7,7 @@
 #include <sstream>
 #include <type_traits>
 
-#define VERSION "3.15"
+#define VERSION "3.15.1"
 
 #pragma GCC diagnostic ignored "-Wpragmas" // Silence GCC warning about the next line disabling a warning that GCC doesn't have.
 #pragma GCC diagnostic ignored "-Wstring-plus-int" // Silence clang warning about `1+R"()"` pattern.
@@ -1431,7 +1431,7 @@ int main(int argc, char **argv)
                     return (type(value) / type(proportions)).max() * type(proportions);
                 }
 
-                // Given two rays, each defined by a point `p?` an a direction `d?`, returns the intersection point offset.
+                // Given two lines, each defined by a point `p?` an a direction `d?`, returns the intersection point offset.
                 // If multiplied by `d1` and added to `p1`, that gives the intersection point.
                 template <floating_point_scalar T>
                 [[nodiscard]] constexpr T point_dir_intersection_factor(vec2<T> p1, vec2<T> d1, vec2<T> p2, vec2<T> d2)
@@ -1439,13 +1439,22 @@ int main(int argc, char **argv)
                     // This was solved programmatically, not sure how exactly it works.
                     return ((p2 - p1) /cross/ d2) / (d1 /cross/ d2);
                 }
-                // Same, but returns the intersection point directly.
+                // Same, but returns the factors for both lines.
+                template <floating_point_scalar T>
+                [[nodiscard]] constexpr std::array<T, 2> point_dir_intersection_factor_two_way(vec2<T> p1, vec2<T> d1, vec2<T> p2, vec2<T> d2)
+                {
+                    // This was solved programmatically, not sure how exactly it works.
+                    vec2<T> p = p2 - p1;
+                    T d = d1 /cross/ d2;
+                    return {(p /cross/ d2) / d, (p /cross/ d1) / d};
+                }
+                // Given two lines, each defined by a point `p?` an a direction `d?`, returns the intersection point.
                 template <floating_point_scalar T>
                 [[nodiscard]] constexpr vec2<T> point_dir_intersection(vec2<T> p1, vec2<T> d1, vec2<T> p2, vec2<T> d2)
                 {
                     return p1 + d1 * (point_dir_intersection_factor)(p1, d1, p2, d2);
                 }
-                // Same, but each line is defined by two points.
+                // Given two lines, each defined by two points, returns the intersection point.
                 template <floating_point_scalar T>
                 [[nodiscard]] constexpr vec2<T> line_intersection(vec2<T> a1, vec2<T> b1, vec2<T> a2, vec2<T> b2)
                 {
