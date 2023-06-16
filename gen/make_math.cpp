@@ -7,10 +7,10 @@
 #include <sstream>
 #include <type_traits>
 
-#define VERSION "3.14.5"
+#define VERSION "3.15"
 
 #pragma GCC diagnostic ignored "-Wpragmas" // Silence GCC warning about the next line disabling a warning that GCC doesn't have.
-#pragma GCC diagnostic ignored "-Wstring-plus-int" // Silence clang warning about `1+R"()"` paUern.
+#pragma GCC diagnostic ignored "-Wstring-plus-int" // Silence clang warning about `1+R"()"` pattern.
 
 namespace data
 {
@@ -1431,13 +1431,25 @@ int main(int argc, char **argv)
                     return (type(value) / type(proportions)).max() * type(proportions);
                 }
 
-                // Finds an intersection point of two lines.
+                // Given two rays, each defined by a point `p?` an a direction `d?`, returns the intersection point offset.
+                // If multiplied by `d1` and added to `p1`, that gives the intersection point.
                 template <floating_point_scalar T>
-                [[nodiscard]] constexpr vec2<T> line_intersection(vec2<T> a1, vec2<T> a2, vec2<T> b1, vec2<T> b2)
+                [[nodiscard]] constexpr T point_dir_intersection_factor(vec2<T> p1, vec2<T> d1, vec2<T> p2, vec2<T> d2)
                 {
-                    auto delta_a = a2 - a1;
-                    auto delta_b = b2 - b1;
-                    return ((a1.y - b1.y) * delta_b.x - (a1.x - b1.x) * delta_b.y) / (delta_a.x * delta_b.y - delta_a.y * delta_b.x) * delta_a + a1;
+                    // This was solved programmatically, not sure how exactly it works.
+                    return ((p2 - p1) /cross/ d2) / (d1 /cross/ d2);
+                }
+                // Same, but returns the intersection point directly.
+                template <floating_point_scalar T>
+                [[nodiscard]] constexpr vec2<T> point_dir_intersection(vec2<T> p1, vec2<T> d1, vec2<T> p2, vec2<T> d2)
+                {
+                    return p1 + d1 * (point_dir_intersection_factor)(p1, d1, p2, d2);
+                }
+                // Same, but each line is defined by two points.
+                template <floating_point_scalar T>
+                [[nodiscard]] constexpr vec2<T> line_intersection(vec2<T> a1, vec2<T> b1, vec2<T> a2, vec2<T> b2)
+                {
+                    return (point_dir_intersection)(a1, b1 - a1, a2, b2 - a2);
                 }
 
                 // Finds an intersection point of a line and a plane.
