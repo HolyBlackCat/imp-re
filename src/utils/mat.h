@@ -1,6 +1,6 @@
 // mat.h
 // Vector and matrix math
-// Version 3.15.1
+// Version 3.15.2
 // Generated, don't touch.
 
 #pragma once
@@ -2480,7 +2480,7 @@ namespace std
         {
             std::size_t ret = std::hash<decltype(v.x)>{}(v.x);
             for (int i = 1; i < D; i++)
-                ret ^= std::hash<decltype(v.x)>{}(v[i]) + 0x9e3779b9 + (ret << 6) + (ret >> 2); // From Boost.
+                ret ^= std::hash<decltype(v.x)>{}(v[i]) + std::size_t(0x9E3779B97F4A7C16) + (ret << 6) + (ret >> 2); // Boost uses something similar.
             return ret;
         }
     };

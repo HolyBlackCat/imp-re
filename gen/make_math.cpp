@@ -7,7 +7,7 @@
 #include <sstream>
 #include <type_traits>
 
-#define VERSION "3.15.1"
+#define VERSION "3.15.2"
 
 #pragma GCC diagnostic ignored "-Wpragmas" // Silence GCC warning about the next line disabling a warning that GCC doesn't have.
 #pragma GCC diagnostic ignored "-Wstring-plus-int" // Silence clang warning about `1+R"()"` pattern.
@@ -2512,7 +2512,7 @@ int main(int argc, char **argv)
                 {
                     std::size_t ret = std::hash<decltype(v.x)>{}(v.x);
                     for (int i = 1; i < D; i++)
-                    $   ret ^= std::hash<decltype(v.x)>{}(v[i]) + 0x9e3779b9 + (ret << 6) + (ret >> 2); // From Boost.
+                    $   ret ^= std::hash<decltype(v.x)>{}(v[i]) + std::size_t(0x9E3779B97F4A7C16) + (ret << 6) + (ret >> 2); // Boost uses something similar.
                     return ret;
                 }
             };
