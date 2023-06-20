@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <type_traits>
+#include <utility>
 
 #include "meta/common.h"
 #include "meta/lists.h"
@@ -53,12 +54,15 @@ namespace Meta::Stateful
 
         struct DefaultUnique {};
 
+        template <typename T>
+        struct DefaultPushBackUnique {};
+
         // Calculates the current list size.
         template <typename Name, typename Unique = DefaultUnique>
         inline constexpr std::size_t size = impl::CalcSize<Name, 0, Unique>::value;
 
         // Touch this type to append `Value` to the list.
-        template <typename Name, typename Value, typename Unique = Value>
+        template <typename Name, typename Value, typename Unique = DefaultPushBackUnique<Value>>
         using PushBack = impl::ElemWriter<Name, size<Name, Unique>, Value>;
 
         // Returns the type previously passed to `WriteState`, or causes a SFINAE error.
