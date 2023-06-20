@@ -11,7 +11,7 @@
 #pragma GCC diagnostic ignored "-Wpragmas" // Silence GCC warning about the next line disabling a warning that GCC doesn't have.
 #pragma GCC diagnostic ignored "-Wstring-plus-int" // Silence clang warning about `1+R"()"` pattern.
 
-#define VERSION "1.1.2"
+#define VERSION "1.1.3"
 
 namespace data
 {
@@ -159,9 +159,14 @@ int main(int argc, char **argv)
             output(1+R"(
                 // Stops the compilation with a specific error message.
                 // `msg` should be a string literal.
-                // This implementation works on both GCC and Clang.
+                #ifndef MA_ABORT
+                #ifndef _MSC_VER
                 #define MA_ABORT(msg) MA_ABORT_impl(GCC error msg)
                 #define MA_ABORT_impl(msg) _Pragma(MA_STR(msg))
+                #else
+                #define MA_ABORT(msg) MA_EXPECT_EMPTY(MA_CAT(msg,!)) // `CAT` prints the message, then `EXPECT_EMPTY` stops the compilation.
+                #endif
+                #endif
             )");
         }
 
