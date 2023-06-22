@@ -11,7 +11,7 @@
 #pragma GCC diagnostic ignored "-Wpragmas" // Silence GCC warning about the next line disabling a warning that GCC doesn't have.
 #pragma GCC diagnostic ignored "-Wstring-plus-int" // Silence clang warning about `1+R"()"` pattern.
 
-#define VERSION "1.1.3"
+#define VERSION "1.1.4"
 
 namespace data
 {
@@ -323,6 +323,19 @@ int main(int argc, char **argv)
                 // `...` has to start with `(..)`. Expands to whatever is between the parens.
                 #define MA_SEQ_FIRST(...) MA_SEQ_FIRST_impl __VA_ARGS__ )
                 #define MA_SEQ_FIRST_impl(...) __VA_ARGS__ MA_NULL(
+
+                // Given `bar` or `(foo)bar`, returns `bar`.
+                #define MA_MAYBE_SKIP_PARENS(...) DETAIL_MA_PARENS_NO_FIRST(DETAIL_MA_PARENS_BAKE_MACRO(DETAIL_MA_PARENS_GRAB __VA_ARGS__))
+                // Given `bar` or `(foo)bar`, returns empty or `foo` respectively.
+                #define MA_MAYBE_ONLY_PARENS(...) MA_SEQ_FIRST(DETAIL_MA_PARENS_BAKE_MACRO(DETAIL_MA_PARENS_GRAB __VA_ARGS__))
+
+                #define DETAIL_MA_PARENS_NO_FIRST(...) DETAIL_MA_PARENS_NO_FIRST_(__VA_ARGS__)
+                #define DETAIL_MA_PARENS_NO_FIRST_(x, ...) __VA_ARGS__
+                #define DETAIL_MA_PARENS_GRAB(...) DETAIL_MA_PARENS_GRABBED(__VA_ARGS__),
+                #define DETAIL_MA_PARENS_BAKE_MACRO(...) DETAIL_MA_PARENS_BAKE_MACRO_(__VA_ARGS__)
+                #define DETAIL_MA_PARENS_BAKE_MACRO_(...) DETAIL_MA_PARENS_BAKE_##__VA_ARGS__
+                #define DETAIL_MA_PARENS_BAKE_DETAIL_MA_PARENS_GRAB (),
+                #define DETAIL_MA_PARENS_BAKE_DETAIL_MA_PARENS_GRABBED
 
                 // `...` has to start with `(..)`. Removes this pair of parens, and inserts a comma after them.
                 #define MA_SEQ_SEP_FIRST(...) __VA_ARGS__,
