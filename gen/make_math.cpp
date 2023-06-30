@@ -7,7 +7,7 @@
 #include <sstream>
 #include <type_traits>
 
-#define VERSION "3.15.2"
+#define VERSION "3.16"
 
 #pragma GCC diagnostic ignored "-Wpragmas" // Silence GCC warning about the next line disabling a warning that GCC doesn't have.
 #pragma GCC diagnostic ignored "-Wstring-plus-int" // Silence clang warning about `1+R"()"` pattern.
@@ -2395,6 +2395,7 @@ int main(int argc, char **argv)
                         template <scalar U> IMP_MATH_SMALL_FUNC explicit(!safely_convertible_to<U,T>) constexpr rect(rect<D,U> r) : a(r.a), b(r.b) {}
                         template <scalar U> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect<D,U> to() const {return vec<D,U>(a).rect_to(vec<D,U>(b));}
                         [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr vec_type size() const {return b - a;}
+                        [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr vec_type center() const {return a + size() / 2;}
                         [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool has_length() const {return (b > a).any();}
                         [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool has_area() const {return (b > a).all();}
                         [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect fix() const {rect ret = *this; sort_two_var(ret.a, ret.b); return ret;} // Swap components of `a` and `b` to order them correctly.
