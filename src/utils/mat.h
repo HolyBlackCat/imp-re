@@ -1,6 +1,6 @@
 // mat.h
 // Vector and matrix math
-// Version 3.16
+// Version 3.17
 // Generated, don't touch.
 
 #pragma once
@@ -1663,12 +1663,12 @@ namespace Math
             [[nodiscard]] constexpr vec4<type> to_vec4(type nz, type nw) const {return {x, y, nz, nw};}
             [[nodiscard]] constexpr vec3<type> to_vec3() const {return {x, y, 0};}
             [[nodiscard]] constexpr vec4<type> to_vec4() const {return {x, y, 0, 0};}
-            [[nodiscard]] constexpr auto len_sqr() const {return x*x + y*y;}
-            [[nodiscard]] constexpr auto len() const {return std::sqrt(len_sqr());}
+            [[nodiscard]] constexpr auto len_sq() const {return x*x + y*y;}
+            [[nodiscard]] constexpr auto len() const {return std::sqrt(len_sq());}
             [[nodiscard]] constexpr auto norm() const -> vec2<decltype(type{}/len())> {if (auto l = len()) return *this / l; else return vec(0);}
-            [[nodiscard]] constexpr auto approx_len() const {return floating_point_t<type>(len_sqr() + 1) / 2;} // Accurate only around `len()==1`.
-            [[nodiscard]] constexpr auto approx_inv_len() const {return 2 / floating_point_t<type>(len_sqr() + 1);}
-            [[nodiscard]] constexpr auto approx_norm() const {return *this * approx_inv_len();} // Guaranteed to converge to `len()==1` eventually, when starting from any finite `len_sqr()`.
+            [[nodiscard]] constexpr auto approx_len() const {return floating_point_t<type>(len_sq() + 1) / 2;} // Accurate only around `len()==1`.
+            [[nodiscard]] constexpr auto approx_inv_len() const {return 2 / floating_point_t<type>(len_sq() + 1);}
+            [[nodiscard]] constexpr auto approx_norm() const {return *this * approx_inv_len();} // Guaranteed to converge to `len()==1` eventually, when starting from any finite `len_sq()`.
             [[nodiscard]] static constexpr vec axis(int a, type len = 1) {vec ret{}; ret[mod_ex(a,2)] = len; return ret;}
             [[nodiscard]] constexpr vec only_component(int a) {vec ret{}; a = mod_ex(a,2); ret[a] = (*this)[a]; return ret;}
             [[nodiscard]] static constexpr vec dir(type angle, type len = 1) requires is_floating_point {return vec(std::cos(angle) * len, std::sin(angle) * len);}
@@ -1738,12 +1738,12 @@ namespace Math
             [[nodiscard]] constexpr vec2<type> to_vec2() const {return {x, y};}
             [[nodiscard]] constexpr vec4<type> to_vec4(type nw) const {return {x, y, z, nw};}
             [[nodiscard]] constexpr vec4<type> to_vec4() const {return {x, y, z, 0};}
-            [[nodiscard]] constexpr auto len_sqr() const {return x*x + y*y + z*z;}
-            [[nodiscard]] constexpr auto len() const {return std::sqrt(len_sqr());}
+            [[nodiscard]] constexpr auto len_sq() const {return x*x + y*y + z*z;}
+            [[nodiscard]] constexpr auto len() const {return std::sqrt(len_sq());}
             [[nodiscard]] constexpr auto norm() const -> vec3<decltype(type{}/len())> {if (auto l = len()) return *this / l; else return vec(0);}
-            [[nodiscard]] constexpr auto approx_len() const {return floating_point_t<type>(len_sqr() + 1) / 2;} // Accurate only around `len()==1`.
-            [[nodiscard]] constexpr auto approx_inv_len() const {return 2 / floating_point_t<type>(len_sqr() + 1);}
-            [[nodiscard]] constexpr auto approx_norm() const {return *this * approx_inv_len();} // Guaranteed to converge to `len()==1` eventually, when starting from any finite `len_sqr()`.
+            [[nodiscard]] constexpr auto approx_len() const {return floating_point_t<type>(len_sq() + 1) / 2;} // Accurate only around `len()==1`.
+            [[nodiscard]] constexpr auto approx_inv_len() const {return 2 / floating_point_t<type>(len_sq() + 1);}
+            [[nodiscard]] constexpr auto approx_norm() const {return *this * approx_inv_len();} // Guaranteed to converge to `len()==1` eventually, when starting from any finite `len_sq()`.
             [[nodiscard]] static constexpr vec axis(int a, type len = 1) {vec ret{}; ret[mod_ex(a,3)] = len; return ret;}
             [[nodiscard]] constexpr vec only_component(int a) {vec ret{}; a = mod_ex(a,3); ret[a] = (*this)[a]; return ret;}
             template <typename U> [[nodiscard]] constexpr auto dot(const vec3<U> &o) const {return x * o.x + y * o.y + z * o.z;}
@@ -1803,12 +1803,12 @@ namespace Math
             template <typename C> [[nodiscard]] constexpr auto index(C &&container) const -> vec<common_vec_size_v<4,vec_size_v<std::decay_t<decltype(container[x])>>>,vec_base_t<std::decay_t<decltype(container[x])>>> {return {Math::vec_elem(0,container[x]), Math::vec_elem(1,container[y]), Math::vec_elem(2,container[z]), Math::vec_elem(3,container[w])};}
             [[nodiscard]] constexpr vec2<type> to_vec2() const {return {x, y};}
             [[nodiscard]] constexpr vec3<type> to_vec3() const {return {x, y, z};}
-            [[nodiscard]] constexpr auto len_sqr() const {return x*x + y*y + z*z + w*w;}
-            [[nodiscard]] constexpr auto len() const {return std::sqrt(len_sqr());}
+            [[nodiscard]] constexpr auto len_sq() const {return x*x + y*y + z*z + w*w;}
+            [[nodiscard]] constexpr auto len() const {return std::sqrt(len_sq());}
             [[nodiscard]] constexpr auto norm() const -> vec4<decltype(type{}/len())> {if (auto l = len()) return *this / l; else return vec(0);}
-            [[nodiscard]] constexpr auto approx_len() const {return floating_point_t<type>(len_sqr() + 1) / 2;} // Accurate only around `len()==1`.
-            [[nodiscard]] constexpr auto approx_inv_len() const {return 2 / floating_point_t<type>(len_sqr() + 1);}
-            [[nodiscard]] constexpr auto approx_norm() const {return *this * approx_inv_len();} // Guaranteed to converge to `len()==1` eventually, when starting from any finite `len_sqr()`.
+            [[nodiscard]] constexpr auto approx_len() const {return floating_point_t<type>(len_sq() + 1) / 2;} // Accurate only around `len()==1`.
+            [[nodiscard]] constexpr auto approx_inv_len() const {return 2 / floating_point_t<type>(len_sq() + 1);}
+            [[nodiscard]] constexpr auto approx_norm() const {return *this * approx_inv_len();} // Guaranteed to converge to `len()==1` eventually, when starting from any finite `len_sq()`.
             [[nodiscard]] static constexpr vec axis(int a, type len = 1) {vec ret{}; ret[mod_ex(a,4)] = len; return ret;}
             [[nodiscard]] constexpr vec only_component(int a) {vec ret{}; a = mod_ex(a,4); ret[a] = (*this)[a]; return ret;}
             template <typename U> [[nodiscard]] constexpr auto dot(const vec4<U> &o) const {return x * o.x + y * o.y + z * o.z + w * o.w;}
@@ -2569,7 +2569,7 @@ namespace Math
             // Returns a rotation matrix for this quaternion. Works even if the quaternion is not normalized.
             [[nodiscard]] constexpr mat3_t matrix_from_denorm() const
             {
-                type f = 1 / as_vec().len_sqr();
+                type f = 1 / as_vec().len_sq();
                 mat3_t m = matrix();
                 return mat3_t(m.x * f, m.y * f, m.z * f);
             }

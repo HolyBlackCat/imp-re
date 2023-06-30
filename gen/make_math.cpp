@@ -7,7 +7,7 @@
 #include <sstream>
 #include <type_traits>
 
-#define VERSION "3.16"
+#define VERSION "3.17"
 
 #pragma GCC diagnostic ignored "-Wpragmas" // Silence GCC warning about the next line disabling a warning that GCC doesn't have.
 #pragma GCC diagnostic ignored "-Wstring-plus-int" // Silence clang warning about `1+R"()"` pattern.
@@ -1843,7 +1843,7 @@ int main(int argc, char **argv)
 
                         { // Length and normalization
                             // Squared length
-                            output("[[nodiscard]] constexpr auto len_sqr() const {return ");
+                            output("[[nodiscard]] constexpr auto len_sq() const {return ");
                             for (int i = 0; i < w; i++)
                             {
                                 if (i != 0)
@@ -1853,15 +1853,15 @@ int main(int argc, char **argv)
                             output(";}\n");
 
                             // Length
-                            output("[[nodiscard]] constexpr auto len() const {return std::sqrt(len_sqr());}\n");
+                            output("[[nodiscard]] constexpr auto len() const {return std::sqrt(len_sq());}\n");
 
                             // Normalize
                             output("[[nodiscard]] constexpr auto norm() const -> vec",w,"<decltype(type{}/len())> {if (auto l = len()) return *this / l; else return vec(0);}\n");
 
                             // Approximate length and normalization.
-                            output("[[nodiscard]] constexpr auto approx_len() const {return floating_point_t<type>(len_sqr() + 1) / 2;} // Accurate only around `len()==1`.\n");
-                            output("[[nodiscard]] constexpr auto approx_inv_len() const {return 2 / floating_point_t<type>(len_sqr() + 1);}\n");
-                            output("[[nodiscard]] constexpr auto approx_norm() const {return *this * approx_inv_len();} // Guaranteed to converge to `len()==1` eventually, when starting from any finite `len_sqr()`.\n");
+                            output("[[nodiscard]] constexpr auto approx_len() const {return floating_point_t<type>(len_sq() + 1) / 2;} // Accurate only around `len()==1`.\n");
+                            output("[[nodiscard]] constexpr auto approx_inv_len() const {return 2 / floating_point_t<type>(len_sq() + 1);}\n");
+                            output("[[nodiscard]] constexpr auto approx_norm() const {return *this * approx_inv_len();} // Guaranteed to converge to `len()==1` eventually, when starting from any finite `len_sq()`.\n");
                         }
 
                         { // Angles and directions
@@ -2605,7 +2605,7 @@ int main(int argc, char **argv)
                     // Returns a rotation matrix for this quaternion. Works even if the quaternion is not normalized.
                     [[nodiscard]] constexpr mat3_t matrix_from_denorm() const
                     {
-                        type f = 1 / as_vec().len_sqr();
+                        type f = 1 / as_vec().len_sq();
                         mat3_t m = matrix();
                         return mat3_t(m.x * f, m.y * f, m.z * f);
                     }
