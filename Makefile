@@ -6,7 +6,7 @@
 $(foreach x,$(filter-out .% MAKE% SHELL CURDIR,$(.VARIABLES)) MAKEINFO,$(if $(filter default,$(origin $x)),$(eval override undefine $x)))
 
 # `-Otarget` groups the output by recipe (manual says it's the default behavior, which doesn't seem to be the case.)
-MAKEFLAGS += rR -Otarget
+MAKEFLAGS += -rR -Otarget
 
 # Automatically parallelize.
 JOBS := $(shell nproc)$(if $(filter-out 0,$(.SHELLSTATUS)),$(info [Warning] Unable to determine the number of cores.)1)
