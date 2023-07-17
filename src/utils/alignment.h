@@ -13,11 +13,18 @@ namespace Storage
     // Aligns `value` up to `Alignment`.
     // Aligns up by default.
     template <std::size_t Alignment, AlignDir Dir = AlignDir::up>
+    requires is_valid_alignment_v<Alignment>
     [[nodiscard]] constexpr std::size_t Align(std::size_t value)
     {
-        static_assert(is_valid_alignment_v<Alignment>, "The alignment is invalid.");
-        constexpr std::size_t p = BitManip::Log2Truncated(Alignment);
-        return (value + (Dir == AlignDir::up ? Alignment - 1 : 0)) & (std::size_t(-1) << p);
+        if constexpr (Alignment == 1)
+        {
+            return value;
+        }
+        else
+        {
+            constexpr std::size_t p = BitManip::Log2Truncated(Alignment);
+            return (value + (Dir == AlignDir::up ? Alignment - 1 : 0)) & (std::size_t(-1) << p);
+        }
     }
 
     // Aligns `ptr` up to `Alignment`. `ptr` must point to `void` or a single-byte arithmetic type.
