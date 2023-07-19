@@ -93,7 +93,7 @@ struct AabbTreeDemo
                 else
                 {
                     #ifndef DEMO_USE_BOX2D_TREE
-                    objects.back().tree_node = tree.AddNode({objects.back().a, objects.back().b}, std::string(1, 'A' + object_counter++));
+                    objects.back().tree_node = tree.AddNode(objects.back().a.rect_to(objects.back().b), std::string(1, 'A' + object_counter++));
                     #else
                     objects.back().tree_node = tree.CreateProxy({b2Vec2(fvec2(objects.back().a)), b2Vec2(fvec2(objects.back().b))}, nullptr);
                     #endif
@@ -136,7 +136,7 @@ struct AabbTreeDemo
             obj.a += mouse.pos_delta();
             obj.b += mouse.pos_delta();
             #ifndef DEMO_USE_BOX2D_TREE
-            tree.ModifyNode(obj.tree_node, {obj.a, obj.b}, mouse.pos_delta());
+            tree.ModifyNode(obj.tree_node, obj.a.rect_to(obj.b), mouse.pos_delta());
             #else
             tree.MoveProxy(obj.tree_node, {b2Vec2(fvec2(obj.a)), b2Vec2(fvec2(obj.b))}, b2Vec2(fvec2(mouse.pos_delta()) * 0.4f));
             #endif
@@ -207,7 +207,7 @@ struct AabbTreeDemo
                 ivec2 a = mouse.pos() - ivec2(10,5);
                 ivec2 b = mouse.pos() + ivec2(15,20);
                 #ifndef DEMO_USE_BOX2D_TREE
-                bool hit = tree.CollideAabb({a, b}, [](int node){(void)node; return true;});
+                bool hit = tree.CollideAabb(a.rect_to(b), [](int node){(void)node; return true;});
                 #else
                 bool hit = false;
                 struct Callback
@@ -327,26 +327,28 @@ struct Application : Program::DefaultBasicState
         ImGui::StyleColorsDark();
 
         { // Load images.
-            Graphics::GlobalData::LoadParams load_params(Program::ExeDir() + "assets/images/");
-            load_params.atlas_params = [](std::string_view atlas)
-            {
-                Graphics::GlobalData::AtlasParams ret;
-                if (atlas == "")
-                {
-                    ret.modify_image = [](Graphics::Image &image)
-                    {
-                        Unicode::CharSet glyph_ranges;
-                        glyph_ranges.Add(Unicode::Ranges::Basic_Latin);
-
-                        Graphics::MakeFontAtlas(image, Graphics::GlobalData::Image<"font_atlas", ivec2(256)>(), {
-                            {Fonts::main, Fonts::Files::main, glyph_ranges, Graphics::FontFile::monochrome_with_hinting},
-                        });
-                    };
-                }
-                return ret;
-            };
-            Graphics::GlobalData::Load(load_params);
+            Graphics::GlobalData::Load(Program::ExeDir() + "assets/images/");
             r.SetAtlas("");
+
+            // Load the font atlas.
+            struct FontLoader : Graphics::GlobalData::Generator
+            {
+                ivec2 Size() const override
+                {
+                    return ivec2(256);
+                }
+
+                void Generate(Graphics::Image &image, irect2 rect) override
+                {
+                    Unicode::CharSet glyph_ranges;
+                    glyph_ranges.Add(Unicode::Ranges::Basic_Latin);
+
+                    Graphics::MakeFontAtlas(image, rect, {
+                        {Fonts::main, Fonts::Files::main, glyph_ranges, Graphics::FontFile::monochrome_with_hinting},
+                    });
+                }
+            };
+            (void)Graphics::GlobalData::Image<"font_atlas", FontLoader>();
         }
 
         // Load various small fonts

@@ -25,7 +25,7 @@
 // Only 2D vectors have been tested properly, the cost heuristics may not work in higher dimensions.
 // `UserData` is an arbitrary type, an instance of which will be stored in each node.
 // Keep it small, since it'll also be stored in internal non-leaf nodes, and copied around on a whim.
-template <Math::vector T, typename UserData = void>
+template <Math::vector T, typename UserDataT = void>
 class AabbTree
 {
     struct Empty {};
@@ -33,7 +33,11 @@ class AabbTree
     using scalar = typename T::type;
     using vector = T;
     using rect = typename T::rect_type;
-    using user_data = std::conditional_t<std::is_void_v<UserData>, Empty, UserData>;
+    using NodeIndex = int;
+    using UserData = std::conditional_t<std::is_void_v<UserDataT>, Empty, UserDataT>;
+
+    // A node index that's guaranteed to be unused.
+    static constexpr NodeIndex null_index = -1;
 
     struct Params
     {
@@ -69,9 +73,25 @@ class AabbTree
     // Makes an empty tree.
     AabbTree(Params params) : params(std::move(params)) {}
 
+    // Returns true if there are no nodes in the tree.
+    // Also returns true for default-constructed trees.
+    [[nodiscard]] bool IsEmpty() const
+    {
+        return root_index == null_index;
+    }
+
+    // Returns the bounds of the whole tree.
+    // Or a default-constructed rect if the tree is empty.
+    [[nodiscard]] rect Bounds() const
+    {
+        if (IsEmpty())
+            return rect{};
+        return GetNodeAabb(root_index);
+    }
+
     // Creates a new node. Returns the node index.
     // `suggested_index` allows you to force a specific index. Mostly for internal use.
-    [[nodiscard]] int AddNode(rect new_aabb, user_data new_data = {}, int new_index = null_index) noexcept
+    [[nodiscard]] NodeIndex AddNode(rect new_aabb, UserData new_data = {}, NodeIndex new_index = null_index) noexcept
     {
         #if IMP_AUTO_VALIDATE_AABB_TREES
         FINALLY{Validate();};
@@ -111,7 +131,7 @@ class AabbTree
 
         // Find the insertion place.
 
-        int sibling_index = root_index;
+        NodeIndex sibling_index = root_index;
         while (!nodes[sibling_index].IsLeaf())
         {
             const Node &sibling_node = nodes[sibling_index];
@@ -151,9 +171,9 @@ class AabbTree
 
         Node &sibling_node = nodes[sibling_index];
 
-        int old_parent_index = sibling_node.parent;
+        NodeIndex old_parent_index = sibling_node.parent;
 
-        int new_parent_index = node_set.InsertAny();
+        NodeIndex new_parent_index = node_set.InsertAny();
         Node &new_parent_node = nodes[new_parent_index];
 
         new_parent_node = {};
@@ -188,7 +208,7 @@ class AabbTree
     }
 
     // Removes a node. Returns false if the index is invalid.
-    bool RemoveNode(int target_index) noexcept
+    bool RemoveNode(NodeIndex target_index) noexcept
     {
         if (!node_set.Contains(target_index))
             return false;
@@ -204,10 +224,10 @@ class AabbTree
             return true;
         }
 
-        int parent = nodes[target_index].parent;
-        int grand_parent = nodes[parent].parent;
+        NodeIndex parent = nodes[target_index].parent;
+        NodeIndex grand_parent = nodes[parent].parent;
 
-        int sibling;
+        NodeIndex sibling;
         if (nodes[parent].children[0] == target_index)
             sibling = nodes[parent].children[1];
         else
@@ -241,7 +261,7 @@ class AabbTree
     // Modifies a node.
     // `new_velocity` is used to predictively expand AABB in the specified direction,
     // it's multiplied by `params.velocity_margin_factor`.
-    void ModifyNode(int target_index, rect new_aabb, T new_velocity)
+    void ModifyNode(NodeIndex target_index, rect new_aabb, T new_velocity)
     {
         ASSERT(node_set.Contains(target_index));
 
@@ -264,33 +284,46 @@ class AabbTree
 
         // The existing rect is either too big or too small.
 
-        user_data userdata = std::move(node.userdata);
+        UserData userdata = std::move(node.userdata);
 
         RemoveNode(target_index);
         (void)AddNode(large_aabb, std::move(userdata), target_index);
     }
 
     // Returns arbitrary user data for the node.
-    [[nodiscard]] user_data &GetNodeUserData(int node_index)
+    [[nodiscard]] UserData &GetNodeUserData(NodeIndex index)
     {
-        return const_cast<user_data &>(std::as_const(*this).GetNodeUserData(node_index));
+        return const_cast<UserData &>(std::as_const(*this).GetNodeUserData(index));
     }
-    [[nodiscard]] const user_data &GetNodeUserData(int node_index) const
+    [[nodiscard]] const UserData &GetNodeUserData(NodeIndex index) const
     {
-        ASSERT(node_set.Contains(node_index));
-        return nodes[node_index].userdata;
+        ASSERT(node_set.Contains(index));
+        return nodes[index].userdata;
     }
 
     // Returns the AABB of a node. It might be larger than the requested AABB.
     // For debug purposes, you can give it IDs of non-leaf nodes, which can only be obtained by calling `Nodes()`.
-    [[nodiscard]] rect GetNodeAabb(int node_index) const
+    [[nodiscard]] rect GetNodeAabb(NodeIndex index) const
     {
-        ASSERT(node_set.Contains(node_index));
-        return nodes[node_index].aabb;
+        ASSERT(node_set.Contains(index));
+        return nodes[index].aabb;
+    }
+
+    // Get an index of some arbitrary leaf node (aka a node that was actually created by the user, as opposed to being created automatically).
+    // Returns `null_index` if no nodes.
+    [[nodiscard]] NodeIndex GetAnyLeafNodeIndex() const
+    {
+        if (IsEmpty())
+            return null_index;
+        NodeIndex ret = root_index;
+        NodeIndex next = nodes[ret].childen[0];
+        while (next)
+            ret = std::exchange(next, nodes[next].childen[0]);
+        return ret;
     }
 
     // A point collision test.
-    // `func` is `bool func(int node)`. It's called for all colliding nodes. If it returns true, the function stops immediately and also returns true.
+    // `func` is `bool func(NodeIndex node)`. It's called for all colliding nodes. If it returns true, the function stops immediately and also returns true.
     // Since we expand AABBs, you might get false positive nodes. Manually check if the collision is exact.
     template <typename F>
     bool CollidePoint(T point, F &&func) const
@@ -299,7 +332,7 @@ class AabbTree
     }
 
     // An AABB collision test.
-    // `func` is `bool func(int node)`. It's called for all colliding nodes. If it returns true, the function stops immediately and also returns true.
+    // `func` is `bool func(NodeIndex node)`. It's called for all colliding nodes. If it returns true, the function stops immediately and also returns true.
     // Since we expand AABBs, you might get false positive nodes. Manually check if the collision is exact.
     template <typename F>
     bool CollideAabb(rect aabb, F &&func) const
@@ -310,20 +343,20 @@ class AabbTree
 
     // A custom collision test.
     // `check_collision` is `bool check_collision(const rect &aabb)`. If it returns true, this AABB will be examined further.
-    // `func` is `bool func(int node)`. It's called for all colliding nodes. If it returns true, the function stops immediately and also returns true.
+    // `func` is `bool func(NodeIndex node)`. It's called for all colliding nodes. If it returns true, the function stops immediately and also returns true.
     // Since we expand AABBs, you might get false positive nodes. Manually check if the collision is exact.
     template <typename C, typename F>
     bool CollideCustom(C &&check_collision, F &&func) const
     {
-        static constexpr bool (*lambda)(const AabbTree &, int, C &, F &) =
-        [](const AabbTree &self, int node_index, C &check_collision, F &func) -> bool
+        static constexpr bool (*lambda)(const AabbTree &, NodeIndex, C &, F &) =
+        [](const AabbTree &self, NodeIndex index, C &check_collision, F &func) -> bool
         {
-            const Node &node = self.nodes[node_index];
+            const Node &node = self.nodes[index];
             if (check_collision(std::as_const(node.aabb)))
             {
                 if (node.IsLeaf())
                 {
-                    if (func(std::as_const(node_index)))
+                    if (func(std::as_const(index)))
                         return true;
                 }
                 else
@@ -348,7 +381,7 @@ class AabbTree
     }
 
     // Reserves memory for a specific number of nodes.
-    void Reserve(int new_capacity)
+    void Reserve(NodeIndex new_capacity)
     {
         if (new_capacity < node_set.Capacity())
             return; // Can't decrease capacity.
@@ -357,7 +390,7 @@ class AabbTree
         nodes.resize(new_capacity);
     }
     // Lets you look at the node set, mostly for debug purposes.
-    [[nodiscard]] const SparseSet<int> &Nodes() const
+    [[nodiscard]] const SparseSet<NodeIndex> &Nodes() const
     {
         return node_set;
     }
@@ -368,7 +401,7 @@ class AabbTree
         if (root_index == null_index)
             return "empty";
         std::string ret;
-        auto lambda = [&](auto &lambda, int node, int level) -> void
+        auto lambda = [&](auto &lambda, NodeIndex node, int level) -> void
         {
             ret += std::string(level * 4, ' ') + std::to_string(node);
             if (!nodes[node].IsLeaf())
@@ -384,13 +417,11 @@ class AabbTree
     }
 
   private:
-    static constexpr int null_index = -1;
-
     Params params;
 
-    SparseSet<int> node_set;
+    SparseSet<NodeIndex> node_set;
 
-    int root_index = null_index;
+    NodeIndex root_index = null_index;
 
     struct Node
     {
@@ -402,11 +433,11 @@ class AabbTree
         // I don't see any use for it yet, so it's commented out.
         // bool moved = false;
 
-        int parent = null_index;
-        int children[2] = {null_index, null_index};
+        NodeIndex parent = null_index;
+        NodeIndex children[2] = {null_index, null_index};
 
         // Arbitrary data.
-        [[no_unique_address]] user_data userdata;
+        [[no_unique_address]] UserData userdata;
 
         [[nodiscard]] bool IsLeaf() const
         {
@@ -424,7 +455,7 @@ class AabbTree
 
     // Performs left or right rotation on the node `ia`, if it's not balanced.
     // Returns the node that replaced it, or `ia` if nothing was changed.
-    [[nodiscard]] int BalanceNode(int ia)
+    [[nodiscard]] NodeIndex BalanceNode(NodeIndex ia)
     {
         ASSERT(ia != null_index);
 
@@ -432,8 +463,8 @@ class AabbTree
         if (a.IsLeaf() || a.height < 2)
             return ia;
 
-        int ib = a.children[0];
-        int ic = a.children[1];
+        NodeIndex ib = a.children[0];
+        NodeIndex ic = a.children[1];
         ASSERT(node_set.Contains(ib));
         ASSERT(node_set.Contains(ic));
 
@@ -445,8 +476,8 @@ class AabbTree
         // Rotate C up.
     	if (balance > params.balance_threshold)
     	{
-    		int id = c.children[0];
-    		int ie = c.children[1];
+    		NodeIndex id = c.children[0];
+    		NodeIndex ie = c.children[1];
     		Node &d = nodes[id];
     		Node &e = nodes[ie];
     		ASSERT(node_set.Contains(id));
@@ -505,8 +536,8 @@ class AabbTree
     	// Rotate B up.
     	if (balance < -params.balance_threshold)
     	{
-    		int id = b.children[0];
-    		int ie = b.children[1];
+    		NodeIndex id = b.children[0];
+    		NodeIndex ie = b.children[1];
     		Node &d = nodes[id];
     		Node &e = nodes[ie];
     		ASSERT(node_set.Contains(id));
@@ -566,7 +597,7 @@ class AabbTree
     }
 
     // For `index` and its every parent, performs `BalanceNode` and updates their AABBs and heights.
-    void FixNodeAndParents(int index)
+    void FixNodeAndParents(NodeIndex index)
     {
         while (index != null_index)
         {
@@ -585,7 +616,7 @@ class AabbTree
 
     // Performs some internal tests on a node, recursively. Throws on failure.
     // Don't call direclty, use the `Validate()` function.
-    void ValidateNode(int index) const
+    void ValidateNode(NodeIndex index) const
     {
         ASSERT_ALWAYS(index != null_index);
 
