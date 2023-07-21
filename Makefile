@@ -387,9 +387,10 @@ WINDRES_FLAGS := -O res
 MAKE_STATIC_LIB = ar rvc $(call quote,$1) $2
 
 # Prevent pkg-config from finding external packages.
-override PKG_CONFIG_PATH :=
+# Note the stupid `-` signs. Fedora's stupid `pkg-config` is a stupid shell script that sets those to fallback values if they're unset OR EMPTY.
+override PKG_CONFIG_PATH := -
 export PKG_CONFIG_PATH
-override PKG_CONFIG_LIBDIR :=
+override PKG_CONFIG_LIBDIR := -
 export PKG_CONFIG_LIBDIR
 
 MODE :=# Build mode.
@@ -651,7 +652,8 @@ endif
 
 # Expands to `pkg-config` with the proper config variables.
 # Not a function.
-override lib_invoke_pkgconfig = PKG_CONFIG_PATH= PKG_CONFIG_LIBDIR=$(call quote,$(subst $(space),:,$(foreach x,$(all_libs),$(call lib_name_to_base_dir,$x)/$(os_mode_string)/prefix/lib/pkgconfig))) pkg-config --define-prefix
+# See the definion of `PKG_CONFIG_PATH` above for why we set it to a `-` rather than nothing.
+override lib_invoke_pkgconfig = PKG_CONFIG_PATH=- PKG_CONFIG_LIBDIR=$(call quote,$(subst $(space),:,$(foreach x,$(all_libs),$(call lib_name_to_base_dir,$x)/$(os_mode_string)/prefix/lib/pkgconfig))) pkg-config --define-prefix
 
 # Given a library name `$1`, returns the pkg-config package names for it.
 override lib_find_packages_for = $(if $(__libsetting_only_pkgconfig_files_$(strip $1)),$(__libsetting_only_pkgconfig_files_$(strip $1)),$(basename $(notdir $(wildcard $(call lib_name_to_base_dir,$1)/$(os_mode_string)/prefix/lib/pkgconfig/*.pc))))
@@ -1354,7 +1356,8 @@ override buildsystem-cmake = \
 		CC=$(call quote,$(CC)) CXX=$(call quote,$(CXX))\
 		CFLAGS=$(call quote,$(__bs_cflags)) CXXFLAGS=$(call quote,$(__bs_cxxflags)) LDFLAGS=$(call quote,$(__bs_ldflags))\
 		$(call, ### Resetting the pkg-config variables here prevents freetype from finding the system harfbuzz, and possibly more.)\
-		PKG_CONFIG_PATH= PKG_CONFIG_LIBDIR=\
+		$(call, ### See their definitions above in this makefile for why we set them to `-` rather than empty strings.)\
+		PKG_CONFIG_PATH=- PKG_CONFIG_LIBDIR=- \
 		cmake\
 		-S $(call quote,$(__source_dir))\
 		-B $(call quote,$(__build_dir))\
@@ -1364,6 +1367,10 @@ override buildsystem-cmake = \
 		$(call, ### Specifying an invalid build type disables built-in flags.)\
 		-DCMAKE_BUILD_TYPE=Custom\
 		-DCMAKE_INSTALL_PREFIX=$(call quote,$(__install_dir))\
+		$(call, ### Fedora installs to `lib64` by default, which breaks our stuff. Apparently everyone except Debian does it, maybe we should too? Hmm.)\
+		$(call, ### Some libraries that don't install anything warn about this flag being unused.)\
+		$(call, ### I don't see any workaround though, short of switching to `lib64` ourselves, since setting the `LIBDIR` environment variable has no effect.)\
+		-DCMAKE_INSTALL_LIBDIR=lib\
 		$(call, ### I'm not sure why abspath is needed here, but stuff doesn't work otherwise. Tested on libvorbis depending on libogg.)\
 		$(call, ### Note the fancy logic that attempts to support spaces in paths.)\
 		-DCMAKE_PREFIX_PATH=$(call quote,$(abspath $(__install_dir))$(subst $(space)$(cmake_host_sep),$(cmake_host_sep),$(foreach x,$(call lib_name_to_prefix,$(__libsetting_deps_$(__lib_name))),$(cmake_host_sep)$(abspath $x))))\
@@ -1400,7 +1407,8 @@ override buildsystem-configure_make = \
 		CFLAGS=$(call quote,$(CFLAGS) $(__libsetting_common_flags_$(__lib_name)) $(__libsetting_cflags_$(__lib_name))) \
 		CXXFLAGS=$(call quote,$(CXXFLAGS) $(__libsetting_common_flags_$(__lib_name)) $(__libsetting_cxxflags_$(__lib_name))) \
 		LDFLAGS=$(call quote,$(LDFLAGS) $(__libsetting_common_flags_$(__lib_name)) $(__libsetting_ldflags_$(__lib_name))) \
-		PKG_CONFIG_PATH= PKG_CONFIG_LIBDIR=$(call quote,$(abspath $(__install_dir)/lib/pkgconfig)) $(__libsetting_configure_vars_$(__lib_name)) \
+		$(call, ### See the definion of `PKG_CONFIG_PATH` above for why we set it to a space rather than nothing.)\
+		PKG_CONFIG_PATH=' ' PKG_CONFIG_LIBDIR=$(call quote,$(abspath $(__install_dir)/lib/pkgconfig)) $(__libsetting_configure_vars_$(__lib_name)) \
 	)\
 	$(call, ### Since we can't configure multiple search prefixes, like we do with CMAKE_SYSTEM_PREFIX_PATH,)\
 	$(call, ### we copy the prefixes of our dependencies to our own prefix.)\

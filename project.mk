@@ -81,7 +81,7 @@ $(foreach f,$(_codegen_list),$(eval $(call _codegen_target,$(word 1,$(subst :, ,
 # --- Dependencies ---
 
 # Don't need anything on Windows.
-# On Linux, install following for SDL2 (from docs/README-linux.md)
+# On Ubuntu 22.04, install following for SDL2 (from docs/README-linux.md)
 # sudo apt-get install build-essential git make autoconf automake libtool \
 	pkg-config cmake ninja-build gnome-desktop-testing libasound2-dev libpulse-dev \
 	libaudio-dev libsndio-dev libsamplerate0-dev libx11-dev libxext-dev \
@@ -91,6 +91,17 @@ $(foreach f,$(_codegen_list),$(eval $(call _codegen_target,$(word 1,$(subst :, ,
 	libpipewire-0.3-dev libdecor-0-dev
 # This list was last updated for SDL 2.26.4.
 # `libjack-dev` was removed from the list, because it caused weird package conflicts on Ubuntu 22.04.
+# On Fedora 38, install following for SDL2 (from docs/README-linux.md)
+# sudo dnf install gcc git-core make cmake autoconf automake libtool \
+    alsa-lib-devel pulseaudio-libs-devel nas-devel pipewire-devel \
+    libX11-devel libXext-devel libXrandr-devel libXcursor-devel libXfixes-devel \
+    libXi-devel libXScrnSaver-devel dbus-devel ibus-devel fcitx-devel \
+    systemd-devel mesa-libGL-devel libxkbcommon-devel mesa-libGLES-devel \
+    mesa-libEGL-devel vulkan-devel wayland-devel wayland-protocols-devel \
+    libdrm-devel mesa-libgbm-devel libusb1-devel libdecor-devel \
+    libsamplerate-devel pipewire-jack-audio-connection-kit-devel
+# `libusb-devel` was changed to `libusb1-devel` in this list, because there's no package `libusb-devel` in Fedora 38.
+# This list was last updated for SDL 2.26.4.
 
 
 # --- Libraries ---
@@ -211,7 +222,7 @@ override buildsystem-imgui = \
 			-I$(call quote,$(__build_dir))\
 			-I$(call quote,src)\
 			-I$(call quote,$(__install_dir)/include)\
-			$(call, ### Add flags for libfmt, see above for explanation.)\
+			$(call, ### Add flags for libfmt, freetype, and other deps. See above for explanation.)\
 			$(call lib_cflags,$(__libsetting_deps_$(__lib_name)))\
 			>>$(call quote,$(__log_path))\
 		)\
