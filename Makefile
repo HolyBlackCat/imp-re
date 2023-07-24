@@ -353,7 +353,6 @@ export CFLAGS ?=
 export CXXFLAGS ?=
 export CPPFLAGS ?=
 export LDFLAGS ?=
-export LDSHARED ?= $(CC)
 
 # LDD. We don't care about the Quasi-MSYS2's `win-ldd` wrapper since we can convert paths ourselves. We need it for the native Winwdows anyway.
 # Also an optional program to preprocess the paths from LDD.
