@@ -11,6 +11,7 @@
 IMP_PLATFORM_IF(clang)(
     IMP_DIAGNOSTICS_PUSH
     IMP_DIAGNOSTICS_IGNORE("-Wdeprecated-builtins")
+    IMP_DIAGNOSTICS_IGNORE("-Wdeprecated-declarations")
 )
 #include <parallel_hashmap/btree.h>
 #include <parallel_hashmap/phmap.h>
