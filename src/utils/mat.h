@@ -1,6 +1,6 @@
 // mat.h
 // Vector and matrix math
-// Version 3.17
+// Version 3.18
 // Generated, don't touch.
 
 #pragma once
@@ -1852,6 +1852,7 @@ namespace Math
             template <scalar U> explicit(!safely_convertible_to<U,T>) constexpr mat(const mat2x2<U> &obj) : x(obj.x), y(obj.y) {}
             template <typename U> requires Custom::convertible<U, mat> explicit constexpr mat(const U &obj) {*this = Custom::Convert<U, mat>{}(obj);}
             template <typename U> requires Custom::convertible<mat, U> explicit operator U() const {return Custom::Convert<mat, U>{}(*this);}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC friend constexpr bool operator==(const mat &a, const mat &b) {return a.x==b.x && a.y==b.y;}
             template <scalar U> [[nodiscard]] constexpr mat2x2<U> to() const {return mat2x2<U>(U(x.x), U(y.x), U(x.y), U(y.y));}
             [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr       member_type &operator[](int i)       {if (!IMP_MATH_IS_CONSTANT(i)) return *(      member_type *)((      char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; IMP_MATH_UNREACHABLE();}
             [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const member_type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const member_type *)((const char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; IMP_MATH_UNREACHABLE();}
@@ -1885,8 +1886,8 @@ namespace Math
                 ret.x.x *= d;
                 ret.y.x *= d;
 
-                ret.x.y = (-x.y) * d;
-                ret.y.y = ( x.x) * d;
+                ret.x.y = -x.y * d;
+                ret.y.y =  x.x * d;
 
                 return ret;
             }
@@ -1920,6 +1921,7 @@ namespace Math
             template <scalar U> explicit(!safely_convertible_to<U,T>) constexpr mat(const mat2x3<U> &obj) : x(obj.x), y(obj.y) {}
             template <typename U> requires Custom::convertible<U, mat> explicit constexpr mat(const U &obj) {*this = Custom::Convert<U, mat>{}(obj);}
             template <typename U> requires Custom::convertible<mat, U> explicit operator U() const {return Custom::Convert<mat, U>{}(*this);}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC friend constexpr bool operator==(const mat &a, const mat &b) {return a.x==b.x && a.y==b.y;}
             template <scalar U> [[nodiscard]] constexpr mat2x3<U> to() const {return mat2x3<U>(U(x.x), U(y.x), U(x.y), U(y.y), U(x.z), U(y.z));}
             [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr       member_type &operator[](int i)       {if (!IMP_MATH_IS_CONSTANT(i)) return *(      member_type *)((      char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; IMP_MATH_UNREACHABLE();}
             [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const member_type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const member_type *)((const char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; IMP_MATH_UNREACHABLE();}
@@ -1959,6 +1961,7 @@ namespace Math
             template <scalar U> explicit(!safely_convertible_to<U,T>) constexpr mat(const mat2x4<U> &obj) : x(obj.x), y(obj.y) {}
             template <typename U> requires Custom::convertible<U, mat> explicit constexpr mat(const U &obj) {*this = Custom::Convert<U, mat>{}(obj);}
             template <typename U> requires Custom::convertible<mat, U> explicit operator U() const {return Custom::Convert<mat, U>{}(*this);}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC friend constexpr bool operator==(const mat &a, const mat &b) {return a.x==b.x && a.y==b.y;}
             template <scalar U> [[nodiscard]] constexpr mat2x4<U> to() const {return mat2x4<U>(U(x.x), U(y.x), U(x.y), U(y.y), U(x.z), U(y.z), U(x.w), U(y.w));}
             [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr       member_type &operator[](int i)       {if (!IMP_MATH_IS_CONSTANT(i)) return *(      member_type *)((      char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; IMP_MATH_UNREACHABLE();}
             [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const member_type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const member_type *)((const char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; IMP_MATH_UNREACHABLE();}
@@ -1999,6 +2002,7 @@ namespace Math
             template <scalar U> explicit(!safely_convertible_to<U,T>) constexpr mat(const mat3x2<U> &obj) : x(obj.x), y(obj.y), z(obj.z) {}
             template <typename U> requires Custom::convertible<U, mat> explicit constexpr mat(const U &obj) {*this = Custom::Convert<U, mat>{}(obj);}
             template <typename U> requires Custom::convertible<mat, U> explicit operator U() const {return Custom::Convert<mat, U>{}(*this);}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC friend constexpr bool operator==(const mat &a, const mat &b) {return a.x==b.x && a.y==b.y && a.z==b.z;}
             template <scalar U> [[nodiscard]] constexpr mat3x2<U> to() const {return mat3x2<U>(U(x.x), U(y.x), U(z.x), U(x.y), U(y.y), U(z.y));}
             [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr       member_type &operator[](int i)       {if (!IMP_MATH_IS_CONSTANT(i)) return *(      member_type *)((      char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; IMP_MATH_UNREACHABLE();}
             [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const member_type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const member_type *)((const char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; IMP_MATH_UNREACHABLE();}
@@ -2039,6 +2043,7 @@ namespace Math
             template <scalar U> explicit(!safely_convertible_to<U,T>) constexpr mat(const mat3x3<U> &obj) : x(obj.x), y(obj.y), z(obj.z) {}
             template <typename U> requires Custom::convertible<U, mat> explicit constexpr mat(const U &obj) {*this = Custom::Convert<U, mat>{}(obj);}
             template <typename U> requires Custom::convertible<mat, U> explicit operator U() const {return Custom::Convert<mat, U>{}(*this);}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC friend constexpr bool operator==(const mat &a, const mat &b) {return a.x==b.x && a.y==b.y && a.z==b.z;}
             template <scalar U> [[nodiscard]] constexpr mat3x3<U> to() const {return mat3x3<U>(U(x.x), U(y.x), U(z.x), U(x.y), U(y.y), U(z.y), U(x.z), U(y.z), U(z.z));}
             [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr       member_type &operator[](int i)       {if (!IMP_MATH_IS_CONSTANT(i)) return *(      member_type *)((      char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; IMP_MATH_UNREACHABLE();}
             [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const member_type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const member_type *)((const char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; IMP_MATH_UNREACHABLE();}
@@ -2133,6 +2138,7 @@ namespace Math
             template <scalar U> explicit(!safely_convertible_to<U,T>) constexpr mat(const mat3x4<U> &obj) : x(obj.x), y(obj.y), z(obj.z) {}
             template <typename U> requires Custom::convertible<U, mat> explicit constexpr mat(const U &obj) {*this = Custom::Convert<U, mat>{}(obj);}
             template <typename U> requires Custom::convertible<mat, U> explicit operator U() const {return Custom::Convert<mat, U>{}(*this);}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC friend constexpr bool operator==(const mat &a, const mat &b) {return a.x==b.x && a.y==b.y && a.z==b.z;}
             template <scalar U> [[nodiscard]] constexpr mat3x4<U> to() const {return mat3x4<U>(U(x.x), U(y.x), U(z.x), U(x.y), U(y.y), U(z.y), U(x.z), U(y.z), U(z.z), U(x.w), U(y.w), U(z.w));}
             [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr       member_type &operator[](int i)       {if (!IMP_MATH_IS_CONSTANT(i)) return *(      member_type *)((      char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; IMP_MATH_UNREACHABLE();}
             [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const member_type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const member_type *)((const char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; IMP_MATH_UNREACHABLE();}
@@ -2173,6 +2179,7 @@ namespace Math
             template <scalar U> explicit(!safely_convertible_to<U,T>) constexpr mat(const mat4x2<U> &obj) : x(obj.x), y(obj.y), z(obj.z), w(obj.w) {}
             template <typename U> requires Custom::convertible<U, mat> explicit constexpr mat(const U &obj) {*this = Custom::Convert<U, mat>{}(obj);}
             template <typename U> requires Custom::convertible<mat, U> explicit operator U() const {return Custom::Convert<mat, U>{}(*this);}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC friend constexpr bool operator==(const mat &a, const mat &b) {return a.x==b.x && a.y==b.y && a.z==b.z && a.w==b.w;}
             template <scalar U> [[nodiscard]] constexpr mat4x2<U> to() const {return mat4x2<U>(U(x.x), U(y.x), U(z.x), U(w.x), U(x.y), U(y.y), U(z.y), U(w.y));}
             [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr       member_type &operator[](int i)       {if (!IMP_MATH_IS_CONSTANT(i)) return *(      member_type *)((      char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; else if (i == 3) return w; IMP_MATH_UNREACHABLE();}
             [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const member_type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const member_type *)((const char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; else if (i == 3) return w; IMP_MATH_UNREACHABLE();}
@@ -2212,6 +2219,7 @@ namespace Math
             template <scalar U> explicit(!safely_convertible_to<U,T>) constexpr mat(const mat4x3<U> &obj) : x(obj.x), y(obj.y), z(obj.z), w(obj.w) {}
             template <typename U> requires Custom::convertible<U, mat> explicit constexpr mat(const U &obj) {*this = Custom::Convert<U, mat>{}(obj);}
             template <typename U> requires Custom::convertible<mat, U> explicit operator U() const {return Custom::Convert<mat, U>{}(*this);}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC friend constexpr bool operator==(const mat &a, const mat &b) {return a.x==b.x && a.y==b.y && a.z==b.z && a.w==b.w;}
             template <scalar U> [[nodiscard]] constexpr mat4x3<U> to() const {return mat4x3<U>(U(x.x), U(y.x), U(z.x), U(w.x), U(x.y), U(y.y), U(z.y), U(w.y), U(x.z), U(y.z), U(z.z), U(w.z));}
             [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr       member_type &operator[](int i)       {if (!IMP_MATH_IS_CONSTANT(i)) return *(      member_type *)((      char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; else if (i == 3) return w; IMP_MATH_UNREACHABLE();}
             [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const member_type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const member_type *)((const char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; else if (i == 3) return w; IMP_MATH_UNREACHABLE();}
@@ -2252,6 +2260,7 @@ namespace Math
             template <scalar U> explicit(!safely_convertible_to<U,T>) constexpr mat(const mat4x4<U> &obj) : x(obj.x), y(obj.y), z(obj.z), w(obj.w) {}
             template <typename U> requires Custom::convertible<U, mat> explicit constexpr mat(const U &obj) {*this = Custom::Convert<U, mat>{}(obj);}
             template <typename U> requires Custom::convertible<mat, U> explicit operator U() const {return Custom::Convert<mat, U>{}(*this);}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC friend constexpr bool operator==(const mat &a, const mat &b) {return a.x==b.x && a.y==b.y && a.z==b.z && a.w==b.w;}
             template <scalar U> [[nodiscard]] constexpr mat4x4<U> to() const {return mat4x4<U>(U(x.x), U(y.x), U(z.x), U(w.x), U(x.y), U(y.y), U(z.y), U(w.y), U(x.z), U(y.z), U(z.z), U(w.z), U(x.w), U(y.w), U(z.w), U(w.w));}
             [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr       member_type &operator[](int i)       {if (!IMP_MATH_IS_CONSTANT(i)) return *(      member_type *)((      char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; else if (i == 3) return w; IMP_MATH_UNREACHABLE();}
             [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const member_type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const member_type *)((const char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; else if (i == 3) return w; IMP_MATH_UNREACHABLE();}

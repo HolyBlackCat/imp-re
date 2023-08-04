@@ -7,7 +7,7 @@
 #include <sstream>
 #include <type_traits>
 
-#define VERSION "3.17"
+#define VERSION "3.18"
 
 #pragma GCC diagnostic ignored "-Wpragmas" // Silence GCC warning about the next line disabling a warning that GCC doesn't have.
 #pragma GCC diagnostic ignored "-Wstring-plus-int" // Silence clang warning about `1+R"()"` pattern.
@@ -207,7 +207,7 @@ int main(int argc, char **argv)
 
     next_line();
 
-    { // Includes
+    { // Macros
         output(1+R"(
             #ifndef IMP_MATH_IS_CONSTANT
             #  ifndef _MSC_VER
@@ -2086,6 +2086,10 @@ int main(int argc, char **argv)
                             )");
                         }
 
+                        { // Comparison operators.
+                            output("[[nodiscard]] IMP_MATH_SMALL_FUNC friend constexpr bool operator==(const mat &a, const mat &b) {return ",LargeFields(" && ","a.@==b.@"),";}\n");
+                        }
+
                         { // Convert to type
                             output("template <scalar U> [[nodiscard]] constexpr mat",w,"x",h,"<U> to() const {return mat",w,"x",h,"<U>(",SmallFields(", ","U(",")"),");}\n");
                         }
@@ -2197,8 +2201,8 @@ int main(int argc, char **argv)
                                             ret.x.x *= d;
                                             ret.y.x *= d;
 
-                                            ret.x.y = (-x.y) * d;
-                                            ret.y.y = ( x.x) * d;
+                                            ret.x.y = -x.y * d;
+                                            ret.y.y =  x.x * d;
 
                                             return ret;
                                         }
