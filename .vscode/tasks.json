@@ -71,7 +71,7 @@
             "type": "shell",
             // There's a log going on here. First we `make -pq` + `grep` for the existing value of flags. Then we replace $$->$ to counteract Make's escaping.
             // We pass the result as the existing value to Zenity, run it, then pass the result back to `make remember ARGS=??`.
-            "command": "make remember ARGS=\"$(zenity --entry --text='Flags:' --entry-text=\"$(make -pq | grep -Po '(?<=^ARGS := ).*' | sed 's/\\$\\$/\\$/g')\")\"",
+            "command": "make remember ARGS=\"$(zenity --entry --title='Set flags' --text='Flags:' --entry-text=\"$(make -pq | grep -Po '(?<=^ARGS := ).*' | sed 's/\\$\\$/\\$/g')\")\"",
             "presentation": {"echo": true, "reveal": "always", "focus": false, "panel": "shared", "showReuseMessage": false, "clear": true},
         },
         {
