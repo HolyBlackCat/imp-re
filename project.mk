@@ -26,6 +26,7 @@ $(Mode)_win_subsystem := -mwindows
 $(call NewMode,sanitize_address_ub)
 $(Mode)COMMON_FLAGS := -g -fsanitize=address -fsanitize=undefined
 $(Mode)CXXFLAGS := -D_GLIBCXX_DEBUG
+$(Mode)PROJ_RUNTIME_ENV += LSAN_OPTIONS=suppressions=misc/leak_sanitizer_suppressions.txt
 
 DIST_NAME := $(APP)_$(TARGET_OS)_v1.*
 ifneq ($(MODE),release)

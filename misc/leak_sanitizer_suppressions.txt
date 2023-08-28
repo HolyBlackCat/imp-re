@@ -1,0 +1,3 @@
+# A list of functions that seem to cause false positive leak reports.
+
+leak:^ALSA_OpenDevice$

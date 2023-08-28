@@ -254,7 +254,7 @@ override Project = \
 	$(call var,proj_list += $2)\
 	$(call var,__proj_kind_$(strip $2) := $(strip $1))\
 
-override proj_setting_names := sources source_dirs cflags cxxflags ldflags common_flags flags_func pch deps libs bad_lib_flags lang
+override proj_setting_names := sources source_dirs cflags cxxflags ldflags common_flags flags_func pch deps libs bad_lib_flags lang runtime_env
 
 # On success, assigns $2 to variable `__projsetting_$1_<lib>`. Otherwise causes an error.
 # Settings are:
@@ -269,6 +269,7 @@ override proj_setting_names := sources source_dirs cflags cxxflags ldflags commo
 # * libs - a space-separated list of libraries created with $(Library), or `*` to use all libraries.
 # * bad_lib_flags - those flags are removed from the library flags (both cflags and ldflags). You can also use replacements here, in the form of `a>>>b`, which may contain `%`.
 # * lang - either `c` or `cpp`. Sets the language for linking and PCH.
+# * runtime_env - a space-separated list of environment variables (`env=value`) for running the resulting binary. Appended to `PROJ_RUNTIME_ENV`.
 override ProjectSetting = \
 	$(if $(filter-out $(proj_setting_names),$1)$(filter-out 1,$(words $1)),$(error Invalid project setting `$1`, expected one of: $(proj_setting_names)))\
 	$(if $(filter 0,$(words $(proj_list))),$(error Must specify project settings after a project))\
@@ -419,6 +420,7 @@ PROJ_CFLAGS :=
 PROJ_CXXFLAGS :=
 PROJ_COMMON_FLAGS :=# Is combined with both CFLAGS and CXXFLAGS.
 PROJ_LDFLAGS :=
+PROJ_RUNTIME_ENV :=# A space-separated list of environment variables (`env=value`), used when running the resulting binary.
 
 # Host toolchain.
 HOST_CC :=
@@ -1002,7 +1004,7 @@ run-$(__proj): override __proj := $(__proj)
 run-$(__proj): override __filename := $(__filename)
 run-$(__proj): build-$(__proj)
 	$(call log_now,[Running] $(__proj))
-	@$(run_without_buffering)$(__filename) $(ARGS)
+	@$(run_without_buffering)$(PROJ_RUNTIME_ENV) $(__projsetting_runtime_env_$(__proj)) $(__filename) $(ARGS)
 
 # A target to run the project without compiling it.
 .PHONY: run-old-$(__proj)
@@ -1010,7 +1012,7 @@ run-old-$(__proj): override __proj := $(__proj)
 run-old-$(__proj): override __filename := $(__filename)
 run-old-$(__proj):
 	$(call log_now,[Running existing build] $(__proj))
-	@$(run_without_buffering)$(__filename) $(ARGS)
+	@$(run_without_buffering)$(PROJ_RUNTIME_ENV) $(__projsetting_runtime_env_$(__proj)) $(__filename) $(ARGS)
 endif
 
 # Target to clean the project.
@@ -1122,6 +1124,7 @@ override config_prefix_app := APP :=
 # In them, following replacements are made:
 # * `<EXECUTABLE>` -> the output executable of the current project
 # * `<ARGS>` -> the executable flags chosen by the user
+# * `/*<ENV_JSON>*/` -> the list of environment variables as a JSON, e.g. `"a":"b", "c":"d",`.
 GENERATE_ON_TARGET_CHANGE := $(proj_dir)/.vscode/launch.json
 # Remove files with missing original files.
 override GENERATE_ON_TARGET_CHANGE := $(foreach x,$(GENERATE_ON_TARGET_CHANGE),$(if $(wildcard $(call generation_source_for_file,$x)),$x))
@@ -1136,12 +1139,15 @@ remember:
 	$(file >>$(LOCAL_CONFIG),MODE := $(MODE))\
 	$(file >>$(LOCAL_CONFIG),APP := $(APP))\
 	$(file >>$(LOCAL_CONFIG),ARGS := $(subst $,$$$$,$(ARGS)))\
-	$(call, ### Regenerate some files.)
+	$(call, ### Convert the list of runtime env variables to JSON, to bake into the generated files.)\
+	$(call var,__env_as_json := $(foreach x,$(PROJ_RUNTIME_ENV) $(__projsetting_runtime_env_$(APP)),$(call var,__name := $(firstword $(subst =, ,$x)))"$(__name)":"$(patsubst $(__name)=%,%,$x)"$(comma)))
+	$(call, ### Regenerate some files.)\
 	$(foreach x,$(GENERATE_ON_TARGET_CHANGE),\
 		$(call safe_shell_exec,cp $(call quote,$(call generation_source_for_file,$x)) $(call quote,$x))\
 		$(call safe_shell_exec,sed -i 's|<EXECUTABLE>|$(call proj_output_filename,$(APP))|' $(call quote,$x))\
 		$(call, ### Note that we replace \->\\ twice. The first replacement is for JSON, and the second is for Sed.)\
 		$(call safe_shell_exec,sed -i 's|<ARGS>|'$(call quote,$(subst \,\\,$(subst ",\",$(subst \,\\,$(ARGS)))))'|' $(call quote,$x))\
+		$(call safe_shell_exec,sed -i 's|/\*<ENV_JSON>\*/|'$(call quote,$(subst \,\\,$(__env_as_json)))'|' $(call quote,$x))\
 	)
 	@true
 
