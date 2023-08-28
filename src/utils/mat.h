@@ -1,6 +1,6 @@
 // mat.h
 // Vector and matrix math
-// Version 3.18
+// Version 3.19
 // Generated, don't touch.
 
 #pragma once
@@ -1664,8 +1664,8 @@ namespace Math
             [[nodiscard]] constexpr vec3<type> to_vec3() const {return {x, y, 0};}
             [[nodiscard]] constexpr vec4<type> to_vec4() const {return {x, y, 0, 0};}
             [[nodiscard]] constexpr auto len_sq() const {return x*x + y*y;}
-            [[nodiscard]] constexpr auto len() const {return std::sqrt(len_sq());}
-            [[nodiscard]] constexpr auto norm() const -> vec2<decltype(type{}/len())> {if (auto l = len()) return *this / l; else return vec(0);}
+            [[nodiscard]] constexpr floating_point_t<type> len() const {return std::sqrt(floating_point_t<type>(len_sq()));}
+            [[nodiscard]] constexpr floating_point_t<vec> norm() const {if (auto l = len()) return *this / l; else return vec(0);}
             [[nodiscard]] constexpr auto approx_len() const {return floating_point_t<type>(len_sq() + 1) / 2;} // Accurate only around `len()==1`.
             [[nodiscard]] constexpr auto approx_inv_len() const {return 2 / floating_point_t<type>(len_sq() + 1);}
             [[nodiscard]] constexpr auto approx_norm() const {return *this * approx_inv_len();} // Guaranteed to converge to `len()==1` eventually, when starting from any finite `len_sq()`.
@@ -1739,8 +1739,8 @@ namespace Math
             [[nodiscard]] constexpr vec4<type> to_vec4(type nw) const {return {x, y, z, nw};}
             [[nodiscard]] constexpr vec4<type> to_vec4() const {return {x, y, z, 0};}
             [[nodiscard]] constexpr auto len_sq() const {return x*x + y*y + z*z;}
-            [[nodiscard]] constexpr auto len() const {return std::sqrt(len_sq());}
-            [[nodiscard]] constexpr auto norm() const -> vec3<decltype(type{}/len())> {if (auto l = len()) return *this / l; else return vec(0);}
+            [[nodiscard]] constexpr floating_point_t<type> len() const {return std::sqrt(floating_point_t<type>(len_sq()));}
+            [[nodiscard]] constexpr floating_point_t<vec> norm() const {if (auto l = len()) return *this / l; else return vec(0);}
             [[nodiscard]] constexpr auto approx_len() const {return floating_point_t<type>(len_sq() + 1) / 2;} // Accurate only around `len()==1`.
             [[nodiscard]] constexpr auto approx_inv_len() const {return 2 / floating_point_t<type>(len_sq() + 1);}
             [[nodiscard]] constexpr auto approx_norm() const {return *this * approx_inv_len();} // Guaranteed to converge to `len()==1` eventually, when starting from any finite `len_sq()`.
@@ -1804,8 +1804,8 @@ namespace Math
             [[nodiscard]] constexpr vec2<type> to_vec2() const {return {x, y};}
             [[nodiscard]] constexpr vec3<type> to_vec3() const {return {x, y, z};}
             [[nodiscard]] constexpr auto len_sq() const {return x*x + y*y + z*z + w*w;}
-            [[nodiscard]] constexpr auto len() const {return std::sqrt(len_sq());}
-            [[nodiscard]] constexpr auto norm() const -> vec4<decltype(type{}/len())> {if (auto l = len()) return *this / l; else return vec(0);}
+            [[nodiscard]] constexpr floating_point_t<type> len() const {return std::sqrt(floating_point_t<type>(len_sq()));}
+            [[nodiscard]] constexpr floating_point_t<vec> norm() const {if (auto l = len()) return *this / l; else return vec(0);}
             [[nodiscard]] constexpr auto approx_len() const {return floating_point_t<type>(len_sq() + 1) / 2;} // Accurate only around `len()==1`.
             [[nodiscard]] constexpr auto approx_inv_len() const {return 2 / floating_point_t<type>(len_sq() + 1);}
             [[nodiscard]] constexpr auto approx_norm() const {return *this * approx_inv_len();} // Guaranteed to converge to `len()==1` eventually, when starting from any finite `len_sq()`.

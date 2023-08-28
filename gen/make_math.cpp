@@ -7,7 +7,7 @@
 #include <sstream>
 #include <type_traits>
 
-#define VERSION "3.18"
+#define VERSION "3.19"
 
 #pragma GCC diagnostic ignored "-Wpragmas" // Silence GCC warning about the next line disabling a warning that GCC doesn't have.
 #pragma GCC diagnostic ignored "-Wstring-plus-int" // Silence clang warning about `1+R"()"` pattern.
@@ -1853,10 +1853,10 @@ int main(int argc, char **argv)
                             output(";}\n");
 
                             // Length
-                            output("[[nodiscard]] constexpr auto len() const {return std::sqrt(len_sq());}\n");
+                            output("[[nodiscard]] constexpr floating_point_t<type> len() const {return std::sqrt(floating_point_t<type>(len_sq()));}\n");
 
                             // Normalize
-                            output("[[nodiscard]] constexpr auto norm() const -> vec",w,"<decltype(type{}/len())> {if (auto l = len()) return *this / l; else return vec(0);}\n");
+                            output("[[nodiscard]] constexpr floating_point_t<vec> norm() const {if (auto l = len()) return *this / l; else return vec(0);}\n");
 
                             // Approximate length and normalization.
                             output("[[nodiscard]] constexpr auto approx_len() const {return floating_point_t<type>(len_sq() + 1) / 2;} // Accurate only around `len()==1`.\n");
