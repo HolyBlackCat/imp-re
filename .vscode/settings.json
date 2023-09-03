@@ -5,4 +5,8 @@
         "deps/": true,
         "obj/": true,
     },
+
+    "files.readonlyInclude": {
+        "deps/**/prefix/include/**": true
+    },
 }
