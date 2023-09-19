@@ -7,7 +7,7 @@
 #include <sstream>
 #include <type_traits>
 
-#define VERSION "3.19"
+#define VERSION "3.20"
 
 #pragma GCC diagnostic ignored "-Wpragmas" // Silence GCC warning about the next line disabling a warning that GCC doesn't have.
 #pragma GCC diagnostic ignored "-Wstring-plus-int" // Silence clang warning about `1+R"()"` pattern.
@@ -1503,12 +1503,12 @@ int main(int argc, char **argv)
                     // This check makes (0,0) worse than any other vector,
                     // and doesn't seem to affect the result if zero vectors are not involved.
                     if (int d = (a == vec2<T>()) - (b == vec2<T>()))
-                        return d < 0;
+                    $   return d < 0;
 
                     if (int d = (a.y < 0) - (b.y < 0))
-                        return d < 0;
+                    $   return d < 0;
                     if (int d = (a.y == 0 && a.x < 0) - (b.y == 0 && b.x < 0))
-                        return d < 0;
+                    $   return d < 0;
 
                     return a.x * b.y > b.x * a.y;
                 }
