@@ -1,6 +1,6 @@
 // mat.h
 // Vector and matrix math
-// Version 3.20
+// Version 3.21
 // Generated, don't touch.
 
 #pragma once
@@ -1638,7 +1638,7 @@ namespace Math
             IMP_MATH_SMALL_FUNC constexpr vec(uninit) {}
             IMP_MATH_SMALL_FUNC constexpr vec(type x, type y) : x(x), y(y) {}
             IMP_MATH_SMALL_FUNC explicit constexpr vec(type obj) : x(obj), y(obj) {}
-            template <scalar U> IMP_MATH_SMALL_FUNC explicit(!safely_convertible_to<U,T>) constexpr vec(vec2<U> obj) : x(obj.x), y(obj.y) {}
+            template <scalar U> IMP_MATH_SMALL_FUNC explicit(!safely_convertible_to<U,type>) constexpr vec(vec2<U> obj) : x(obj.x), y(obj.y) {}
             template <typename U> requires Custom::convertible<U, vec> explicit constexpr vec(const U &obj) {*this = Custom::Convert<U, vec>{}(obj);}
             template <typename U> requires Custom::convertible<vec, U> explicit operator U() const {return Custom::Convert<vec, U>{}(*this);}
             template <scalar U> [[nodiscard]] constexpr vec2<U> to() const {return vec2<U>(U(x), U(y));}
@@ -1692,14 +1692,15 @@ namespace Math
             [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr compare_none<vec> operator()(compare_none_tag) const {return compare_none(*this);}
             [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr compare_not_all<vec> operator()(compare_not_all_tag) const {return compare_not_all(*this);}
             [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr compare_elemwise<vec> operator()(compare_elemwise_tag) const {return compare_elemwise(*this);}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect2<T> tiny_rect() const {return rect_to(next_value(*this));}
-            template <scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect2<larger_t<T,U>> rect_to(vec2<U> b) const {rect2<larger_t<T,U>> ret; ret.a = *this; ret.b = b; return ret;}
-            template <scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect2<larger_t<T,U>> rect_size(vec2<U> b) const {return rect_to(*this + b);}
-            template <scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect2<larger_t<T,U>> rect_size(U b) const {return rect_size(vec2<U>(b));}
-            template <scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect2<larger_t<T,U>> centered_rect_size(vec2<U> b) const {return (*this - b/2).rect_size(b);}
-            template <scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect2<larger_t<T,U>> centered_rect_size(U b) const {return centered_rect_size(vec2<U>(b));}
-            template <scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect2<larger_t<T,U>> centered_rect_halfsize(vec2<U> b) const {return (*this - b).rect_to(*this + b);}
-            template <scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect2<larger_t<T,U>> centered_rect_halfsize(U b) const {return centered_rect_halfsize(vec2<U>(b));}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr mat2<type> to_rotation_matrix() const {return mat2<type>(*this, rot90());}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect2<type> tiny_rect() const {return rect_to(next_value(*this));}
+            template <scalar U = type> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect2<larger_t<type,U>> rect_to(vec2<U> b) const {rect2<larger_t<type,U>> ret; ret.a = *this; ret.b = b; return ret;}
+            template <scalar U = type> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect2<larger_t<type,U>> rect_size(vec2<U> b) const {return rect_to(*this + b);}
+            template <scalar U = type> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect2<larger_t<type,U>> rect_size(U b) const {return rect_size(vec2<U>(b));}
+            template <scalar U = type> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect2<larger_t<type,U>> centered_rect_size(vec2<U> b) const {return (*this - b/2).rect_size(b);}
+            template <scalar U = type> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect2<larger_t<type,U>> centered_rect_size(U b) const {return centered_rect_size(vec2<U>(b));}
+            template <scalar U = type> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect2<larger_t<type,U>> centered_rect_halfsize(vec2<U> b) const {return (*this - b).rect_to(*this + b);}
+            template <scalar U = type> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect2<larger_t<type,U>> centered_rect_halfsize(U b) const {return centered_rect_halfsize(vec2<U>(b));}
         };
 
         template <typename T> struct vec<3,T> // vec3
@@ -1716,7 +1717,7 @@ namespace Math
             IMP_MATH_SMALL_FUNC constexpr vec(uninit) {}
             IMP_MATH_SMALL_FUNC constexpr vec(type x, type y, type z) : x(x), y(y), z(z) {}
             IMP_MATH_SMALL_FUNC explicit constexpr vec(type obj) : x(obj), y(obj), z(obj) {}
-            template <scalar U> IMP_MATH_SMALL_FUNC explicit(!safely_convertible_to<U,T>) constexpr vec(vec3<U> obj) : x(obj.x), y(obj.y), z(obj.z) {}
+            template <scalar U> IMP_MATH_SMALL_FUNC explicit(!safely_convertible_to<U,type>) constexpr vec(vec3<U> obj) : x(obj.x), y(obj.y), z(obj.z) {}
             template <typename U> requires Custom::convertible<U, vec> explicit constexpr vec(const U &obj) {*this = Custom::Convert<U, vec>{}(obj);}
             template <typename U> requires Custom::convertible<vec, U> explicit operator U() const {return Custom::Convert<vec, U>{}(*this);}
             template <scalar U> [[nodiscard]] constexpr vec3<U> to() const {return vec3<U>(U(x), U(y), U(z));}
@@ -1757,14 +1758,14 @@ namespace Math
             [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr compare_none<vec> operator()(compare_none_tag) const {return compare_none(*this);}
             [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr compare_not_all<vec> operator()(compare_not_all_tag) const {return compare_not_all(*this);}
             [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr compare_elemwise<vec> operator()(compare_elemwise_tag) const {return compare_elemwise(*this);}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect3<T> tiny_rect() const {return rect_to(next_value(*this));}
-            template <scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect3<larger_t<T,U>> rect_to(vec3<U> b) const {rect3<larger_t<T,U>> ret; ret.a = *this; ret.b = b; return ret;}
-            template <scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect3<larger_t<T,U>> rect_size(vec3<U> b) const {return rect_to(*this + b);}
-            template <scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect3<larger_t<T,U>> rect_size(U b) const {return rect_size(vec3<U>(b));}
-            template <scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect3<larger_t<T,U>> centered_rect_size(vec3<U> b) const {return (*this - b/2).rect_size(b);}
-            template <scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect3<larger_t<T,U>> centered_rect_size(U b) const {return centered_rect_size(vec3<U>(b));}
-            template <scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect3<larger_t<T,U>> centered_rect_halfsize(vec3<U> b) const {return (*this - b).rect_to(*this + b);}
-            template <scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect3<larger_t<T,U>> centered_rect_halfsize(U b) const {return centered_rect_halfsize(vec3<U>(b));}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect3<type> tiny_rect() const {return rect_to(next_value(*this));}
+            template <scalar U = type> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect3<larger_t<type,U>> rect_to(vec3<U> b) const {rect3<larger_t<type,U>> ret; ret.a = *this; ret.b = b; return ret;}
+            template <scalar U = type> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect3<larger_t<type,U>> rect_size(vec3<U> b) const {return rect_to(*this + b);}
+            template <scalar U = type> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect3<larger_t<type,U>> rect_size(U b) const {return rect_size(vec3<U>(b));}
+            template <scalar U = type> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect3<larger_t<type,U>> centered_rect_size(vec3<U> b) const {return (*this - b/2).rect_size(b);}
+            template <scalar U = type> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect3<larger_t<type,U>> centered_rect_size(U b) const {return centered_rect_size(vec3<U>(b));}
+            template <scalar U = type> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect3<larger_t<type,U>> centered_rect_halfsize(vec3<U> b) const {return (*this - b).rect_to(*this + b);}
+            template <scalar U = type> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect3<larger_t<type,U>> centered_rect_halfsize(U b) const {return centered_rect_halfsize(vec3<U>(b));}
         };
 
         template <typename T> struct vec<4,T> // vec4
@@ -1782,7 +1783,7 @@ namespace Math
             IMP_MATH_SMALL_FUNC constexpr vec(uninit) {}
             IMP_MATH_SMALL_FUNC constexpr vec(type x, type y, type z, type w) : x(x), y(y), z(z), w(w) {}
             IMP_MATH_SMALL_FUNC explicit constexpr vec(type obj) : x(obj), y(obj), z(obj), w(obj) {}
-            template <scalar U> IMP_MATH_SMALL_FUNC explicit(!safely_convertible_to<U,T>) constexpr vec(vec4<U> obj) : x(obj.x), y(obj.y), z(obj.z), w(obj.w) {}
+            template <scalar U> IMP_MATH_SMALL_FUNC explicit(!safely_convertible_to<U,type>) constexpr vec(vec4<U> obj) : x(obj.x), y(obj.y), z(obj.z), w(obj.w) {}
             template <typename U> requires Custom::convertible<U, vec> explicit constexpr vec(const U &obj) {*this = Custom::Convert<U, vec>{}(obj);}
             template <typename U> requires Custom::convertible<vec, U> explicit operator U() const {return Custom::Convert<vec, U>{}(*this);}
             template <scalar U> [[nodiscard]] constexpr vec4<U> to() const {return vec4<U>(U(x), U(y), U(z), U(w));}
@@ -1821,14 +1822,14 @@ namespace Math
             [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr compare_none<vec> operator()(compare_none_tag) const {return compare_none(*this);}
             [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr compare_not_all<vec> operator()(compare_not_all_tag) const {return compare_not_all(*this);}
             [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr compare_elemwise<vec> operator()(compare_elemwise_tag) const {return compare_elemwise(*this);}
-            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect4<T> tiny_rect() const {return rect_to(next_value(*this));}
-            template <scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect4<larger_t<T,U>> rect_to(vec4<U> b) const {rect4<larger_t<T,U>> ret; ret.a = *this; ret.b = b; return ret;}
-            template <scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect4<larger_t<T,U>> rect_size(vec4<U> b) const {return rect_to(*this + b);}
-            template <scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect4<larger_t<T,U>> rect_size(U b) const {return rect_size(vec4<U>(b));}
-            template <scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect4<larger_t<T,U>> centered_rect_size(vec4<U> b) const {return (*this - b/2).rect_size(b);}
-            template <scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect4<larger_t<T,U>> centered_rect_size(U b) const {return centered_rect_size(vec4<U>(b));}
-            template <scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect4<larger_t<T,U>> centered_rect_halfsize(vec4<U> b) const {return (*this - b).rect_to(*this + b);}
-            template <scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect4<larger_t<T,U>> centered_rect_halfsize(U b) const {return centered_rect_halfsize(vec4<U>(b));}
+            [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect4<type> tiny_rect() const {return rect_to(next_value(*this));}
+            template <scalar U = type> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect4<larger_t<type,U>> rect_to(vec4<U> b) const {rect4<larger_t<type,U>> ret; ret.a = *this; ret.b = b; return ret;}
+            template <scalar U = type> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect4<larger_t<type,U>> rect_size(vec4<U> b) const {return rect_to(*this + b);}
+            template <scalar U = type> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect4<larger_t<type,U>> rect_size(U b) const {return rect_size(vec4<U>(b));}
+            template <scalar U = type> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect4<larger_t<type,U>> centered_rect_size(vec4<U> b) const {return (*this - b/2).rect_size(b);}
+            template <scalar U = type> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect4<larger_t<type,U>> centered_rect_size(U b) const {return centered_rect_size(vec4<U>(b));}
+            template <scalar U = type> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect4<larger_t<type,U>> centered_rect_halfsize(vec4<U> b) const {return (*this - b).rect_to(*this + b);}
+            template <scalar U = type> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect4<larger_t<type,U>> centered_rect_halfsize(U b) const {return centered_rect_halfsize(vec4<U>(b));}
         };
 
         template <typename ...P> requires(sizeof...(P) >= 2 && sizeof...(P) <= 4) vec(P...) -> vec<sizeof...(P), larger_t<P...>>;

@@ -7,7 +7,7 @@
 #include <sstream>
 #include <type_traits>
 
-#define VERSION "3.20"
+#define VERSION "3.21"
 
 #pragma GCC diagnostic ignored "-Wpragmas" // Silence GCC warning about the next line disabling a warning that GCC doesn't have.
 #pragma GCC diagnostic ignored "-Wstring-plus-int" // Silence clang warning about `1+R"()"` pattern.
@@ -1732,7 +1732,7 @@ int main(int argc, char **argv)
                             output("IMP_MATH_SMALL_FUNC explicit constexpr vec(type obj) : ",Fields(", ","@(obj)")," {}\n");
 
                             // Converting
-                            output("template <scalar U> IMP_MATH_SMALL_FUNC explicit(!safely_convertible_to<U,T>) constexpr vec(vec",w,"<U> obj) : ",Fields(", ","@(obj.@)")," {}\n");
+                            output("template <scalar U> IMP_MATH_SMALL_FUNC explicit(!safely_convertible_to<U,type>) constexpr vec(vec",w,"<U> obj) : ",Fields(", ","@(obj.@)")," {}\n");
                         }
 
                         { // Customization point constructor and conversion operator
@@ -1934,15 +1934,22 @@ int main(int argc, char **argv)
                                 output("[[nodiscard]] IMP_MATH_SMALL_FUNC constexpr compare_",mode,"<vec> operator()(compare_",mode,"_tag) const {return compare_",mode,"(*this);}\n");
                         }
 
-                        { // Rect helpers
-                            output("[[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect",w,"<T> tiny_rect() const {return rect_to(next_value(*this));}\n");
-                            output("template <scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect",w,"<larger_t<T,U>> rect_to(vec",w,"<U> b) const {rect",w,"<larger_t<T,U>> ret; ret.a = *this; ret.b = b; return ret;}\n");
-                            output("template <scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect",w,"<larger_t<T,U>> rect_size(vec",w,"<U> b) const {return rect_to(*this + b);}\n");
-                            output("template <scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect",w,"<larger_t<T,U>> rect_size(U b) const {return rect_size(vec",w,"<U>(b));}\n");
-                            output("template <scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect",w,"<larger_t<T,U>> centered_rect_size(vec",w,"<U> b) const {return (*this - b/2).rect_size(b);}\n");
-                            output("template <scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect",w,"<larger_t<T,U>> centered_rect_size(U b) const {return centered_rect_size(vec",w,"<U>(b));}\n");
-                            output("template <scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect",w,"<larger_t<T,U>> centered_rect_halfsize(vec",w,"<U> b) const {return (*this - b).rect_to(*this + b);}\n");
-                            output("template <scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect",w,"<larger_t<T,U>> centered_rect_halfsize(U b) const {return centered_rect_halfsize(vec",w,"<U>(b));}\n");
+                        { // To matrix
+                            { // 2D vector to rotation matrix
+                                if (w == 2)
+                                    output("[[nodiscard]] IMP_MATH_SMALL_FUNC constexpr mat2<type> to_rotation_matrix() const {return mat2<type>(*this, rot90());}\n");
+                            }
+                        }
+
+                        { // To rectangle
+                            output("[[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect",w,"<type> tiny_rect() const {return rect_to(next_value(*this));}\n");
+                            output("template <scalar U = type> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect",w,"<larger_t<type,U>> rect_to(vec",w,"<U> b) const {rect",w,"<larger_t<type,U>> ret; ret.a = *this; ret.b = b; return ret;}\n");
+                            output("template <scalar U = type> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect",w,"<larger_t<type,U>> rect_size(vec",w,"<U> b) const {return rect_to(*this + b);}\n");
+                            output("template <scalar U = type> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect",w,"<larger_t<type,U>> rect_size(U b) const {return rect_size(vec",w,"<U>(b));}\n");
+                            output("template <scalar U = type> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect",w,"<larger_t<type,U>> centered_rect_size(vec",w,"<U> b) const {return (*this - b/2).rect_size(b);}\n");
+                            output("template <scalar U = type> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect",w,"<larger_t<type,U>> centered_rect_size(U b) const {return centered_rect_size(vec",w,"<U>(b));}\n");
+                            output("template <scalar U = type> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect",w,"<larger_t<type,U>> centered_rect_halfsize(vec",w,"<U> b) const {return (*this - b).rect_to(*this + b);}\n");
+                            output("template <scalar U = type> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect",w,"<larger_t<type,U>> centered_rect_halfsize(U b) const {return centered_rect_halfsize(vec",w,"<U>(b));}\n");
                         }
                     });
                 }
