@@ -109,7 +109,7 @@ override filter_substr = $(strip $(foreach x,$2,$(foreach y,$1,$(if $(strip $(fi
 override pairwise_subst = $(if $2,$(call pairwise_subst_low,$1,$(subst $1, ,$(firstword $2)),$3,$(wordlist 2,$(words $2),$2)),$3)
 override pairwise_subst_low = $(if $(filter-out 1 2,$(words $2)),$(error The separator can't appear more than once per element))$(call pairwise_subst,$1,$4,$(patsubst $(word 1,$2),$(word 2,$2),$3))
 
-# Given a word, matches it against a set of rule. Returns the name of the first matching rule, or empty string on failure.
+# Given a word, matches it against a set of rules. Returns the name of the first matching rule, or empty string on failure.
 # $4 is the target word.
 # $3 is a list of space-separated rules, where each rule is `<pattens>$1<name>`, where patterns are separated by $2 and can contain %.
 # Example: `$(call find_first_match,->,;,a->letter 1;2;3->number,2)` returns `number`.
@@ -173,14 +173,15 @@ language_list :=
 # `language_outputs_deps` describes whether an extra `.d` file is created or not (don't define it if not).
 # In `language_command`:
 # $1 is the input file.
-# $2 is the output file.
-# $3 is the project name.
+# $2 is the output file, or empty string if we don't care.
+# $3 is the project name, or empty string if none.
 # $4 is extra flags.
+# $5 - if non-empty string, output dependencies as if by -MMD -MP, if this language supports it. You must also set `language_outputs_deps-??` to non-empty strin if you support it.
 
 language_list += c
 override language_name-c := C
 override language_pattern-c := *.c
-override language_command-c = $(strip $(CC) $(call pch_flag_for_source,$1,$3) $4 -MMD -MP -c $1 $(if $2,-o $2) $(call proj_filtered_flags,cflags,$3) $(CFLAGS) $(PROJ_CFLAGS) $(__projsetting_common_flags_$3) $(__projsetting_cflags_$3) $(call $(__projsetting_flags_func_$3),$1))
+override language_command-c = $(strip $(CC) $(if $3,$(call pch_flag_for_source,$1,$3)) $4 $(if $5,-MMD -MP) -c $1 $(if $2,-o $2) $(if $3,$(call proj_libs_filtered_flags,cflags,$3)) $(combined_global_cflags) $(if $3,$(PROJ_COMMON_FLAGS) $(PROJ_CFLAGS) $(__projsetting_common_flags_$3) $(__projsetting_cflags_$3) $(call $(__projsetting_flags_func_$3),$1)))
 override language_outputs_deps-c := y
 override language_link-c = $(CC)
 override language_pchflag-c := -xc-header
@@ -188,7 +189,7 @@ override language_pchflag-c := -xc-header
 language_list += cpp
 override language_name-cpp := C++
 override language_pattern-cpp := *.cpp
-override language_command-cpp = $(strip $(CXX) $(call pch_flag_for_source,$1,$3) $4 -MMD -MP -c $1 $(if $2,-o $2) $(call proj_filtered_flags,cflags,$3) $(CXXFLAGS) $(PROJ_CXXFLAGS) $(__projsetting_common_flags_$3) $(__projsetting_cxxflags_$3) $(call $(__projsetting_flags_func_$3),$1))
+override language_command-cpp = $(strip $(CXX) $(if $3,$(call pch_flag_for_source,$1,$3)) $4 $(if $5,-MMD -MP) -c $1 $(if $2,-o $2) $(if $3,$(call proj_libs_filtered_flags,cflags,$3)) $(combined_global_cxxflags) $(if $3,$(PROJ_COMMON_FLAGS) $(PROJ_CXXFLAGS) $(__projsetting_common_flags_$3) $(__projsetting_cxxflags_$3) $(call $(__projsetting_flags_func_$3),$1)))
 override language_outputs_deps-cpp := y
 override language_link-cpp = $(CXX)
 override language_pchflag-cpp := -xc++-header
@@ -260,7 +261,7 @@ override proj_setting_names := sources source_dirs cflags cxxflags ldflags commo
 # Settings are:
 # * sources - individual source files.
 # * source_dirs - directories to search for source files. The result is combined with `sources`.
-# * {c,cxx}flags - compiler flags for C and CXX respectively.
+# * cflags,cxxflags - compiler flags for C and CXX respectively.
 # * ldflags - linker flags.
 # * common_flags - those are added to both `{c,cxx}flags` and `ldflags`.
 # * flags_func - a function name to determine extra per-file flags. The function is given the source filename as $1, and can return flags if it wants to.
@@ -281,6 +282,7 @@ override mode_list :=
 # Usage: `$(call NewMode,release)`
 override NewMode = \
 	$(if $(filter-out 1,$(words $1)),$(error Mode name must be a single word))\
+	$(if $(filter generic,$1),$(error Mode name `generic` is reserved))\
 	$(call var,mode_list += $1)
 
 # Runs the rest of the line immediately, if the mode matches.
@@ -292,9 +294,10 @@ override Mode = $(if $(strip $(filter-out $(lastword $(mode_list)),$(MODE))),ove
 # --- Set default values before loading configs ---
 
 # Detect target OS.
-# Quasi-MSYS2 sets this variable...
 ifeq ($(TARGET_OS),)
-ifeq ($(OS),Windows_NT)
+ifneq ($(EMSCRIPTEN),)# Emmake sets this.
+TARGET_OS := emscripten
+else ifeq ($(OS),Windows_NT)# Quasi-MSYS2 sets this.
 TARGET_OS := windows
 else
 TARGET_OS := linux
@@ -317,6 +320,10 @@ PREFIX_static := lib
 ifeq ($(TARGET_OS),windows)
 EXT_exe := .exe
 EXT_shared := .dll
+EXT_static := .a
+else ifeq ($(TARGET_OS),emscripten)
+EXT_exe := .html
+EXT_shared := .so
 EXT_static := .a
 else
 EXT_exe :=
@@ -372,10 +379,10 @@ endif
 # Patchelf command, if necessary.
 ifeq ($(TARGET_OS),windows)
 PATCHELF :=
-LDFLAGS_RPATH :=
+GLOBAL_LDFLAGS_RPATH :=
 else
 PATCHELF := patchelf --set-rpath '$$ORIGIN'
-LDFLAGS_RPATH := -Wl,-rpath='$$ORIGIN'
+GLOBAL_LDFLAGS_RPATH := -Wl,-rpath='$$ORIGIN'
 endif
 
 # Windres settings:
@@ -393,36 +400,47 @@ export PKG_CONFIG_PATH
 override PKG_CONFIG_LIBDIR := -
 export PKG_CONFIG_LIBDIR
 
-MODE :=# Build mode.
+MODE :=# Build mode. Set to `generic` to not add any custom flags.
 APP :=# Target project
 ARGS :=# Flags for running the application.
 
 COMMON_FLAGS :=# Used both when compiling and linking.
-LINKER := AUTO# E.g. `lld` or `lld-13`. Can be `AUTO` to guess LLD version, or empty to use the default one.
+# The linker, e.g. `lld` or `lld-13`. Can be `AUTO` to guess LLD version, or empty to use the default one.
+ifeq ($(TARGET_OS),emscripten)
+LINKER :=
+else
+LINKER := AUTO
+endif
 ALLOW_PCH := 1# If 0 or empty, disable PCH.
 CMAKE_GENERATOR := Ninja# CMake generator, not quoted. Optional.
 CMAKE_BUILD_TOOL := ninja# CMake build tool, such as `make` or `ninja`. Optional. If specified, must match the generator.
 
 # Used both when compiling and linking. Those are set automatically.
-COMMON_FLAGS_IMPLICIT :=
+IMPLICIT_COMMON_FLAGS :=
 ifneq ($(TARGET_OS),windows)
 # Without this we can't build shared libraries.
 # Also libfmt is known to produce static libs without this flag, meaning they can't later be linked into our shared libs.
-COMMON_FLAGS_IMPLICIT += -fPIC
+IMPLICIT_COMMON_FLAGS += -fPIC
 endif
 ifneq ($(MAKE_TERMERR),)
 # -Otarget messes with the colors, so we fix it here.
-COMMON_FLAGS_IMPLICIT += -fdiagnostics-color=always
+IMPLICIT_COMMON_FLAGS += -fdiagnostics-color=always
 endif
 
+# Flags applied to both projects and dependencies.
+GLOBAL_COMMON_FLAGS :=# Combined with `{C,CXX,LD}FLAGS`.
+GLOBAL_CFLAGS :=
+GLOBAL_CXXFLAGS :=
+GLOBAL_LDFLAGS :=
 # Flags applied to all our projects, but not to the dependencies.
+PROJ_COMMON_FLAGS :=# Combined with `{C,CXX,LD}FLAGS`.
 PROJ_CFLAGS :=
 PROJ_CXXFLAGS :=
-PROJ_COMMON_FLAGS :=# Is combined with both CFLAGS and CXXFLAGS.
 PROJ_LDFLAGS :=
 PROJ_RUNTIME_ENV :=# A space-separated list of environment variables (`env=value`), used when running the resulting binary.
 
 # Host toolchain.
+# `emmake` sets those, but we don't really care what they want the host compiler to be.
 HOST_CC :=
 HOST_CXX :=
 
@@ -577,7 +595,7 @@ else
   # Make sure the specified mode is in the list.
   $(if $(filter 0,$(words $(MODE))),$(error Build mode is not set.$(lf)To set the mode once, add `MODE=...` to flags, one of: $(mode_list)$(lf)To set it permanently, use `make remember MODE=...`))
   $(if $(filter-out 1,$(words $(MODE))),$(error MODE must be a single word))
-  $(if $(filter $(MODE),$(mode_list)),,$(error MODE must be one of: $(mode_list)))
+  $(if $(filter $(MODE),generic $(mode_list)),,$(error MODE must `generic` or one of: $(mode_list)))
  endif
 endif
 # Strip, just in case.
@@ -607,20 +625,9 @@ override ARGS := $(value ARGS)
 
 # Note that we can't add the flags to CC, CXX.
 # It initially looked like we can, if we then do `-DCMAKE_C_COMPILER=$(subst $(space,;,$(CC))`, but CMake seems to ignore those extra flags. What a shame.
-# Note that we can't use `+=` here, because if user overrides those variables, they may not be `:=`, and we then undefine `COMMON_FLAGS`.
-override CFLAGS   := $(COMMON_FLAGS_IMPLICIT) $(COMMON_FLAGS) $(CFLAGS)
-override CXXFLAGS := $(COMMON_FLAGS_IMPLICIT) $(COMMON_FLAGS) $(CXXFLAGS)
-override LDFLAGS  := $(COMMON_FLAGS_IMPLICIT) $(COMMON_FLAGS) $(LDFLAGS_RPATH) $(LDFLAGS)
-override undefine COMMON_FLAGS
-override undefine COMMON_FLAGS_IMPLICIT
-override undefine LDFLAGS_RPATH
-
-override LDFLAGS := $(if $(LINKER),-fuse-ld=$(LINKER)) $(LDFLAGS)
-
-# Perform the same fixup for project-only flags.
-override PROJ_CFLAGS   := $(PROJ_COMMON_FLAGS) $(PROJ_CFLAGS)
-override PROJ_CXXFLAGS := $(PROJ_COMMON_FLAGS) $(PROJ_CXXFLAGS)
-override undefine PROJ_COMMON_FLAGS
+override combined_global_cflags   := $(IMPLICIT_COMMON_FLAGS) $(GLOBAL_COMMON_FLAGS) $(GLOBAL_CFLAGS)
+override combined_global_cxxflags := $(IMPLICIT_COMMON_FLAGS) $(GLOBAL_COMMON_FLAGS) $(GLOBAL_CXXFLAGS)
+override combined_global_ldflags  := $(IMPLICIT_COMMON_FLAGS) $(if $(LINKER),-fuse-ld=$(LINKER)) $(GLOBAL_LDFLAGS_RPATH) $(GLOBAL_COMMON_FLAGS) $(GLOBAL_LDFLAGS)
 
 
 # Use this string in paths to mode-specific files.
@@ -663,22 +670,22 @@ override lib_find_packages_for = $(if $(__libsetting_only_pkgconfig_files_$(stri
 # We just run pkg-config on all packages of those libraries.
 override lib_cflags = $(strip\
 	$(if $(filter-out $(all_libs),$1),$(error Unknown libraries: $(filter-out $(all_libs),$1)))\
-	$(call, Raw flags will be written here.)\
+	$(call, ### Raw flags will be written here.)\
 	$(call var,__raw_flags :=)\
-	$(call, Pkg-config packages will be written here.)\
+	$(call, ### Pkg-config packages will be written here.)\
 	$(call var,__pkgs :=)\
-	$(call, Run lib_cflags_low for every library.)\
+	$(call, ### Run lib_cflags_low for every library.)\
 	$(foreach x,$1,$(call lib_cflags_low,$(call lib_find_packages_for,$x)))\
-	$(call, Run pkg-config for libraries that have pkg-config packages.)\
+	$(call, ### Run pkg-config for libraries that have pkg-config packages.)\
 	$(if $(__pkgs),$(call safe_shell,$(lib_invoke_pkgconfig) --cflags $(__pkgs)))\
 	$(__raw_flags)\
 	)
 override lib_cflags_low = \
 	$(if $1,\
-		$(call, Have pkg-config file, so add this lib to the list of packages.)\
+		$(call, ### Have pkg-config file, so add this lib to the list of packages.)\
 		$(call var,__pkgs += $1)\
 	,\
-		$(call, Use a hardcoded search path.)\
+		$(call, ### Use a hardcoded search path.)\
 		$(call var,__raw_flags += -I$(call lib_name_to_base_dir,$x)/$(os_mode_string)/prefix/include)\
 	)
 
@@ -689,29 +696,29 @@ override lib_file_patterns := $(PREFIX_shared)%$(EXT_shared) $(PREFIX_static)%$(
 # We try to run pkg-config for each library if available, falling back to manually finding the libraries and linking them.
 override lib_ldflags = $(strip\
 	$(if $(filter-out $(all_libs),$1),$(error Unknown libraries: $(filter-out $(all_libs),$1)))\
-	$(call, Raw flags will be written here.)\
+	$(call, ### Raw flags will be written here.)\
 	$(call var,__raw_flags :=)\
-	$(call, Pkg-config packages will be written here.)\
+	$(call, ### Pkg-config packages will be written here.)\
 	$(call var,__pkgs :=)\
-	$(call, Run lib_ldflags_low for every library.)\
+	$(call, ### Run lib_ldflags_low for every library.)\
 	$(foreach x,$1,$(call lib_ldflags_low,$(call lib_find_packages_for,$x)))\
-	$(call, Run pkg-config for libraries that have pkg-config packages.)\
+	$(call, ### Run pkg-config for libraries that have pkg-config packages.)\
 	$(if $(__pkgs),$(call safe_shell,$(lib_invoke_pkgconfig) --libs $(__pkgs)))\
 	$(__raw_flags)\
 	)
 override lib_ldflags_low = \
 	$(if $1,\
-		$(call, Have pkg-config file, so add this lib to the list of packages.)\
+		$(call, ### Have pkg-config file, so add this lib to the list of packages.)\
 		$(call var,__pkgs += $1)\
 	,\
-		$(call, Dir for library search.)\
+		$(call, ### Dir for library search.)\
 		$(call var,__dir := $(call lib_name_to_base_dir,$x)/$(os_mode_string)/prefix/lib)\
-		$(call, Find library filenames.)\
+		$(call, ### Find library filenames.)\
 		$(call var,__libs := $(notdir $(wildcard $(subst %,*,$(addprefix $(__dir)/,$(lib_file_patterns))))))\
 		$(if $(__libs),\
-			$(call, Strip prefix and extension.)\
+			$(call, ### Strip prefix and extension.)\
 			$(foreach x,$(lib_file_patterns),$(call var,__libs := $(patsubst $x,%,$(__libs))))\
-			$(call, Convert to flags.)\
+			$(call, ### Convert to flags.)\
 			$(call var,__raw_flags += -L$(__dir) $(addprefix -l,$(sort $(__libs))))\
 		)\
 	)
@@ -746,7 +753,7 @@ $(call var,__ar_path := $(LIB_SRC_DIR)/$(__ar_name))# Archive path
 $(call var,__log_path_final := $(call lib_name_to_log_path,$(__lib_name)))# The final log path
 $(call var,__log_path := $(__log_path_final).unfinished)# Temporary log path for an unfinished log
 
-$(call, Forward the same variables to the target.)
+# Forward the same variables to the target.
 $(__log_path_final): override __lib_name := $(__lib_name)
 $(__log_path_final): override __ar_name := $(__ar_name)
 $(__log_path_final): override __ar_path := $(__ar_path)
@@ -889,9 +896,9 @@ override bad_lib_flags_sep := >>>
 # A separator for the `pch` project property.
 override pch_rule_sep := ->
 
-# Given project $2 and flag type $1 (cflags or ldflags), returns the flags.
+# Given project $2 and flag type $1 (cflags or ldflags), returns those flags for all libraries the project depends on.
 # The flags are filtered according to the project settings, and also are cached.
-override proj_filtered_flags = $(call pairwise_subst,$(bad_lib_flags_sep),$(BAD_LIB_FLAGS) $(__projsetting_bad_lib_flags_$2),$(call lib_cache_flags,lib_$(strip $1),$(__projsetting_libs_$2)))
+override proj_libs_filtered_flags = $(call pairwise_subst,$(bad_lib_flags_sep),$(BAD_LIB_FLAGS) $(__projsetting_bad_lib_flags_$2),$(call lib_cache_flags,lib_$(strip $1),$(__projsetting_libs_$2)))
 
 # Given source filenames $1 and a project $2, returns the resulting dependency output files, if any. Some languages don't generate them.
 override source_files_to_dep_outputs = $(strip $(foreach x,$1,$(if $(language_outputs_deps-$(call guess_lang_from_filename,$x)),$(OBJ_DIR)/$(os_mode_string)/$2/$x.d)))
@@ -967,7 +974,7 @@ $(__outputs) &: override __pch := $(__pch)
 
 $(__outputs) &: $(__src) $(__pch) $(call lib_name_to_log_path,$(all_libs))
 	$(call log_now,[$(language_name-$(__lang))] $<)
-	@$(call language_command-$(__lang),$<,$(firstword $(__outputs)),$(__proj))
+	@$(call language_command-$(__lang),$<,$(firstword $(__outputs)),$(__proj),,output_deps)
 
 -include $(call source_files_to_dep_outputs,$(__src),$(__proj))
 endef
@@ -993,8 +1000,8 @@ $(__filename): override __proj := $(__proj)
 $(__filename): $(call source_files_to_main_outputs,$(__proj_allsources_$(__proj)),$(__proj)) $(call proj_output_filename,$(__projsetting_deps_$(__proj)))
 	$(call log_now,[$(proj_kind_name-$(__proj_kind_$(__proj)))] $@)
 	@$(language_link-$(__projsetting_lang_$(__proj))) $(if $(filter shared,$(__proj_kind_$(__proj))),-shared) -o $@ $(filter %.o,$^) \
-		$(call proj_filtered_flags,ldflags,$(__proj)) \
-		$(LDFLAGS) $(PROJ_LDFLAGS) $(__projsetting_common_flags_$(__proj)) $(__projsetting_ldflags_$(__proj)) \
+		$(call proj_libs_filtered_flags,ldflags,$(__proj)) \
+		$(combined_global_ldflags) $(PROJ_COMMON_FLAGS) $(PROJ_LDFLAGS) $(__projsetting_common_flags_$(__proj)) $(__projsetting_ldflags_$(__proj)) \
 		-L$(call quote,$(BIN_DIR)/$(os_mode_string)) $(patsubst $(PREFIX_shared)%$(EXT_shared),-l%,$(notdir $(call proj_output_filename,$(__projsetting_deps_$(__proj)))))
 
 ifeq ($(__proj_kind_$(__proj)),exe)
@@ -1353,9 +1360,9 @@ override buildsystem-cmake = \
 	$(call, ### Add dependency include directories to compiler flags. Otherwise OpenAL can't find SDL2.)\
 	$(call, ### Note that we're not single-quoting paths here, as it doesn't work in native Windows builds. Should probably use double-quotes, but junk in paths doesn't work anyway because of Zlib and such.)\
 	$(call var,__bs_include_paths := $(foreach x,$(call lib_name_to_prefix,$(__libsetting_deps_$(__lib_name))),-I$(call abs_path_to_host,$(abspath $x)/include)))\
-	$(call var,__bs_cflags := $(CFLAGS) $(__libsetting_common_flags_$(__lib_name)) $(__libsetting_cflags_$(__lib_name)) $(__bs_include_paths))\
-	$(call var,__bs_cxxflags := $(CXXFLAGS) $(__libsetting_common_flags_$(__lib_name)) $(__libsetting_cxxflags_$(__lib_name)) $(__bs_include_paths))\
-	$(call var,__bs_ldflags := $(LDFLAGS) $(__libsetting_common_flags_$(__lib_name)) $(__libsetting_ldflags_$(__lib_name)))\
+	$(call var,__bs_cflags := $(combined_global_cflags) $(__libsetting_common_flags_$(__lib_name)) $(__libsetting_cflags_$(__lib_name)) $(__bs_include_paths))\
+	$(call var,__bs_cxxflags := $(combined_global_cxxflags) $(__libsetting_common_flags_$(__lib_name)) $(__libsetting_cxxflags_$(__lib_name)) $(__bs_include_paths))\
+	$(call var,__bs_ldflags := $(combined_global_ldflags) $(__libsetting_common_flags_$(__lib_name)) $(__libsetting_ldflags_$(__lib_name)))\
 	$(call safe_shell_exec,\
 		$(call, ### Using the env variables instead of the CMake variables to silence the unused variable warnings. Also this is less verbose.)\
 		CC=$(call quote,$(CC)) CXX=$(call quote,$(CXX))\
@@ -1409,9 +1416,9 @@ override buildsystem-configure_make = \
 	$(call, ### A list of env variables we use. Note explicit pkg-config stuff. At least freetype needs it, and fails to find pkgconfig files in the prefix otherwise.)\
 	$(call, ### Note that we only need to set prefix for this single library, since we copy all dependencies here anyway.)\
 	$(call var,__bs_shell_vars := $(foreach f,CC CXX CPP LD CPPFLAGS,$f=$(call quote,$($f))) \
-		CFLAGS=$(call quote,$(CFLAGS) $(__libsetting_common_flags_$(__lib_name)) $(__libsetting_cflags_$(__lib_name))) \
-		CXXFLAGS=$(call quote,$(CXXFLAGS) $(__libsetting_common_flags_$(__lib_name)) $(__libsetting_cxxflags_$(__lib_name))) \
-		LDFLAGS=$(call quote,$(LDFLAGS) $(__libsetting_common_flags_$(__lib_name)) $(__libsetting_ldflags_$(__lib_name))) \
+		CFLAGS=$(call quote,$(combined_global_cflags) $(__libsetting_common_flags_$(__lib_name)) $(__libsetting_cflags_$(__lib_name))) \
+		CXXFLAGS=$(call quote,$(combined_global_cxxflags) $(__libsetting_common_flags_$(__lib_name)) $(__libsetting_cxxflags_$(__lib_name))) \
+		LDFLAGS=$(call quote,$(combined_global_ldflags) $(__libsetting_common_flags_$(__lib_name)) $(__libsetting_ldflags_$(__lib_name))) \
 		$(call, ### See the definion of `PKG_CONFIG_PATH` above for why we set it to a space rather than nothing.)\
 		PKG_CONFIG_PATH=' ' PKG_CONFIG_LIBDIR=$(call quote,$(abspath $(__install_dir)/lib/pkgconfig)) $(__libsetting_configure_vars_$(__lib_name)) \
 	)\

@@ -3,29 +3,29 @@
 _win_subsystem :=
 
 $(call NewMode,debug)
-$(Mode)COMMON_FLAGS := -g
-$(Mode)CXXFLAGS := -D_GLIBCXX_DEBUG
+$(Mode)GLOBAL_COMMON_FLAGS := -g
+$(Mode)GLOBAL_CXXFLAGS := -D_GLIBCXX_DEBUG
 
 $(call NewMode,debug_soft)
-$(Mode)COMMON_FLAGS := -g
-$(Mode)CXXFLAGS := -D_GLIBCXX_ASSERTIONS
+$(Mode)GLOBAL_COMMON_FLAGS := -g
+$(Mode)GLOBAL_CXXFLAGS := -D_GLIBCXX_ASSERTIONS
 
 $(call NewMode,release)
-$(Mode)COMMON_FLAGS := -O3
+$(Mode)GLOBAL_COMMON_FLAGS := -O3
+$(Mode)GLOBAL_CXXFLAGS := -DNDEBUG
+$(Mode)GLOBAL_LDFLAGS := -s
 $(Mode)PROJ_COMMON_FLAGS := -flto
-$(Mode)CXXFLAGS := -DNDEBUG
 $(Mode)PROJ_CXXFLAGS := -DIMP_PLATFORM_FLAG_prod=1
-$(Mode)LDFLAGS := -s
 $(Mode)_win_subsystem := -mwindows
 
 $(call NewMode,profile)
-$(Mode)COMMON_FLAGS := -O3 -pg
-$(Mode)CXXFLAGS := -DNDEBUG
+$(Mode)GLOBAL_COMMON_FLAGS := -O3 -pg
+$(Mode)GLOBAL_CXXFLAGS := -DNDEBUG
 $(Mode)_win_subsystem := -mwindows
 
 $(call NewMode,sanitize_address_ub)
-$(Mode)COMMON_FLAGS := -g -fsanitize=address -fsanitize=undefined
-$(Mode)CXXFLAGS := -D_GLIBCXX_DEBUG
+$(Mode)GLOBAL_COMMON_FLAGS := -g -fsanitize=address -fsanitize=undefined
+$(Mode)GLOBAL_CXXFLAGS := -D_GLIBCXX_DEBUG
 $(Mode)PROJ_RUNTIME_ENV += LSAN_OPTIONS=suppressions=misc/leak_sanitizer_suppressions.txt
 
 DIST_NAME := $(APP)_$(TARGET_OS)_v1.*
@@ -42,7 +42,6 @@ PROJ_CXXFLAGS += -Isrc -Ilib/include
 PROJ_CXXFLAGS += -DIMGUI_USER_CONFIG=\"third_party_connectors/imconfig.h\"# Custom ImGui config.
 PROJ_CXXFLAGS += -DFMT_DEPRECATED_OSTREAM# See issue: https://github.com/fmtlib/fmt/issues/3088
 
-PROJ_LDFLAGS :=
 ifeq ($(TARGET_OS),windows)
 PROJ_LDFLAGS += $(_win_subsystem)
 endif
@@ -165,7 +164,7 @@ override buildsystem-cglfl = \
 	$(call safe_shell_exec,mv $(call quote,$(__source_dir)/cglfl_generate$(HOST_EXT_exe)) $(call quote,$(__build_dir)))\
 	$(call, ### Lastly, build the static library)\
 	$(call log_now,[Library] >>> Building library...)\
-	$(call safe_shell_exec,$(CXX) $(CXXFLAGS) -c $(call quote,$(__source_dir)/src/cglfl.cpp) -o $(call quote,$(__build_dir)/cglfl.o) $(call quote,-I$(__install_dir)/include) >>$(call quote,$(__log_path)))\
+	$(call safe_shell_exec,$(call language_command-cpp,$(__source_dir)/src/cglfl.cpp,$(__build_dir)/cglfl.o,,-I$(__install_dir)/include >>$(call quote,$(__log_path))))\
 	$(call safe_shell_exec,mkdir $(call quote,$(__install_dir)/lib))\
 	$(call safe_shell_exec,$(call MAKE_STATIC_LIB,$(__install_dir)/lib/$(PREFIX_static)cglfl$(EXT_static),$(call quote,$(__build_dir)/cglfl.o)) >>$(call quote,$(__log_path)))\
 	$(call log_now,[Library] >>> Cleaning up...)\
@@ -218,7 +217,8 @@ override buildsystem-imgui = \
 	$(call log_now,[Library] >>> Building...)\
 	$(call var,__bs_sources := $(wildcard $(__build_dir)/*.cpp))\
 	$(foreach x,$(__bs_sources),\
-		$(call safe_shell_exec,$(CXX) $(CXXFLAGS) -std=c++20 -c $(call quote,$x) -o $(call quote,$(x:.cpp=.o))\
+		$(call safe_shell_exec,$(call language_command-cpp,$x,$(x:.cpp=.o),,\
+			-std=c++20 \
 			-DIMGUI_USER_CONFIG=\"third_party_connectors/imconfig.h\"\
 			-I$(call quote,$(__build_dir))\
 			-I$(call quote,src)\
@@ -226,7 +226,7 @@ override buildsystem-imgui = \
 			$(call, ### Add flags for libfmt, freetype, and other deps. See above for explanation.)\
 			$(call lib_cflags,$(__libsetting_deps_$(__lib_name)))\
 			>>$(call quote,$(__log_path))\
-		)\
+		))\
 	)\
 	$(call safe_shell_exec,$(call MAKE_STATIC_LIB,$(__install_dir)/lib/$(PREFIX_static)imgui$(EXT_static),$(__bs_sources:.cpp=.o)) >>$(call quote,$(__log_path)))\
 
@@ -238,7 +238,7 @@ $(call Library,ogg,libogg-1.3.5.tar.gz) # Only serves as a dependency for `libvo
 $(call Library,openal-soft,openal-soft-1.23.0.tar.gz)
   $(call LibrarySetting,deps,sdl2 zlib)# We want SDL2 as a backend. It's unclear what Zlib adds, we give it just because.
   $(call LibrarySetting,cmake_flags,$(_openal_flags))
-ifneq ($(filter -D_GLIBCXX_DEBUG,$(CXXFLAGS)),)
+ifneq ($(filter -D_GLIBCXX_DEBUG,$(GLOBAL_CXXFLAGS)),)
   $(call LibrarySetting,cxxflags,-U_GLIBCXX_DEBUG -D_GLIBCXX_ASSERTIONS)# The debug mode causes weird compilation errors.
 endif
 
