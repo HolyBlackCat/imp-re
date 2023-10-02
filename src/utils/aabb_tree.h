@@ -108,7 +108,8 @@ class AabbTree
         }
         else
         {
-            ASSERT(node_set.Insert(new_index));
+            [[maybe_unused]] bool ok = node_set.Insert(new_index);
+            ASSERT(ok);
         }
 
         // Don't want to create a reference to `nodes[new_index]` yet, since it can become dangling later.
