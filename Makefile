@@ -212,12 +212,22 @@ override language_command-ico = echo $(call quote,"$1" ICON "$1") >$(call quote,
 
 # List of all libraries.
 override all_libs :=
+# Defines a new library.
 # $1 is a library name. $2 is the corresponding archive name.
 override Library = \
 	$(if $(filter-out 1,$(words $1)),$(error The library name must be a single word.))\
 	$(if $(filter-out 1,$(words $2)),$(error The archive filename must be a single word.))\
 	$(call var,all_libs += $1)\
 	$(call var,__libsetting_archive_$(strip $1) := $(strip $2))
+
+override all_lib_stubs :=
+# Defines a new library stub. Building it is a no-op, it's just a collection of flags.
+# $1 is a library name, $2 are common flags, $3 are cflags, $4 are ldflags.
+override LibraryStub = \
+	$(call var,all_lib_stubs += $1)\
+	$(call var,__libsetting_is_stub_$(strip $1) := 1)\
+	$(call var,__libsetting_stub_cflags_$(strip $1) := $(strip $2 $3))\
+	$(call var,__libsetting_stub_ldflags_$(strip $1) := $(strip $2 $4))
 
 # Known library setting names.
 # `archive` isn't here, because it's set directly by `Library`.
@@ -669,16 +679,17 @@ override lib_find_packages_for = $(if $(__libsetting_only_pkgconfig_files_$(stri
 # Determine cflags for a list of libraries `$1`.
 # We just run pkg-config on all packages of those libraries.
 override lib_cflags = $(strip\
-	$(if $(filter-out $(all_libs),$1),$(error Unknown libraries: $(filter-out $(all_libs),$1)))\
+	$(if $(filter-out $(all_libs) $(all_lib_stubs),$1),$(error Unknown libraries: $(filter-out $(all_libs) $(all_lib_stubs),$1)))\
 	$(call, ### Raw flags will be written here.)\
 	$(call var,__raw_flags :=)\
 	$(call, ### Pkg-config packages will be written here.)\
 	$(call var,__pkgs :=)\
 	$(call, ### Run lib_cflags_low for every library.)\
-	$(foreach x,$1,$(call lib_cflags_low,$(call lib_find_packages_for,$x)))\
+	$(foreach x,$(filter-out $(all_lib_stubs),$1),$(call lib_cflags_low,$(call lib_find_packages_for,$x)))\
 	$(call, ### Run pkg-config for libraries that have pkg-config packages.)\
 	$(if $(__pkgs),$(call safe_shell,$(lib_invoke_pkgconfig) --cflags $(__pkgs)))\
 	$(__raw_flags)\
+	$(foreach x,$(filter $(all_lib_stubs),$1),$(__libsetting_stub_cflags_$x))\
 	)
 override lib_cflags_low = \
 	$(if $1,\
@@ -695,16 +706,17 @@ override lib_file_patterns := $(PREFIX_shared)%$(EXT_shared) $(PREFIX_static)%$(
 # Determine ldflags for a list of libraries `$1`.
 # We try to run pkg-config for each library if available, falling back to manually finding the libraries and linking them.
 override lib_ldflags = $(strip\
-	$(if $(filter-out $(all_libs),$1),$(error Unknown libraries: $(filter-out $(all_libs),$1)))\
+	$(if $(filter-out $(all_libs) $(all_lib_stubs),$1),$(error Unknown libraries: $(filter-out $(all_libs) $(all_lib_stubs),$1)))\
 	$(call, ### Raw flags will be written here.)\
 	$(call var,__raw_flags :=)\
 	$(call, ### Pkg-config packages will be written here.)\
 	$(call var,__pkgs :=)\
 	$(call, ### Run lib_ldflags_low for every library.)\
-	$(foreach x,$1,$(call lib_ldflags_low,$(call lib_find_packages_for,$x)))\
+	$(foreach x,$(filter-out $(all_lib_stubs),$1),$(call lib_ldflags_low,$(call lib_find_packages_for,$x)))\
 	$(call, ### Run pkg-config for libraries that have pkg-config packages.)\
 	$(if $(__pkgs),$(call safe_shell,$(lib_invoke_pkgconfig) --libs $(__pkgs)))\
 	$(__raw_flags)\
+	$(foreach x,$(filter $(all_lib_stubs),$1),$(__libsetting_stub_ldflags_$x))\
 	)
 override lib_ldflags_low = \
 	$(if $1,\
@@ -753,6 +765,10 @@ $(call var,__ar_path := $(LIB_SRC_DIR)/$(__ar_name))# Archive path
 $(call var,__log_path_final := $(call lib_name_to_log_path,$(__lib_name)))# The final log path
 $(call var,__log_path := $(__log_path_final).unfinished)# Temporary log path for an unfinished log
 
+# Check that all dependencies are valid.
+$(call var,__bad_deps := $(filter-out $(all_libs) $(all_lib_stubs),$(__libsetting_deps_$(__lib_name))))
+$(if $(__bad_deps),$(error Unknown dependencies specified for `$(__lib_name)`: $(__bad_deps)))
+
 # Forward the same variables to the target.
 $(__log_path_final): override __lib_name := $(__lib_name)
 $(__log_path_final): override __ar_name := $(__ar_name)
@@ -794,7 +810,7 @@ $(__ar_path): | $(LIB_SRC_DIR)
 # Actually builds the library. Has a pretty alias, defined above.
 # One big `strip` around the target makes sure two of them can't run in parallel, I hope.
 # Normally that doesn't happen, but once I've seen an error that could only be caused by it.
-$(__log_path_final): $(__ar_path) $(call lib_name_to_log_path,$(__libsetting_deps_$(__lib_name)))
+$(__log_path_final): $(__ar_path) $(call lib_name_to_log_path,$(filter-out $(all_lib_stubs),$(__libsetting_deps_$(__lib_name))))
 	$(call, ### Firstly, detect archive type, and stop if unknown, to avoid creating junk.)
 	$(call var,__ar_type := $(call archive_classify_filename,$(__ar_name)))
 	$(if $(__ar_type),,$(error Don't know this archive extension: `$(__ar_name)`))
@@ -873,7 +889,7 @@ clean-libs-this-os-this-mode:
 # Determine language for each project, if not specified.
 $(foreach x,$(proj_list),$(if $(__projsetting_lang_$x),,$(call var,__projsetting_lang_$x := cpp)))
 # Handle `libs=*`, which means 'all known libraries'.
-$(foreach x,$(proj_list),$(if $(findstring $(__projsetting_libs_$x),*),$(call var,__projsetting_libs_$x := $(all_libs))))
+$(foreach x,$(proj_list),$(if $(findstring $(__projsetting_libs_$x),*),$(call var,__projsetting_libs_$x := $(all_libs) $(all_lib_stubs))))
 
 # Find source files.
 override source_file_patterns := $(foreach x,$(language_list),$(language_pattern-$x))

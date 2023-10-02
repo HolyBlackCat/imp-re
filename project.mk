@@ -136,10 +136,14 @@ endif
 $(call Library,box2d,box2d-2.4.1.tar.gz)
   $(call LibrarySetting,cmake_flags,-DBOX2D_BUILD_UNIT_TESTS:BOOL=OFF -DBOX2D_BUILD_TESTBED:BOOL=OFF)
 
+ifeq ($(TARGET_OS),emscripten)
+$(call LibraryStub,bullet,-sUSE_BULLET=1)
+else
 $(call Library,bullet,bullet3-3.25_no-examples.tar.gz)
   # The `_no-examples` suffix on the archive indicates that following directories were removed from it: `./data`, and everything in `./examples` except `CommonInterfaces`.
   # This decreases the archive size from 170+ mb to 10+ mb.
   $(call LibrarySetting,cmake_flags,$(_bullet_flags))
+endif
 
 $(call Library,doctest,doctest-2.4.11.tar.gz)
   $(call LibrarySetting,cmake_flags,-DDOCTEST_WITH_TESTS:BOOL=OFF)# Tests don't compile because of their `-Werror`. Last tested on doctest-2.4.11, Clang 16.0.1.
@@ -167,15 +171,19 @@ override buildsystem-cglfl = \
 	$(call safe_shell_exec,$(call language_command-cpp,$(__source_dir)/src/cglfl.cpp,$(__build_dir)/cglfl.o,,-I$(__install_dir)/include >>$(call quote,$(__log_path))))\
 	$(call safe_shell_exec,mkdir $(call quote,$(__install_dir)/lib))\
 	$(call safe_shell_exec,$(call MAKE_STATIC_LIB,$(__install_dir)/lib/$(PREFIX_static)cglfl$(EXT_static),$(call quote,$(__build_dir)/cglfl.o)) >>$(call quote,$(__log_path)))\
-	$(call log_now,[Library] >>> Cleaning up...)\
+	$(call log_now,[Library] >>> Cleaning up...)
 
 $(call Library,double-conversion,double-conversion-3.2.1.tar.gz)
 
 $(call Library,fmt,fmt-9.1.0.zip)
   $(call LibrarySetting,cmake_flags,-DFMT_TEST=OFF)
 
+ifeq ($(TARGET_OS),emscripten)
+$(call LibraryStub,freetype,-sUSE_FREETYPE=1)
+else
 $(call Library,freetype,freetype-2.13.0.tar.gz)
   $(call LibrarySetting,deps,zlib)
+endif
 
 $(call Library,imgui,imgui-1.89.4.tar.gz)
   $(call LibrarySetting,build_system,imgui)
@@ -230,10 +238,14 @@ override buildsystem-imgui = \
 	)\
 	$(call safe_shell_exec,$(call MAKE_STATIC_LIB,$(__install_dir)/lib/$(PREFIX_static)imgui$(EXT_static),$(__bs_sources:.cpp=.o)) >>$(call quote,$(__log_path)))\
 
+ifeq ($(TARGET_OS),emscripten)
+$(call LibraryStub,ogg,-sUSE_OGG=1)
+else
 $(call Library,ogg,libogg-1.3.5.tar.gz) # Only serves as a dependency for `libvorbis`.
   # When built with CMake on MinGW, ogg/vorbis can't decide whether to prefix the libraries with `lib` or not.
   # The resulting executable doesn't find libraries because of this inconsistency.
   $(call LibrarySetting,build_system,configure_make)
+endif
 
 $(call Library,openal-soft,openal-soft-1.23.0.tar.gz)
   $(call LibrarySetting,deps,sdl2 zlib)# We want SDL2 as a backend. It's unclear what Zlib adds, we give it just because.
@@ -245,7 +257,9 @@ endif
 $(call Library,phmap,parallel-hashmap-1.3.8.tar.gz)
   $(call LibrarySetting,cmake_flags,-DPHMAP_BUILD_TESTS=OFF -DPHMAP_BUILD_EXAMPLES=OFF)# Otherwise it downloads GTest, which is nonsense.
 
-ifeq ($(TARGET_OS),windows)
+ifeq ($(TARGET_OS),emscripten)
+$(call LibraryStub,sdl2,-sUSE_SDL=2)
+else ifeq ($(TARGET_OS),windows)
 $(call Library,sdl2,SDL2-devel-2.26.4-mingw.tar.gz)
   $(call LibrarySetting,build_system,copy_files)
   $(call LibrarySetting,copy_files,$(_win_sdl2_arch)/*->.)
@@ -268,13 +282,21 @@ $(call Library,stb,stb-5736b15.zip)
   # There's also `textedit`, which ImGui uses and we don't but we let ImGui keep its version, since it's slightly patched.
   $(call LibrarySetting,copy_files,stb_image.h->include stb_image_write.h->include stb_rect_pack.h->include)
 
+ifeq ($(TARGET_OS),emscripten)
+$(call LibraryStub,vorbis,-sUSE_VORBIS=1)
+else
 $(call Library,vorbis,libvorbis-1.3.7.tar.gz)
   $(call LibrarySetting,deps,ogg)
   # See ogg for why we use configure+make.
   $(call LibrarySetting,build_system,configure_make)
+endif
 
+ifeq ($(TARGET_OS),emscripten)
+$(call LibraryStub,zlib,-sUSE_ZLIB=1)
+else
 $(call Library,zlib,zlib-1.2.13.tar.gz)
   # CMake support in ZLib is jank. On MinGW it builds `libzlib.dll`, but pkg-config says `-lz`. Last checked on 1.2.12.
   $(call LibrarySetting,build_system,configure_make)
   # Need to set `cc`, otherwise their makefile uses the executable named `cc` to link, which doesn't support `-fuse-ld=lld-N`, it seems. Last tested on 1.2.12.
   $(call LibrarySetting,configure_vars,$(_zlib_env_vars))
+endif

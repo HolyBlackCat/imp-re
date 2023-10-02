@@ -68,7 +68,7 @@
 #endif
 
 #ifndef IMP_PLATFORM_FLAG_msvc
-#  if defined _MSC_VER
+#  if defined _MSC_VER && !defined __clang__
 #    define IMP_PLATFORM_FLAG_msvc 1
 #  else
 #    define IMP_PLATFORM_FLAG_msvc 0
@@ -118,6 +118,14 @@
 #  endif
 #endif
 
+#ifndef IMP_PLATFORM_FLAG_emscripten
+#  if defined __EMSCRIPTEN__
+#    define IMP_PLATFORM_FLAG_emscripten 1
+#  else
+#    define IMP_PLATFORM_FLAG_emscripten 0
+#  endif
+#endif
+
 #ifndef IMP_PLATFORM_FLAG_android
 #  if defined __ANDROID__
 #    define IMP_PLATFORM_FLAG_android 1
@@ -131,7 +139,7 @@
 #  define IMP_PLATFORM_FLAG_unknown_os 0
 #endif
 
-#if IMP_PLATFORM_IS(windows) + IMP_PLATFORM_IS(macos) + IMP_PLATFORM_IS(linux) + IMP_PLATFORM_IS(android) + IMP_PLATFORM_IS(unknown_os) != 1
+#if IMP_PLATFORM_IS(windows) + IMP_PLATFORM_IS(macos) + IMP_PLATFORM_IS(linux) + IMP_PLATFORM_IS(emscripten) + IMP_PLATFORM_IS(android) + IMP_PLATFORM_IS(unknown_os) != 1
 #  error Invalid platform flags: OS.
 #endif
 
@@ -145,6 +153,14 @@
 #  endif
 #endif
 
+#ifndef IMP_PLATFORM_FLAG_web
+#  if IMP_PLATFORM_IS(emscripten)
+#    define IMP_PLATFORM_FLAG_web 1
+#  else
+#    define IMP_PLATFORM_FLAG_web 0
+#  endif
+#endif
+
 #ifndef IMP_PLATFORM_FLAG_mobile
 #  if IMP_PLATFORM_IS(android)
 #    define IMP_PLATFORM_FLAG_mobile 1
@@ -153,7 +169,7 @@
 #  endif
 #endif
 
-#if IMP_PLATFORM_IS(pc) + IMP_PLATFORM_IS(mobile) > 1
+#if IMP_PLATFORM_IS(pc) + IMP_PLATFORM_IS(web) + IMP_PLATFORM_IS(mobile) > 1
 #  error Invalid platform flags: More than one OS category is specified.
 #endif
 

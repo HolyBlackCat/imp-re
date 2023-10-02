@@ -12,6 +12,11 @@
 #include "macros/finally.h"
 #include "utils/clock.h"
 #include "utils/metronome.h"
+#include "program/platform.h"
+
+#if IMP_PLATFORM_IS(emscripten)
+#include <emscripten.h>
+#endif
 
 namespace Program
 {
@@ -39,7 +44,11 @@ namespace Program
             FINALLY{loop_running = false;};
 
             // Run the loop.
+            #if !IMP_PLATFORM_IS(emscripten)
             while (RunSingleFrame()) {}
+            #else
+            emscripten_set_main_loop_arg([](void *self){static_cast<BasicState *>(self)->RunSingleFrame();}, this, -1, true);
+            #endif
         }
     };
 
@@ -87,7 +96,7 @@ namespace Program
             // Load some basic config from state.
             auto *metronome = GetTickMetronome();
             auto fps_cap = GetFpsCap();
-            bool have_fps_cap = fps_cap > 0;
+            bool have_fps_cap = fps_cap > 0 && !IMP_PLATFORM_IS(emscripten);
 
             // Compute timings if needed.
             std::uint64_t delta = 0;
