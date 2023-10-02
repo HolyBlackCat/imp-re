@@ -84,7 +84,7 @@ namespace Filesystem
         ret.path = path;
 
         bool info_ok = true;
-        ret.info = GetObjectInfo(path, ok ? &info_ok : 0);
+        ret.info = GetObjectInfo(path, ok ? &info_ok : nullptr);
         if (!info_ok)
             return ret;
 
