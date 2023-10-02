@@ -33,7 +33,7 @@ namespace Ent
                 [[nodiscard]]       typename Tag::Entity &get(typename NextBase::Id id)       {return this->template get<AllEntitiesUnordered>().entity_with_id(id);}
                 [[nodiscard]] const typename Tag::Entity &get(typename NextBase::Id id) const {return this->template get<AllEntitiesUnordered>().entity_with_id(id);}
 
-                // Get entity by ID, or null invalid.
+                // Get entity by ID, or null if invalid.
                 [[nodiscard]]       typename Tag::Entity *get_opt(typename NextBase::Id id)       {return this->template get<AllEntitiesUnordered>().entity_with_id_opt(id);}
                 [[nodiscard]] const typename Tag::Entity *get_opt(typename NextBase::Id id) const {return this->template get<AllEntitiesUnordered>().entity_with_id_opt(id);}
             };
