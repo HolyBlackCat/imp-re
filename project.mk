@@ -35,7 +35,7 @@ endif
 
 # --- Project config ---
 
-PROJ_CXXFLAGS += -std=c++2b -pedantic-errors -Wall -Wextra -Wdeprecated -Wextra-semi
+PROJ_CXXFLAGS += -std=c++2b -pedantic-errors -Wall -Wextra -Wdeprecated -Wextra-semi -Wimplicit-fallthrough
 PROJ_CXXFLAGS += -ftemplate-backtrace-limit=0 -fmacro-backtrace-limit=0
 PROJ_CXXFLAGS += -includesrc/program/common_macros.h -includesrc/program/parachute.h
 PROJ_CXXFLAGS += -Isrc -Ilib/include
