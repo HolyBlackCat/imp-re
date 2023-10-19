@@ -101,7 +101,7 @@ namespace Unicode
     // Decodes a UTF8 character.
     // Returns a pointer to the first byte of the next character.
     // If `end` is not null, it'll stop reading at `end`. In this case `end` will be returned.
-    [[nodiscard]] inline const char *FindNextCharacter(const char *data, const char *end = 0)
+    [[nodiscard]] inline const char *FindNextCharacter(const char *data, const char *end = nullptr)
     {
         do
             data++;
@@ -115,13 +115,13 @@ namespace Unicode
     // If `next_char` is not null, it will be set to point to the next byte after the current character.
     // If `data == end`, returns '\0'. (If `end != 0` and `data > end`, also returns '\0'.)
     // If `data == 0`, returns '\0'.
-    inline Char Decode(const char *data, const char *end = 0, const char **next_char = 0)
+    inline Char Decode(const char *data, const char *end = nullptr, const char **next_char = nullptr)
     {
         // Stop if `data` is a null pointer.
         if (!data)
         {
             if (next_char)
-                *next_char = 0;
+                *next_char = nullptr;
             return 0;
         }
 
@@ -188,14 +188,14 @@ namespace Unicode
 
     class Iterator
     {
-        const char *cur = 0;
-        const char *next = 0;
-        const char *range_end = 0;
+        const char *cur = nullptr;
+        const char *next = nullptr;
+        const char *range_end = nullptr;
         Char ch = 0;
 
       public:
         Iterator() {}
-        Iterator(const char *from, const char *to = 0) : next(from), range_end(to)
+        Iterator(const char *from, const char *to = nullptr) : next(from), range_end(to)
         {
             ++(*this);
         }
@@ -225,14 +225,14 @@ namespace Unicode
         {
             // Detect end of range if `range_end` is not null.
             if (range_end && next >= range_end)
-                next = 0;
+                next = nullptr;
 
             cur = next;
             ch = Decode(cur, range_end, &next);
 
             // Detect end of range if `range_end` is null.
             if (!range_end && ch == 0)
-                cur = next = 0;
+                cur = next = nullptr;
 
             return *this;
         }
