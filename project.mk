@@ -81,6 +81,7 @@ $(foreach f,$(_codegen_list),$(eval $(call _codegen_target,$(word 1,$(subst :, ,
 # --- Dependencies ---
 
 # Don't need anything on Windows.
+
 # On Ubuntu 22.04, install following for SDL2 (from docs/README-linux.md)
 # sudo apt-get install build-essential git make autoconf automake libtool \
 	pkg-config cmake ninja-build gnome-desktop-testing libasound2-dev libpulse-dev \
@@ -91,6 +92,15 @@ $(foreach f,$(_codegen_list),$(eval $(call _codegen_target,$(word 1,$(subst :, ,
 	libpipewire-0.3-dev libdecor-0-dev
 # This list was last updated for SDL 2.26.4.
 # `libjack-dev` was removed from the list, because it caused weird package conflicts on Ubuntu 22.04.
+
+# On Manjaro/Arch, install following for SDL2 (from https://archlinux.org/packages/extra/x86_64/sdl2/)
+# pamac install glibc hidapi libgl libusb libx11 libxcursor libxext libxrender alsa-lib \
+    jack libdecor libpulse pipewire alsa-lib cmake fcitx5 ibus jack libdecor libpulse \
+    libxinerama libxkbcommon libxrandr libxss mesa ninja pipewire wayland wayland-protocols
+# This list was last updated for SDL 2.28.4.
+# Not sure if those allow all features to be build, but since we're not going
+#   to distribute Arch binaries anyway, it shouldn't matter.
+
 # On Fedora 38, install following for SDL2 (from docs/README-linux.md)
 # sudo dnf install gcc git-core make cmake autoconf automake libtool \
     alsa-lib-devel pulseaudio-libs-devel nas-devel pipewire-devel \
