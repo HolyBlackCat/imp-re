@@ -176,7 +176,7 @@ language_list :=
 # $2 is the output file, or empty string if we don't care.
 # $3 is the project name, or empty string if none.
 # $4 is extra flags.
-# $5 - if non-empty string, output dependencies as if by -MMD -MP, if this language supports it. You must also set `language_outputs_deps-??` to non-empty strin if you support it.
+# $5 - if non-empty string, output dependencies as if by -MMD -MP, if this language supports it. You must also set `language_outputs_deps-??` to non-empty string if you support it.
 
 language_list += c
 override language_name-c := C
@@ -963,7 +963,7 @@ $(__output): override __lang := $(__projsetting_lang_$(__proj))
 
 $(__output): $(__src) $(call lib_name_to_log_path,$(all_libs))
 	$(call log_now,[$(language_name-$(__lang)) PCH] $<)
-	@$(call language_command-$(__lang),$<,$@,$(__proj),$(language_pchflag-$(__projsetting_lang_$(__proj))))
+	@$(call language_command-$(__lang),$<,$@,$(__proj),$(language_pchflag-$(__projsetting_lang_$(__proj))),output_deps)
 
 -include $(__output:.gch=.d)
 endef
