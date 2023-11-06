@@ -37,10 +37,11 @@ namespace Meta
             std::copy_n(new_str, size, str);
         }
 
-        [[nodiscard]] constexpr std::string_view view() const
+        [[nodiscard]] constexpr std::string_view view() const &
         {
             return {str, str + size};
         }
+        [[nodiscard]] constexpr std::string_view view() const && = delete;
     };
 
     template <std::size_t A, std::size_t B>

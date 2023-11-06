@@ -41,8 +41,10 @@ namespace Meta
         {
           case 3:
             k1 ^= (std::uint32_t)(std::uint8_t)tail[2] << 16;
+            [[fallthrough]];
           case 2:
             k1 ^= (std::uint32_t)(std::uint8_t)tail[1] << 8;
+            [[fallthrough]];
           case 1:
             k1 ^= (std::uint32_t)(std::uint8_t)tail[0];
             k1 *= c1;

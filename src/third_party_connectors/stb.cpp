@@ -1,14 +1,24 @@
 #include "program/errors.h"
 #include "program/compiler.h"
 
+IMP_PLATFORM_IF(clang)
+(
+    IMP_DIAGNOSTICS_PUSH
+    IMP_DIAGNOSTICS_IGNORE("-Wimplicit-fallthrough")
+)
 #define STB_IMAGE_IMPLEMENTATION
 #define STBI_ASSERT(expr) ASSERT(expr, "In STB Image: " #expr)
 #include <stb_image.h>
+IMP_PLATFORM_IF(clang)
+(
+    IMP_DIAGNOSTICS_POP
+)
 
 IMP_PLATFORM_IF(clang)
 (
     IMP_DIAGNOSTICS_PUSH
     IMP_DIAGNOSTICS_IGNORE("-Wmissing-field-initializers")
+    IMP_DIAGNOSTICS_IGNORE("-Wimplicit-fallthrough")
 )
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #define STBIW_ASSERT(expr) ASSERT(expr, "In STB Image Write: " #expr)
