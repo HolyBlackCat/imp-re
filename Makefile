@@ -1161,7 +1161,7 @@ remember:
 	$(call, ### We used to have some clever code that used `sed` to replace the existing values, if any, but that made it harder to handle wonky flags.)
 	$(file >>$(LOCAL_CONFIG),MODE := $(MODE))\
 	$(file >>$(LOCAL_CONFIG),APP := $(APP))\
-	$(file >>$(LOCAL_CONFIG),ARGS := $(subst $,$$$$,$(ARGS)))\
+	$(file >>$(LOCAL_CONFIG),ARGS := $(subst #,\#,$(subst $,$$$$,$(ARGS))))\
 	$(call, ### Convert the list of runtime env variables to JSON, to bake into the generated files.)\
 	$(call var,__env_as_json := $(foreach x,$(PROJ_RUNTIME_ENV) $(__projsetting_runtime_env_$(APP)),$(call var,__name := $(firstword $(subst =, ,$x)))"$(__name)":"$(patsubst $(__name)=%,%,$x)"$(comma)))
 	$(call, ### Regenerate some files.)\
