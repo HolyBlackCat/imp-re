@@ -254,7 +254,7 @@ namespace GameUtils::TilesToEdges
 
                     first = false;
 
-                    if ( finished )
+                    if (finished)
                         break;
 
                     bool found_any = false;
