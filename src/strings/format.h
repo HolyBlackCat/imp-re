@@ -235,7 +235,7 @@ namespace Strings
             using char_type = C; \
             [[maybe_unused]] constexpr operator ::fmt::basic_string_view<char_type>() const \
             { \
-                const auto& string = ::Strings::impl::Format::format_string_storage<decltype(lambda)>; \
+                const auto &string = ::Strings::impl::Format::format_string_storage<decltype(lambda)>; \
                 return ::fmt::basic_string_view<char_type>(string.data(), string.size()); \
             } \
         }; \

@@ -1122,7 +1122,7 @@ namespace Ent
 
                 // Links `a` and `b` using links `name_a` and `name_b` respectively.
                 // This is the completely type-erased overload.
-                void link(std::string_view name_a, typename Tag::Entity& a, std::string name_b, typename Tag::EntityOrId b)
+                void link(std::string_view name_a, typename Tag::Entity &a, std::string name_b, typename Tag::EntityOrId b)
                 {
                     // Note that the first name is `std::string_view`, and the second is `std::string`.
                     // This is wonky, but also the most efficient.

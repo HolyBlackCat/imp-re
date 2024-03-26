@@ -673,7 +673,7 @@ int main(int argc, char **argv)
                        " {apply_elementwise([](vec_base_t<A> &a, vec_base_t<B> b) IMP_MATH_SMALL_LAMBDA {a ",op," b;}, a, b); return a;}\n");
             }
 
-            for (const auto& [op, std_op] : ops2comp)
+            for (const auto &[op, std_op] : ops2comp)
             {
                 // Default implementation without an explicit mode.
                 std::string default_mode = op == "==" ? "all" : op == "!=" ? "any" : "elemwise";
