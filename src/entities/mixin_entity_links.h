@@ -124,28 +124,28 @@ namespace Ent
                 // or adds a target to a multi-target link (removing the old link to the same entity, if any).
                 // If `symmetric` is true, acts symmetrically.
                 // Unsafe! Prefer the high-level functions in the controller.
-                virtual void _link_attach(typename Tag::Controller &con, bool symmetric, std::string_view name, typename Tag::Id linked_id, std::string linked_name) = 0;
+                virtual void _detail_link_attach(typename Tag::Controller &con, bool symmetric, std::string_view name, typename Tag::Id linked_id, std::string linked_name) = 0;
 
                 // Detaches `id` from the link named `name`, or returns `false` if not linked. Throws on failure.
                 // If `id` is null, detaches all linked entities. Always returns true in this case.
                 // If `con` is specified, acts symmetrically.
                 // Unsafe! Prefer the high-level functions in the controller.
-                virtual bool _link_detach(typename Tag::Controller *con, std::string_view name, typename Tag::Id linked_id) = 0;
+                virtual bool _detail_link_detach(typename Tag::Controller *con, std::string_view name, typename Tag::Id linked_id) = 0;
 
                 // Returns the number of targets for a link. Throws if the name is invalid.
                 // Prefer the high-level functions in the controller.
-                [[nodiscard]] virtual std::size_t _link_num_targets(std::string_view name) const = 0;
+                [[nodiscard]] virtual std::size_t _detail_link_num_targets(std::string_view name) const = 0;
 
                 // Returns the target of a single-target link. Null if no target.
                 // Throws if this is a multi-target link, or if the name is invalid.
                 // Prefer the high-level functions in the controller.
-                [[nodiscard]] virtual const LinkTargetIdWithName &_link_single_target(std::string_view name) const = 0;
+                [[nodiscard]] virtual const LinkTargetIdWithName &_detail_link_single_target(std::string_view name) const = 0;
 
                 // Returns true if the link has `linked_id` as the target (or one of the targets). Throws if the name is invalid.
                 // If the `linked_id` is null, always returns false.
                 // If `maybe_linked_name` isn't empty, also checks it for equality. Otherwise ignores the name.
                 // Prefer the high-level functions in the controller.
-                [[nodiscard]] virtual bool _link_has_target(std::string_view name, typename Tag::Id linked_id, std::string_view maybe_linked_name) const = 0;
+                [[nodiscard]] virtual bool _detail_link_has_target(std::string_view name, typename Tag::Id linked_id, std::string_view maybe_linked_name) const = 0;
             };
 
             template <EntityType<Tag> E>
@@ -241,7 +241,7 @@ namespace Ent
                 };
 
               public:
-                void _link_attach(typename Tag::Controller &con, bool symmetric, std::string_view name, typename Tag::Id linked_id, std::string linked_name) override
+                void _detail_link_attach(typename Tag::Controller &con, bool symmetric, std::string_view name, typename Tag::Id linked_id, std::string linked_name) override
                 {
                     LinkCallFunc<
                         FuncLinkAttach,
@@ -251,7 +251,7 @@ namespace Ent
                     >(name, *this, con, *this, symmetric, linked_id, std::move(linked_name));
                 }
 
-                bool _link_detach(typename Tag::Controller *con, std::string_view name, typename Tag::Id linked_id) override
+                bool _detail_link_detach(typename Tag::Controller *con, std::string_view name, typename Tag::Id linked_id) override
                 {
                     return LinkCallFunc<
                         FuncLinkDetach,
@@ -261,7 +261,7 @@ namespace Ent
                     >(name, *this, con, con ? this : nullptr, linked_id);
                 }
 
-                [[nodiscard]] std::size_t _link_num_targets(std::string_view name) const override
+                [[nodiscard]] std::size_t _detail_link_num_targets(std::string_view name) const override
                 {
                     return LinkCallFunc<
                         FuncLinkNumTargets,
@@ -271,7 +271,7 @@ namespace Ent
                     >(name, *this);
                 }
 
-                [[nodiscard]] const LinkTargetIdWithName &_link_single_target(std::string_view name) const override
+                [[nodiscard]] const LinkTargetIdWithName &_detail_link_single_target(std::string_view name) const override
                 {
                     return LinkCallFunc<
                         FuncLinkSingleTarget,
@@ -281,7 +281,7 @@ namespace Ent
                     >(name, *this);
                 }
 
-                [[nodiscard]] bool _link_has_target(std::string_view name, typename Tag::Id linked_id, std::string_view maybe_linked_name) const override
+                [[nodiscard]] bool _detail_link_has_target(std::string_view name, typename Tag::Id linked_id, std::string_view maybe_linked_name) const override
                 {
                     return LinkCallFunc<
                         FuncLinkHasTarget,
@@ -359,7 +359,7 @@ namespace Ent
                     _adl_link_detach<nullptr>(self_link, &con, &self, {});
 
                     if (symmetric)
-                        con.get(linked_id)._link_attach(con, false, linked_name, self.id(), std::string(Name.view()));
+                        con.get(linked_id)._detail_link_attach(con, false, linked_name, self.id(), std::string(Name.view()));
 
                     self_link.target.target_id = linked_id;
                     self_link.target.target_link_name = std::move(linked_name);
@@ -379,7 +379,7 @@ namespace Ent
                         return true; // Not linked.
 
                     if (con)
-                        con->get(self_link.target.target_id)._link_detach(nullptr, self_link.target.target_link_name, self->id());
+                        con->get(self_link.target.target_id)._detail_link_detach(nullptr, self_link.target.target_link_name, self->id());
 
                     self_link.target.target_id = nullptr;
                     self_link.target.target_link_name = {};
@@ -810,7 +810,7 @@ namespace Ent
                     _adl_link_detach<Name>(self_link, &con, &self, linked_id);
 
                     if (symmetric)
-                        con.get(linked_id)._link_attach(con, false, linked_name, self.id(), std::string(Name.view()));
+                        con.get(linked_id)._detail_link_attach(con, false, linked_name, self.id(), std::string(Name.view()));
 
                     ContainerTraits::insert(self_link.GetCont(), linked_id, std::move(linked_name));
                 }
@@ -831,7 +831,7 @@ namespace Ent
                         if (it == ContainerTraits::end(self_link.GetCont()))
                             return false;
                         if (con)
-                            con->get(it->id())._link_detach(nullptr, static_cast<LinkElemLow<Data> &>(*it).target_link, self->id());
+                            con->get(it->id())._detail_link_detach(nullptr, static_cast<LinkElemLow<Data> &>(*it).target_link, self->id());
                         ContainerTraits::erase(self_link.GetCont(), it);
                     }
                     else
@@ -843,7 +843,7 @@ namespace Ent
                             while (!self_link.elems.empty())
                             {
                                 auto &one = ContainerTraits::peek_one(self_link.GetCont());
-                                con->get(one.id())._link_detach(nullptr, static_cast<LinkElemLow<Data> &>(one).target_link, self->id());
+                                con->get(one.id())._detail_link_detach(nullptr, static_cast<LinkElemLow<Data> &>(one).target_link, self->id());
                                 ContainerTraits::pop_one(self_link.GetCont());
                             }
                         }
@@ -886,12 +886,6 @@ namespace Ent
                     return elem && (maybe_linked_name.empty() || elem->target_link_name() == maybe_linked_name);
                 }
 
-                void _deinit(typename Tag::Controller &con, typename Tag::Entity &e)
-                {
-                    using impl::EntityLinks::_adl_link_detach;
-                    _adl_link_detach<nullptr>(*this, &con, &e, {});
-                }
-
                 // Returns a container with the linked entity IDs, and possibly user data.
                 template <Meta::ConstString SelfName> requires(SelfName == Name)
                 [[nodiscard]] LinkCont &link()
@@ -902,6 +896,13 @@ namespace Ent
                 [[nodiscard]] const LinkCont &link() const
                 {
                     return elems;
+                }
+
+              private:
+                void _deinit(typename Tag::Controller &con, typename Tag::Entity &e)
+                {
+                    using impl::EntityLinks::_adl_link_detach;
+                    _adl_link_detach<nullptr>(*this, &con, &e, {});
                 }
             };
 
@@ -939,7 +940,7 @@ namespace Ent
                 // This is the type-erased overload. Throws if the `name` is invalid.
                 [[nodiscard]] static std::size_t num_link_targets(std::string_view name, const typename Tag::Entity &e)
                 {
-                    return e._link_num_targets(name);
+                    return e._detail_link_num_targets(name);
                 }
 
 
@@ -1022,7 +1023,7 @@ namespace Ent
                 // This is the type-erased overload. Throws if the `name` is invalid.
                 [[nodiscard]] static const LinkTargetIdWithName &get_link_low_opt(std::string_view name, const typename Tag::Entity &e)
                 {
-                    return e._link_single_target(name);
+                    return e._detail_link_single_target(name);
                 }
 
 
@@ -1062,7 +1063,7 @@ namespace Ent
                 // This is the type-erased overload.
                 [[nodiscard]] static bool has_link_to(std::string_view name, const typename Tag::Entity &e, typename Tag::ConstEntityOrId target)
                 {
-                    return e._link_has_target(name, target.value, {});
+                    return e._detail_link_has_target(name, target.value, {});
                 }
 
 
@@ -1093,7 +1094,7 @@ namespace Ent
                 {
                     if (linked_name.empty())
                         return false;
-                    return e._link_has_target(name, target.value, linked_name);
+                    return e._detail_link_has_target(name, target.value, linked_name);
                 }
 
 
@@ -1126,7 +1127,7 @@ namespace Ent
                 {
                     // Note that the first name is `std::string_view`, and the second is `std::string`.
                     // This is wonky, but also the most efficient.
-                    a._link_attach(static_cast<typename Tag::Controller &>(*this), true, name_a, b.value, name_b);
+                    a._detail_link_attach(static_cast<typename Tag::Controller &>(*this), true, name_a, b.value, name_b);
                 }
 
 
@@ -1145,7 +1146,7 @@ namespace Ent
                 // This is the type-erased overload. Throws if the `name` is invalid.
                 void unlink(std::string_view name, typename Tag::Entity &e)
                 {
-                    e._link_detach(static_cast<typename Tag::Controller *>(this), name, {});
+                    e._detail_link_detach(static_cast<typename Tag::Controller *>(this), name, {});
                 }
 
                 // Unlink a single entity. If `id` is null, has no effect. Throws if it's not linked.
@@ -1166,7 +1167,7 @@ namespace Ent
                 {
                     if (!target.value.is_nonzero())
                         return; // We can't just forward a zero, because `DetachLinkLowUnsafeAsymmetric()` treats it as 'unlink all targets'.
-                    if (!e._link_detach(static_cast<typename Tag::Controller *>(this), name, target.value))
+                    if (!e._detail_link_detach(static_cast<typename Tag::Controller *>(this), name, target.value))
                         throw std::runtime_error("That entity isn't linked.");
                 }
             };

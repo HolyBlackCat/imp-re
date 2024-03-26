@@ -100,36 +100,39 @@ namespace Ent
 
         constexpr void _adl_imp_ComponentMarker() {} // A dummy ADL target.
 
+        // Whether `T` is a component.
+        template <typename T, typename Tag>
+        concept IsComponentLow = requires(Tag tag, T &t)
+        {
+            _adl_imp_ComponentMarker(tag, &t);
+        };
+
+        // Whether `T` is a component that can be constructed directly as an entity.
+        template <typename T, typename Tag>
+        concept IsStandaloneComponentLow = requires
+        {
+            // Can't use `requires(...)` parameters here, because this call is evaluated (even though it's just at compile-time).
+            requires _adl_imp_ComponentMarker(Tag{}, (T *)nullptr);
+        };
+
         // Components add this as a friend.
+        // This is templated, so you can provide your own specializations (with tag types) that automatically become friends.
+        template <typename FriendTag>
         struct ComponentFriend
         {
             ComponentFriend() = delete;
             ~ComponentFriend() = delete;
-
-            // Whether `T` is a component.
-            template <TagType Tag, typename T>
-            static constexpr bool IsComponent = requires(Tag tag, T &t)
-            {
-                _adl_imp_ComponentMarker(tag, &t);
-            };
-
-            // Whether `T` is a component that can be constructed directly as an entity.
-            template <TagType Tag, typename T>
-            static constexpr bool IsStandaloneComponent = requires
-            {
-                requires _adl_imp_ComponentMarker(Tag{}, (T *)nullptr);
-            };
         };
     }
 
     // A component is a class that has the `IMP_COMPONENT` macro in it (or one of its variations), with the right tag.
     // Several macros per class are allowed.
     template <typename T, typename Tag>
-    concept Component = Meta::cvref_unqualified<T> && impl::ComponentFriend::IsComponent<Tag, T>;
+    concept Component = Meta::cvref_unqualified<T> && TagType<Tag> && impl::IsComponentLow<T, Tag>;
 
     // A component created with the `IMP_STANDALONE_COMPONENT` macro. Unlike regular components, those can be created directly as entities.
     template <typename T, typename Tag>
-    concept StandaloneComponent = Component<T, Tag> && impl::ComponentFriend::IsStandaloneComponent<Tag, T>;
+    concept StandaloneComponent = Component<T, Tag> && impl::IsStandaloneComponentLow<T, Tag>;
 
     // Assigns indices to components.
     template <TagType Tag>
@@ -774,4 +777,6 @@ namespace Ent
     /* This is called to check if a type is a component. */\
     /* Note: I tried to use `same_as<self_type_name_> auto` instead of the classical SFINAE, but it caused redefinition errors on Clang 16. Not sure if it's a bug. */\
     template <typename MA_CAT(_entity_T,counter_), ::std::enable_if_t<::std::is_same_v<MA_CAT(_entity_T,counter_), self_type_name_>, ::std::nullptr_t> = nullptr> \
-    constexpr friend bool _adl_imp_ComponentMarker(tag_, MA_CAT(_entity_T,counter_) *) {return is_standalone_;}
+    constexpr friend bool _adl_imp_ComponentMarker(tag_, MA_CAT(_entity_T,counter_) *) {return is_standalone_;} \
+    /* Friend the helper type. We don't currently use it, but the mixins might. */\
+    template <typename MA_CAT(_entity_T,counter_)> friend struct ::Ent::impl::ComponentFriend;

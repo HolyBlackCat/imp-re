@@ -9,6 +9,7 @@
 
 // Gives components optional callbacks, called when a controller creates or destroys them as a part of an entity.
 // Usage:
+//   private:
 //     void _init(Game::Controller &c, Game::Entity &e) {...}
 //     void _deinit(Game::Controller &c, Game::Entity &e) {...}
 // Here, `e` receives `*this`, in case your component is not polymorphic and can't perform the cast by itself.
@@ -20,12 +21,16 @@
 
 namespace Ent
 {
-    namespace Mixins
+    namespace impl
     {
-        template <typename Tag, typename NextBase>
-        struct EntityCallbacks : NextBase
+        namespace MixinEntityCallbacks
         {
-          private:
+            struct CompFriendTag {};
+        }
+
+        template <>
+        struct ComponentFriend<MixinEntityCallbacks::CompFriendTag>
+        {
             // Manages an automatically detected list of callbacks in all components of an entity.
             // `Func` specifies the function, it must be `template <typename T> using MyFunc = Meta::value_tag<&T::my_func>`.
             // `Reverse` reverses the component sorting order.
@@ -33,7 +38,7 @@ namespace Ent
             // The components are sorted by end address (sic, we use address right past the end of a component, for better sorting order),
             //   and then by `is_base_of`. If this leaves any ambiguities, you get a compilation error.
             // This gives the most natural sorting order: bases first, then the derived classes.
-            template <template <typename> typename Func, bool Reverse, typename ...P>
+            template <TagType Tag, template <typename> typename Func, bool Reverse, typename ...P>
             struct FuncList
             {
                 // Whether component `C` seems to override the function.
@@ -125,7 +130,19 @@ namespace Ent
 
             template <typename T> using FuncInit = Meta::value_tag<&T::_init>;
             template <typename T> using FuncDeinit = Meta::value_tag<&T::_deinit>;
+        };
 
+        namespace MixinEntityCallbacks
+        {
+            using CompFriend = impl::ComponentFriend<CompFriendTag>;
+        }
+    }
+
+    namespace Mixins
+    {
+        template <typename Tag, typename NextBase>
+        struct EntityCallbacks : NextBase
+        {
           public:
             struct Controller;
 
@@ -147,12 +164,12 @@ namespace Ent
 
                 void OnCreated(typename Tag::Controller &controller) override
                 {
-                    FuncList<FuncInit, false, typename Tag::Controller &, typename Tag::Entity &>::call(static_cast<E &>(*this), controller, *this);
+                    impl::MixinEntityCallbacks::CompFriend::FuncList<Tag, impl::MixinEntityCallbacks::CompFriend::FuncInit, false, typename Tag::Controller &, typename Tag::Entity &>::call(static_cast<E &>(*this), controller, *this);
                 }
 
                 void OnDestroyed(typename Tag::Controller &controller) override
                 {
-                    FuncList<FuncDeinit, true, typename Tag::Controller &, typename Tag::Entity &>::call(static_cast<E &>(*this), controller, *this);
+                    impl::MixinEntityCallbacks::CompFriend::FuncList<Tag, impl::MixinEntityCallbacks::CompFriend::FuncDeinit, true, typename Tag::Controller &, typename Tag::Entity &>::call(static_cast<E &>(*this), controller, *this);
                 }
             };
 
