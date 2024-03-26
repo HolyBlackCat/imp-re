@@ -680,7 +680,8 @@ namespace Ent
                 }
 
                 // Destroy an entity in this controller.
-                template <typename E> requires EntityType<E, Tag> || Component<E, Tag> || std::same_as<E, typename Tag::Entity>
+                template <typename E>
+                requires (EntityType<E, Tag> || Component<E, Tag> || std::same_as<E, typename Tag::Entity>) && std::is_polymorphic_v<E>
                 void destroy(E &entity_or_component) noexcept
                 {
                     ThrowIfNull();
