@@ -54,7 +54,7 @@ override run_without_buffering := $(if $(or $(findstring n,$(single_letter_makef
 # --- Define functions ---
 
 # Used to create local variables in a safer way. E.g. `$(call var,x := 42)`.
-override var = $(eval override $(subst $,$$$$,$1))
+override var = $(eval override $(subst #,$$(strip #),$(subst $,$$$$,$1)))
 
 # Encloses $1 in single quotes, with proper escaping for the shell.
 # If you makefile uses single quotes everywhere, a decent way to transition is to manually search and replace `'(\$(?:.|\(.*?\)))'` with `$(call quote,$1)`.
