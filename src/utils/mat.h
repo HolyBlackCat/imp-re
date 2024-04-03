@@ -1,11 +1,12 @@
 // mat.h
 // Vector and matrix math
-// Version 3.21
+// Version 3.22
 // Generated, don't touch.
 
 #pragma once
 
 #include <algorithm>
+#include <array>
 #include <bit>
 #include <cmath>
 #include <concepts>
@@ -1687,6 +1688,7 @@ namespace Math
             [[nodiscard]] constexpr auto tie() const & {return std::tie(x,y);}
             template <int I> [[nodiscard]] constexpr type &get() & {return std::get<I>(tie());}
             template <int I> [[nodiscard]] constexpr const type &get() const & {return std::get<I>(tie());}
+            [[nodiscard]] friend constexpr std::array<T,2> format_as(const vec &v) {return {v.x,v.y};}
             [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr compare_any<vec> operator()(compare_any_tag) const {return compare_any(*this);}
             [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr compare_all<vec> operator()(compare_all_tag) const {return compare_all(*this);}
             [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr compare_none<vec> operator()(compare_none_tag) const {return compare_none(*this);}
@@ -1753,6 +1755,7 @@ namespace Math
             [[nodiscard]] constexpr auto tie() const & {return std::tie(x,y,z);}
             template <int I> [[nodiscard]] constexpr type &get() & {return std::get<I>(tie());}
             template <int I> [[nodiscard]] constexpr const type &get() const & {return std::get<I>(tie());}
+            [[nodiscard]] friend constexpr std::array<T,3> format_as(const vec &v) {return {v.x,v.y,v.z};}
             [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr compare_any<vec> operator()(compare_any_tag) const {return compare_any(*this);}
             [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr compare_all<vec> operator()(compare_all_tag) const {return compare_all(*this);}
             [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr compare_none<vec> operator()(compare_none_tag) const {return compare_none(*this);}
@@ -1817,6 +1820,7 @@ namespace Math
             [[nodiscard]] constexpr auto tie() const & {return std::tie(x,y,z,w);}
             template <int I> [[nodiscard]] constexpr type &get() & {return std::get<I>(tie());}
             template <int I> [[nodiscard]] constexpr const type &get() const & {return std::get<I>(tie());}
+            [[nodiscard]] friend constexpr std::array<T,4> format_as(const vec &v) {return {v.x,v.y,v.z,v.w};}
             [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr compare_any<vec> operator()(compare_any_tag) const {return compare_any(*this);}
             [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr compare_all<vec> operator()(compare_all_tag) const {return compare_all(*this);}
             [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr compare_none<vec> operator()(compare_none_tag) const {return compare_none(*this);}
@@ -1859,6 +1863,7 @@ namespace Math
             [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const member_type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const member_type *)((const char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; IMP_MATH_UNREACHABLE();}
             [[nodiscard]] IMP_MATH_SMALL_FUNC type *as_array() {return &x.x;}
             [[nodiscard]] IMP_MATH_SMALL_FUNC const type *as_array() const {return &x.x;}
+            [[nodiscard]] friend constexpr std::array<T,2> format_as(const mat &m) {return {m.x,m.y};}
             [[nodiscard]] constexpr mat3x2<type> to_vec3(const member_type &nz) const {return {x, y, nz};}
             [[nodiscard]] constexpr mat4x2<type> to_vec4(const member_type &nz, const member_type &nw) const {return {x, y, nz, nw};}
             [[nodiscard]] constexpr mat3x2<type> to_vec3() const {return to_vec3({});}
@@ -1928,6 +1933,7 @@ namespace Math
             [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const member_type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const member_type *)((const char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; IMP_MATH_UNREACHABLE();}
             [[nodiscard]] IMP_MATH_SMALL_FUNC type *as_array() {return &x.x;}
             [[nodiscard]] IMP_MATH_SMALL_FUNC const type *as_array() const {return &x.x;}
+            [[nodiscard]] friend constexpr std::array<T,2> format_as(const mat &m) {return {m.x,m.y};}
             [[nodiscard]] constexpr mat3x3<type> to_vec3(const member_type &nz) const {return {x, y, nz};}
             [[nodiscard]] constexpr mat4x3<type> to_vec4(const member_type &nz, const member_type &nw) const {return {x, y, nz, nw};}
             [[nodiscard]] constexpr mat3x3<type> to_vec3() const {return to_vec3({});}
@@ -1968,6 +1974,7 @@ namespace Math
             [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const member_type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const member_type *)((const char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; IMP_MATH_UNREACHABLE();}
             [[nodiscard]] IMP_MATH_SMALL_FUNC type *as_array() {return &x.x;}
             [[nodiscard]] IMP_MATH_SMALL_FUNC const type *as_array() const {return &x.x;}
+            [[nodiscard]] friend constexpr std::array<T,2> format_as(const mat &m) {return {m.x,m.y};}
             [[nodiscard]] constexpr mat3x4<type> to_vec3(const member_type &nz) const {return {x, y, nz};}
             [[nodiscard]] constexpr mat4x4<type> to_vec4(const member_type &nz, const member_type &nw) const {return {x, y, nz, nw};}
             [[nodiscard]] constexpr mat3x4<type> to_vec3() const {return to_vec3({});}
@@ -2009,6 +2016,7 @@ namespace Math
             [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const member_type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const member_type *)((const char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; IMP_MATH_UNREACHABLE();}
             [[nodiscard]] IMP_MATH_SMALL_FUNC type *as_array() {return &x.x;}
             [[nodiscard]] IMP_MATH_SMALL_FUNC const type *as_array() const {return &x.x;}
+            [[nodiscard]] friend constexpr std::array<T,3> format_as(const mat &m) {return {m.x,m.y,m.z};}
             [[nodiscard]] constexpr mat2x2<type> to_vec2() const {return {x, y};}
             [[nodiscard]] constexpr mat4x2<type> to_vec4(const member_type &nw) const {return {x, y, z, nw};}
             [[nodiscard]] constexpr mat4x2<type> to_vec4() const {return to_vec4({});}
@@ -2050,6 +2058,7 @@ namespace Math
             [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const member_type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const member_type *)((const char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; IMP_MATH_UNREACHABLE();}
             [[nodiscard]] IMP_MATH_SMALL_FUNC type *as_array() {return &x.x;}
             [[nodiscard]] IMP_MATH_SMALL_FUNC const type *as_array() const {return &x.x;}
+            [[nodiscard]] friend constexpr std::array<T,3> format_as(const mat &m) {return {m.x,m.y,m.z};}
             [[nodiscard]] constexpr mat2x3<type> to_vec2() const {return {x, y};}
             [[nodiscard]] constexpr mat4x3<type> to_vec4(const member_type &nw) const {return {x, y, z, nw};}
             [[nodiscard]] constexpr mat4x3<type> to_vec4() const {return to_vec4({});}
@@ -2145,6 +2154,7 @@ namespace Math
             [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const member_type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const member_type *)((const char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; IMP_MATH_UNREACHABLE();}
             [[nodiscard]] IMP_MATH_SMALL_FUNC type *as_array() {return &x.x;}
             [[nodiscard]] IMP_MATH_SMALL_FUNC const type *as_array() const {return &x.x;}
+            [[nodiscard]] friend constexpr std::array<T,3> format_as(const mat &m) {return {m.x,m.y,m.z};}
             [[nodiscard]] constexpr mat2x4<type> to_vec2() const {return {x, y};}
             [[nodiscard]] constexpr mat4x4<type> to_vec4(const member_type &nw) const {return {x, y, z, nw};}
             [[nodiscard]] constexpr mat4x4<type> to_vec4() const {return to_vec4({});}
@@ -2186,6 +2196,7 @@ namespace Math
             [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const member_type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const member_type *)((const char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; else if (i == 3) return w; IMP_MATH_UNREACHABLE();}
             [[nodiscard]] IMP_MATH_SMALL_FUNC type *as_array() {return &x.x;}
             [[nodiscard]] IMP_MATH_SMALL_FUNC const type *as_array() const {return &x.x;}
+            [[nodiscard]] friend constexpr std::array<T,4> format_as(const mat &m) {return {m.x,m.y,m.z,m.w};}
             [[nodiscard]] constexpr mat2x2<type> to_vec2() const {return {x, y};}
             [[nodiscard]] constexpr mat3x2<type> to_vec3() const {return {x, y, z};}
             [[nodiscard]] constexpr mat2x2<type> to_mat2x2() const {return {x.x,y.x,x.y,y.y};}
@@ -2226,6 +2237,7 @@ namespace Math
             [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const member_type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const member_type *)((const char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; else if (i == 3) return w; IMP_MATH_UNREACHABLE();}
             [[nodiscard]] IMP_MATH_SMALL_FUNC type *as_array() {return &x.x;}
             [[nodiscard]] IMP_MATH_SMALL_FUNC const type *as_array() const {return &x.x;}
+            [[nodiscard]] friend constexpr std::array<T,4> format_as(const mat &m) {return {m.x,m.y,m.z,m.w};}
             [[nodiscard]] constexpr mat2x3<type> to_vec2() const {return {x, y};}
             [[nodiscard]] constexpr mat3x3<type> to_vec3() const {return {x, y, z};}
             [[nodiscard]] constexpr mat2x2<type> to_mat2x2() const {return {x.x,y.x,x.y,y.y};}
@@ -2267,6 +2279,7 @@ namespace Math
             [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr const member_type &operator[](int i) const {if (!IMP_MATH_IS_CONSTANT(i)) return *(const member_type *)((const char *)this + sizeof(member_type)*i); else if (i == 0) return x; else if (i == 1) return y; else if (i == 2) return z; else if (i == 3) return w; IMP_MATH_UNREACHABLE();}
             [[nodiscard]] IMP_MATH_SMALL_FUNC type *as_array() {return &x.x;}
             [[nodiscard]] IMP_MATH_SMALL_FUNC const type *as_array() const {return &x.x;}
+            [[nodiscard]] friend constexpr std::array<T,4> format_as(const mat &m) {return {m.x,m.y,m.z,m.w};}
             [[nodiscard]] constexpr mat2x4<type> to_vec2() const {return {x, y};}
             [[nodiscard]] constexpr mat3x4<type> to_vec3() const {return {x, y, z};}
             [[nodiscard]] constexpr mat2x2<type> to_mat2x2() const {return {x.x,y.x,x.y,y.y};}

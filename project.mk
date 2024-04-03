@@ -116,7 +116,7 @@ $(foreach f,$(_codegen_list),$(eval $(call _codegen_target,$(word 1,$(subst :, ,
 
 # --- Libraries ---
 
-DIST_DEPS_ARCHIVE := https://github.com/HolyBlackCat/imp-re/releases/download/deps-sources/deps_v4.zip
+DIST_DEPS_ARCHIVE := https://github.com/HolyBlackCat/imp-re/releases/download/deps-sources/deps_v5.zip
 
 _win_is_x32 :=
 _win_sdl2_arch := $(if $(_win_is_x32),i686-w64-mingw32,x86_64-w64-mingw32)
@@ -134,6 +134,8 @@ _bullet_flags += -DBUILD_SHARED_LIBS:BOOL=OFF
 _bullet_flags += -DINSTALL_LIBS:BOOL=ON
 
 _openal_flags := -DALSOFT_EXAMPLES=FALSE
+# Disable helper executables. Otherwise Windows builds fails because of missing Qt.
+_openal_flags += -DALSOFT_UTILS=FALSE
 # Enable SDL2 backend.
 _openal_flags += -DALSOFT_REQUIRE_SDL2=TRUE -DALSOFT_BACKEND_SDL2=TRUE
 # We used to disable other backends here, but it seems our CMake isolation works well enough to make this unnecessary.
@@ -183,19 +185,19 @@ override buildsystem-cglfl = \
 	$(call safe_shell_exec,$(call MAKE_STATIC_LIB,$(__install_dir)/lib/$(PREFIX_static)cglfl$(EXT_static),$(call quote,$(__build_dir)/cglfl.o)) >>$(call quote,$(__log_path)))\
 	$(call log_now,[Library] >>> Cleaning up...)
 
-$(call Library,double-conversion,double-conversion-3.2.1.tar.gz)
+$(call Library,double-conversion,double-conversion-3.3.0.tar.gz)
 
-$(call Library,fmt,fmt-9.1.0.zip)
+$(call Library,fmt,fmt-10.2.1.zip)
   $(call LibrarySetting,cmake_flags,-DFMT_TEST=OFF)
 
 ifeq ($(TARGET_OS),emscripten)
 $(call LibraryStub,freetype,-sUSE_FREETYPE=1)
 else
-$(call Library,freetype,freetype-2.13.0.tar.gz)
+$(call Library,freetype,freetype-2.13.2.tar.gz)
   $(call LibrarySetting,deps,zlib)
 endif
 
-$(call Library,imgui,imgui-1.89.4.tar.gz)
+$(call Library,imgui,imgui-1.90.4.tar.gz)
   $(call LibrarySetting,build_system,imgui)
   # `stb` is needed because we delete ImGui's own copy of it, and tell it to use an external one.
   # `freetype` is needed because we enable it in `imconfig.h`.
@@ -257,27 +259,27 @@ $(call Library,ogg,libogg-1.3.5.tar.gz) # Only serves as a dependency for `libvo
   $(call LibrarySetting,build_system,configure_make)
 endif
 
-$(call Library,openal-soft,openal-soft-1.23.0.tar.gz)
+$(call Library,openal-soft,openal-soft-1.23.1.tar.gz)
   $(call LibrarySetting,deps,sdl2 zlib)# We want SDL2 as a backend. It's unclear what Zlib adds, we give it just because.
   $(call LibrarySetting,cmake_flags,$(_openal_flags))
 ifneq ($(filter -D_GLIBCXX_DEBUG,$(GLOBAL_CXXFLAGS)),)
   $(call LibrarySetting,cxxflags,-U_GLIBCXX_DEBUG -D_GLIBCXX_ASSERTIONS)# The debug mode causes weird compilation errors.
 endif
 
-$(call Library,phmap,parallel-hashmap-1.3.8.tar.gz)
+$(call Library,phmap,parallel-hashmap-1.3.12.tar.gz)
   $(call LibrarySetting,cmake_flags,-DPHMAP_BUILD_TESTS=OFF -DPHMAP_BUILD_EXAMPLES=OFF)# Otherwise it downloads GTest, which is nonsense.
 
 ifeq ($(TARGET_OS),emscripten)
 $(call LibraryStub,sdl2,-sUSE_SDL=2)
 else ifeq ($(TARGET_OS),windows)
-$(call Library,sdl2,SDL2-devel-2.26.4-mingw.tar.gz)
+$(call Library,sdl2,SDL2-devel-2.30.2-mingw.tar.gz)
   $(call LibrarySetting,build_system,copy_files)
   $(call LibrarySetting,copy_files,$(_win_sdl2_arch)/*->.)
 $(call Library,sdl2_net,SDL2_net-devel-2.2.0-mingw.tar.gz)
   $(call LibrarySetting,build_system,copy_files)
   $(call LibrarySetting,copy_files,$(_win_sdl2_arch)/*->.)
 else
-$(call Library,sdl2,SDL2-2.26.4.tar.gz)
+$(call Library,sdl2,SDL2-2.30.2.tar.gz)
   # Allow SDL to see system packages. If we were using `configure+make`, we'd need `configure_vars = env -uPKG_CONFIG_PATH -uPKG_CONFIG_LIBDIR` instead.
   $(call LibrarySetting,cmake_flags,-DCMAKE_FIND_USE_CMAKE_SYSTEM_PATH=ON)
   $(call LibrarySetting,common_flags,-fno-sanitize=address -fno-sanitize=undefined)# ASAN/UBSAN cause linker errors in Linux, when making `libSDL2.so`. `-DSDL_ASAN=ON` doesn't help.
@@ -286,7 +288,7 @@ $(call Library,sdl2_net,SDL2_net-2.2.0.tar.gz)
   $(call LibrarySetting,common_flags,-fno-sanitize=address -fno-sanitize=undefined)# See above.
 endif
 
-$(call Library,stb,stb-5736b15.zip)
+$(call Library,stb,stb-ae721c5.zip)
   $(call LibrarySetting,build_system,copy_files)
   # Out of those, `rectpack` is used both by us and ImGui.
   # There's also `textedit`, which ImGui uses and we don't but we let ImGui keep its version, since it's slightly patched.
@@ -304,7 +306,7 @@ endif
 ifeq ($(TARGET_OS),emscripten)
 $(call LibraryStub,zlib,-sUSE_ZLIB=1)
 else
-$(call Library,zlib,zlib-1.2.13.tar.gz)
+$(call Library,zlib,zlib-1.3.1.tar.gz)
   # CMake support in ZLib is jank. On MinGW it builds `libzlib.dll`, but pkg-config says `-lz`. Last checked on 1.2.12.
   $(call LibrarySetting,build_system,configure_make)
   # Need to set `cc`, otherwise their makefile uses the executable named `cc` to link, which doesn't support `-fuse-ld=lld-N`, it seems. Last tested on 1.2.12.

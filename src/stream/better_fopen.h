@@ -1,7 +1,13 @@
 #pragma once
 
-#include <filesystem>
 #include <cstdio>
+
+#ifdef __MINGW32__
+#include <filesystem>
+#include "program/compiler.h"
+#include "program/platform.h"
+#endif
+
 
 namespace Stream
 {
@@ -19,7 +25,9 @@ namespace Stream
             if (mode[i] == '\0')
                 break;
         }
+        IMP_PLATFORM_IF(gcc_clang)(IMP_DIAGNOSTICS_PUSH IMP_DIAGNOSTICS_IGNORE("-Wdeprecated-declarations"))
         return _wfopen(std::filesystem::u8path(name).c_str(), wide_mode); // In C++20 `u8path` will be deprecated in favor of a new constructor.
+        IMP_PLATFORM_IF(gcc_clang)(IMP_DIAGNOSTICS_POP)
         #endif
     }
 }

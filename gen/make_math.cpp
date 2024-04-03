@@ -7,7 +7,7 @@
 #include <sstream>
 #include <type_traits>
 
-#define VERSION "3.21"
+#define VERSION "3.22"
 
 #pragma GCC diagnostic ignored "-Wpragmas" // Silence GCC warning about the next line disabling a warning that GCC doesn't have.
 #pragma GCC diagnostic ignored "-Wstring-plus-int" // Silence clang warning about `1+R"()"` pattern.
@@ -190,6 +190,7 @@ int main(int argc, char **argv)
     { // Includes
         output(1+R"(
             #include <algorithm>
+            #include <array>
             #include <bit>
             #include <cmath>
             #include <concepts>
@@ -1929,6 +1930,10 @@ int main(int argc, char **argv)
                             output("template <int I> [[nodiscard]] constexpr const type &get() const & {return std::get<I>(tie());}\n");
                         }
 
+                        { // `format_as` for libfmt
+                            output("[[nodiscard]] friend constexpr std::array<T,",w,"> format_as(const vec &v) {return {",Fields(",","v.@"),"};}\n");
+                        }
+
                         { // Comparison helpers
                             for (const std::string &mode : data::compare_modes)
                                 output("[[nodiscard]] IMP_MATH_SMALL_FUNC constexpr compare_",mode,"<vec> operator()(compare_",mode,"_tag) const {return compare_",mode,"(*this);}\n");
@@ -2109,6 +2114,10 @@ int main(int argc, char **argv)
                             // As array
                             output("[[nodiscard]] IMP_MATH_SMALL_FUNC type *as_array() {return &x.x;}\n");
                             output("[[nodiscard]] IMP_MATH_SMALL_FUNC const type *as_array() const {return &x.x;}\n");
+                        }
+
+                        { // `format_as` for libfmt
+                            output("[[nodiscard]] friend constexpr std::array<T,",w,"> format_as(const mat &m) {return {",LargeFields(",","m.@"),"};}\n");
                         }
 
                         { // Resize
