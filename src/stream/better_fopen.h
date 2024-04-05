@@ -2,7 +2,7 @@
 
 #include <cstdio>
 
-#ifdef __MINGW32__
+#ifdef _WIN32
 #include <filesystem>
 #include "program/compiler.h"
 #include "program/platform.h"
@@ -14,7 +14,7 @@ namespace Stream
     // Like regular fopen, but can handle unicode paths on MinGW.
     [[nodiscard]] inline FILE *better_fopen(const char *name, const char *mode)
     {
-        #ifndef __MINGW32__
+        #ifndef _WIN32
         return std::fopen(name, mode);
         #else
         constexpr int max_mode_len = 3;
