@@ -93,11 +93,9 @@ $(foreach f,$(_codegen_list),$(eval $(call _codegen_target,$(word 1,$(subst :, ,
 # This list was last updated for SDL 2.26.4.
 # `libjack-dev` was removed from the list, because it caused weird package conflicts on Ubuntu 22.04.
 
-# On Manjaro/Arch, install following for SDL2 (from https://archlinux.org/packages/extra/x86_64/sdl2/)
-# pamac install glibc hidapi libgl libusb libx11 libxcursor libxext libxrender alsa-lib \
-    jack libdecor libpulse pipewire alsa-lib cmake fcitx5 ibus jack libdecor libpulse \
-    libxinerama libxkbcommon libxrandr libxss mesa ninja pipewire wayland wayland-protocols
-# This list was last updated for SDL 2.28.4.
+# On Arch/Manjaro, install following for SDL2 (from https://gitlab.archlinux.org/archlinux/packaging/packages/sdl2/-/blob/main/PKGBUILD)
+# pacman -S glibc libxext libxrender libx11 libgl libxcursor hidapi libusb alsa-lib mesa libpulse libxrandr libxinerama wayland libxkbcommon wayland-protocols ibus fcitx5 libxss cmake jack ninja pipewire libdecor
+# This list was last updated for SDL 2.30.2.
 # Not sure if those allow all features to be build, but since we're not going
 #   to distribute Arch binaries anyway, it shouldn't matter.
 
