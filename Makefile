@@ -668,10 +668,14 @@ endif
 # We need this before defining library targets, since those can depend on each other,
 # and custom build systems may use those functions determine the flags.
 
+# Given list of libraries $1, returns them and all their dependencies recursively.
+override lib_add_deps = $(call,$(call var,__lib_add_deps_ret :=)$(foreach x,$1,$(call lib_add_deps_low,$x)))$(sort $(__lib_add_deps_ret))
+override lib_add_deps_low = $(if $(filter $1,$(__lib_add_deps_ret)),,$(call var,__lib_add_deps_ret += $1)$(foreach x,$(__libsetting_deps_$1),$(call lib_add_deps_low,$x)))
+
 # Expands to `pkg-config` with the proper config variables.
-# $1 is a list of libraries to add to the search path.
+# $1 is a list of libraries to add to the search path (we automatically add their dependencies).
 # See the definion of `PKG_CONFIG_PATH` above for why we set it to a `-` rather than nothing.
-override lib_invoke_pkgconfig = PKG_CONFIG_PATH=- PKG_CONFIG_LIBDIR=$(call quote,$(subst $(space),:,$(foreach x,$1,$(call lib_name_to_base_dir,$x)/$(os_mode_string)/prefix/lib/pkgconfig))) pkg-config --define-prefix
+override lib_invoke_pkgconfig = PKG_CONFIG_PATH=- PKG_CONFIG_LIBDIR=$(call quote,$(subst $(space),:,$(foreach x,$(call lib_add_deps,$1),$(call lib_name_to_base_dir,$x)/$(os_mode_string)/prefix/lib/pkgconfig))) pkg-config --define-prefix
 
 # Given a library name `$1`, returns the pkg-config package names for it.
 override lib_find_packages_for = $(if $(__libsetting_only_pkgconfig_files_$(strip $1)),$(__libsetting_only_pkgconfig_files_$(strip $1)),$(basename $(notdir $(wildcard $(call lib_name_to_base_dir,$1)/$(os_mode_string)/prefix/lib/pkgconfig/*.pc))))
