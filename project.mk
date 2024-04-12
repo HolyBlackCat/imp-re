@@ -27,6 +27,9 @@ $(call NewMode,sanitize_address_ub)
 $(Mode)GLOBAL_COMMON_FLAGS := -g -fsanitize=address -fsanitize=undefined
 $(Mode)GLOBAL_CXXFLAGS := -D_GLIBCXX_DEBUG
 $(Mode)PROJ_RUNTIME_ENV += LSAN_OPTIONS=suppressions=misc/leak_sanitizer_suppressions.txt
+# Otherwise we get odr-violation error on `z_errmsg`. Not sure what's going on.
+# I previously fixed this error on Fedora, but there the build process of ZLib was broken, using a wrong compiler. That isn't what happens now, though.
+$(Mode)PROJ_RUNTIME_ENV += ASAN_OPTIONS=detect_odr_violation=1
 
 DIST_NAME := $(APP)_$(TARGET_OS)_v1.*
 ifneq ($(MODE),release)
@@ -38,7 +41,7 @@ endif
 PROJ_CXXFLAGS += -std=c++2b -pedantic-errors -Wall -Wextra -Wdeprecated -Wextra-semi -Wimplicit-fallthrough
 PROJ_CXXFLAGS += -ftemplate-backtrace-limit=0 -fmacro-backtrace-limit=0
 PROJ_CXXFLAGS += -includesrc/program/common_macros.h -includesrc/program/parachute.h
-PROJ_CXXFLAGS += -Isrc -Ilib/include
+PROJ_CXXFLAGS += -Isrc
 PROJ_CXXFLAGS += -DIMGUI_USER_CONFIG=\"third_party_connectors/imconfig.h\"# Custom ImGui config.
 PROJ_CXXFLAGS += -DFMT_DEPRECATED_OSTREAM# See issue: https://github.com/fmtlib/fmt/issues/3088
 

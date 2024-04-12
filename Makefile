@@ -669,9 +669,9 @@ endif
 # and custom build systems may use those functions determine the flags.
 
 # Expands to `pkg-config` with the proper config variables.
-# Not a function.
+# $1 is a list of libraries to add to the search path.
 # See the definion of `PKG_CONFIG_PATH` above for why we set it to a `-` rather than nothing.
-override lib_invoke_pkgconfig = PKG_CONFIG_PATH=- PKG_CONFIG_LIBDIR=$(call quote,$(subst $(space),:,$(foreach x,$(all_libs),$(call lib_name_to_base_dir,$x)/$(os_mode_string)/prefix/lib/pkgconfig))) pkg-config --define-prefix
+override lib_invoke_pkgconfig = PKG_CONFIG_PATH=- PKG_CONFIG_LIBDIR=$(call quote,$(subst $(space),:,$(foreach x,$1,$(call lib_name_to_base_dir,$x)/$(os_mode_string)/prefix/lib/pkgconfig))) pkg-config --define-prefix
 
 # Given a library name `$1`, returns the pkg-config package names for it.
 override lib_find_packages_for = $(if $(__libsetting_only_pkgconfig_files_$(strip $1)),$(__libsetting_only_pkgconfig_files_$(strip $1)),$(basename $(notdir $(wildcard $(call lib_name_to_base_dir,$1)/$(os_mode_string)/prefix/lib/pkgconfig/*.pc))))
@@ -687,7 +687,7 @@ override lib_cflags = $(strip\
 	$(call, ### Run lib_cflags_low for every library.)\
 	$(foreach x,$(filter-out $(all_lib_stubs),$1),$(call lib_cflags_low,$(call lib_find_packages_for,$x)))\
 	$(call, ### Run pkg-config for libraries that have pkg-config packages.)\
-	$(if $(__pkgs),$(call safe_shell,$(lib_invoke_pkgconfig) --cflags $(__pkgs)))\
+	$(if $(__pkgs),$(call safe_shell,$(call lib_invoke_pkgconfig,$1) --cflags $(__pkgs)))\
 	$(__raw_flags)\
 	$(foreach x,$(filter $(all_lib_stubs),$1),$(__libsetting_stub_cflags_$x))\
 	)
@@ -714,7 +714,7 @@ override lib_ldflags = $(strip\
 	$(call, ### Run lib_ldflags_low for every library.)\
 	$(foreach x,$(filter-out $(all_lib_stubs),$1),$(call lib_ldflags_low,$(call lib_find_packages_for,$x)))\
 	$(call, ### Run pkg-config for libraries that have pkg-config packages.)\
-	$(if $(__pkgs),$(call safe_shell,$(lib_invoke_pkgconfig) --libs $(__pkgs)))\
+	$(if $(__pkgs),$(call safe_shell,$(call lib_invoke_pkgconfig,$1) --libs $(__pkgs)))\
 	$(__raw_flags)\
 	$(foreach x,$(filter $(all_lib_stubs),$1),$(__libsetting_stub_ldflags_$x))\
 	)
@@ -1435,8 +1435,8 @@ override buildsystem-configure_make = \
 		CFLAGS=$(call quote,$(combined_global_cflags) $(__libsetting_common_flags_$(__lib_name)) $(__libsetting_cflags_$(__lib_name))) \
 		CXXFLAGS=$(call quote,$(combined_global_cxxflags) $(__libsetting_common_flags_$(__lib_name)) $(__libsetting_cxxflags_$(__lib_name))) \
 		LDFLAGS=$(call quote,$(combined_global_ldflags) $(__libsetting_common_flags_$(__lib_name)) $(__libsetting_ldflags_$(__lib_name))) \
-		$(call, ### See the definion of `PKG_CONFIG_PATH` above for why we set it to a space rather than nothing.)\
-		PKG_CONFIG_PATH=' ' PKG_CONFIG_LIBDIR=$(call quote,$(abspath $(__install_dir)/lib/pkgconfig)) $(__libsetting_configure_vars_$(__lib_name)) \
+		$(call, ### See the definion of `PKG_CONFIG_PATH` above for why we set it to a minus sign rather than nothing.)\
+		PKG_CONFIG_PATH='-' PKG_CONFIG_LIBDIR=$(call quote,$(abspath $(__install_dir)/lib/pkgconfig)) $(__libsetting_configure_vars_$(__lib_name)) \
 	)\
 	$(call, ### Since we can't configure multiple search prefixes, like we do with CMAKE_SYSTEM_PREFIX_PATH,)\
 	$(call, ### we copy the prefixes of our dependencies to our own prefix.)\
