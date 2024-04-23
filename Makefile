@@ -455,17 +455,17 @@ HOST_CC :=
 HOST_CXX :=
 
 # Libraries are built here.
-LIB_DIR := $(proj_dir)/deps
+LIB_DIR := $(proj_dir)/build/deps
 # Library source archives are found here.
 LIB_SRC_DIR := $(proj_dir)/deps_src
 # Object files are written here.
-OBJ_DIR := $(proj_dir)/obj
+OBJ_DIR := $(proj_dir)/build/obj
 # Binaries are written here.
-BIN_DIR := $(proj_dir)/bin
+BIN_DIR := $(proj_dir)/build/bin
 # Distribution archives are created here.
 DIST_DIR := $(proj_dir)
 # A temporary directory for distribution archives is created here.
-DIST_TMP_DIR := $(proj_dir)/dist
+DIST_TMP_DIR := $(proj_dir)/build/dist
 
 # If true, don't delete build trees when building libraries.
 # The build trees occupy extra space.
@@ -1394,7 +1394,7 @@ override buildsystem-cmake = \
 		-S $(call quote,$(__source_dir))\
 		-B $(call quote,$(__build_dir))\
 		-Wno-dev\
-		$(call, ### Weird semi-documented flags. Helps at least for freetype, ogg, vorbis.)\
+		$(call, ### Weird semi-documented flag. Enable shared library generation. Helps at least for freetype, ogg, vorbis?)\
 		-DBUILD_SHARED_LIBS=ON\
 		$(call, ### Specifying an invalid build type disables built-in flags.)\
 		-DCMAKE_BUILD_TYPE=Custom\
