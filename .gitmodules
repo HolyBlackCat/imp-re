@@ -1,0 +1,3 @@
+[submodule "deps/sub/box2cpp"]
+	path = deps/sub/box2cpp
+	url = https://github.com/HolyBlackCat/box2cpp
