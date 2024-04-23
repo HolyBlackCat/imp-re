@@ -147,7 +147,7 @@ override archive_extract-TAR = tar -xf $(call quote,$1) -C $(call quote,$2)
 
 archive_types += ZIP
 override archive_is-ZIP = $(filter %.zip,$1)
-# `-o` allows us to overwrite files. Good for at least `make -B deps_src`.
+# `-o` allows us to overwrite files. Good for at least `make -B deps/src`.
 override archive_extract-ZIP = unzip -oq $(call quote,$1) -d $(call quote,$2)
 
 
@@ -457,7 +457,7 @@ HOST_CXX :=
 # Libraries are built here.
 LIB_DIR := $(proj_dir)/build/deps
 # Library source archives are found here.
-LIB_SRC_DIR := $(proj_dir)/deps_src
+LIB_SRC_DIR := $(proj_dir)/deps/src
 # Object files are written here.
 OBJ_DIR := $(proj_dir)/build/obj
 # Binaries are written here.

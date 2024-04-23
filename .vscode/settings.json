@@ -2,11 +2,11 @@
     "files.exclude": {
         ".cache/": true,
         "deps_src/": true,
-        "deps/": true,
-        "obj/": true,
+        "build/deps/": true,
+        "build/obj/": true,
     },
 
     "files.readonlyInclude": {
-        "deps/**/prefix/include/**": true
+        "build/deps/**/prefix/include/**": true
     },
 }

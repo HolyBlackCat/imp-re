@@ -1,6 +1,6 @@
 /.cache/**
 /build/**
-/deps_src/**
+/deps/src/**
 
 *.tar.gz
 *.tar.zst
