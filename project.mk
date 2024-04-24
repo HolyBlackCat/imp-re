@@ -42,6 +42,7 @@ PROJ_CXXFLAGS += -std=c++2b -pedantic-errors -Wall -Wextra -Wdeprecated -Wextra-
 PROJ_CXXFLAGS += -ftemplate-backtrace-limit=0 -fmacro-backtrace-limit=0
 PROJ_CXXFLAGS += -includesrc/program/common_macros.h -includesrc/program/parachute.h
 PROJ_CXXFLAGS += -Isrc
+PROJ_CXXFLAGS += -Ideps/sub/box2cpp/include
 PROJ_CXXFLAGS += -DIMGUI_USER_CONFIG=\"third_party_connectors/imconfig.h\"# Custom ImGui config.
 PROJ_CXXFLAGS += -DFMT_DEPRECATED_OSTREAM# See issue: https://github.com/fmtlib/fmt/issues/3088
 
@@ -72,7 +73,7 @@ endif
 
 # --- Codegen ---
 
-_codegen_command = $(CXX) -std=c++20 -Wall -Wextra -pedantic-errors
+_codegen_command = $(CXX) -std=c++23 -Wall -Wextra -pedantic-errors
 override _codegen_dir := gen
 override _codegen_list := math:src/utils/mat.h macros:src/macros/generated.h
 override _codegen_target = $2: $(_codegen_dir)/make_$1.cpp ; \
@@ -117,7 +118,7 @@ $(foreach f,$(_codegen_list),$(eval $(call _codegen_target,$(word 1,$(subst :, ,
 
 # --- Libraries ---
 
-DIST_DEPS_ARCHIVE := https://github.com/HolyBlackCat/imp-re/releases/download/deps-sources/deps_v5.zip
+DIST_DEPS_ARCHIVE := https://github.com/HolyBlackCat/imp-re/releases/download/deps-sources/deps_v6.zip
 
 _win_is_x32 :=
 _win_sdl2_arch := $(if $(_win_is_x32),i686-w64-mingw32,x86_64-w64-mingw32)
@@ -146,8 +147,25 @@ ifeq ($(TARGET_OS),windows)
 _zlib_env_vars += uname=linux
 endif
 
-$(call Library,box2d,box2d-2.4.1.tar.gz)
-  $(call LibrarySetting,cmake_flags,-DBOX2D_BUILD_UNIT_TESTS:BOOL=OFF -DBOX2D_BUILD_TESTBED:BOOL=OFF)
+# When you update this, check if they:
+# 1. Added a switch to disable tests, so we can use it and stop patching tests ouf ot CMakeLists.txt.
+# 2. Fixed unconditional FetchConcent (check with -DFETCHCONTENT_QUIET=0 to see logs).
+# 3. Added installation rules for headers.
+$(call Library,box2c,box2c-41e47c6-2024-04-21.zip)
+  $(call LibrarySetting,cmake_flags,-DBOX2D_SAMPLES:BOOL=OFF)
+  $(call LibrarySetting,build_system,box2c)
+override buildsystem-box2c =\
+	$(call log_now,[Library] >>> Patching CMakeLists.txt...)\
+	$(call, ### Disable tests [which isn't currently necessary because they're auto-disabled when building shared libs for some reason...])\
+	$(call, ### and disable downloading enkiTS, which is only needed for tests and samples.)\
+	$(call safe_shell_exec,awk -i inplace '/FetchContent_Declare/||/# Tests need static linkage/{x=1} {if (!x) print $0} /FetchContent_MakeAvailable/||/endif/{x=0}' $(call quote,$(__source_dir)/CMakeLists.txt))\
+	$(call, ### Forward to CMake.)\
+	$(buildsystem-cmake)\
+	$(call, ### Install headers.)\
+	$(call safe_shell_exec,cp -rT $(call quote,$(__source_dir)/include) $(call quote,$(__install_dir)/include))
+
+#$(call Library,box2d,box2d-2.4.1.tar.gz)
+#  $(call LibrarySetting,cmake_flags,-DBOX2D_BUILD_UNIT_TESTS:BOOL=OFF -DBOX2D_BUILD_TESTBED:BOOL=OFF)
 
 ifeq ($(TARGET_OS),emscripten)
 $(call LibraryStub,bullet,-sUSE_BULLET=1)
@@ -187,6 +205,9 @@ override buildsystem-cglfl = \
 	$(call log_now,[Library] >>> Cleaning up...)
 
 $(call Library,double-conversion,double-conversion-3.3.0.tar.gz)
+
+$(call Library,enkits,enkiTS-6474b35-2024-03-05-with-mingw-patch.zip)
+  $(call LibrarySetting,cmake_flags,-DENKITS_INSTALL=ON -DENKITS_BUILD_SHARED=ON -DENKITS_BUILD_EXAMPLES=OFF)
 
 $(call Library,fmt,fmt-10.2.1.zip)
   $(call LibrarySetting,cmake_flags,-DFMT_TEST=OFF)

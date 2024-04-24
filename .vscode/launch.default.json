@@ -15,7 +15,7 @@
             "preLaunchTask": "Build",
             "initCommands": [
                 // Enable printing of the `phmap` hashmaps. The path needs to be updated when the library is updated.
-                "command script import deps/parallel-hashmap-1.3.8/source/phmap_lldb.py",
+                "command script import build/deps/parallel-hashmap-1.3.12/source/phmap_lldb.py",
             ],
             "env": {/*<ENV_JSON>*/},
         },
