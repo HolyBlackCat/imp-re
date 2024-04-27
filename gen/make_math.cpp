@@ -7,7 +7,7 @@
 #include <sstream>
 #include <type_traits>
 
-#define VERSION "3.22"
+#define VERSION "3.23"
 
 #pragma GCC diagnostic ignored "-Wpragmas" // Silence GCC warning about the next line disabling a warning that GCC doesn't have.
 #pragma GCC diagnostic ignored "-Wstring-plus-int" // Silence clang warning about `1+R"()"` pattern.
@@ -347,6 +347,7 @@ int main(int argc, char **argv)
                 struct Convert
                 {
                     // To operator()(const From &) const {...}
+                    // static constexpr bool is_explicit = false;
                 };
 
                 template <typename From, typename To>
@@ -1738,8 +1739,8 @@ int main(int argc, char **argv)
 
                         { // Customization point constructor and conversion operator
                             output(1+R"(
-                                template <typename U> requires Custom::convertible<U, vec> explicit constexpr vec(const U &obj) {*this = Custom::Convert<U, vec>{}(obj);}
-                                template <typename U> requires Custom::convertible<vec, U> explicit operator U() const {return Custom::Convert<vec, U>{}(*this);}
+                                template <typename U> requires Custom::convertible<U, vec> explicit(Custom::Convert<U, vec>::is_explicit) constexpr vec(const U &obj) {*this = Custom::Convert<U, vec>{}(obj);}
+                                template <typename U> requires Custom::convertible<vec, U> explicit(Custom::Convert<vec, U>::is_explicit) operator U() const {return Custom::Convert<vec, U>{}(*this);}
                             )");
                         }
 
@@ -2093,8 +2094,8 @@ int main(int argc, char **argv)
 
                         { // Customization point constructor and conversion operator
                             output(1+R"(
-                                template <typename U> requires Custom::convertible<U, mat> explicit constexpr mat(const U &obj) {*this = Custom::Convert<U, mat>{}(obj);}
-                                template <typename U> requires Custom::convertible<mat, U> explicit operator U() const {return Custom::Convert<mat, U>{}(*this);}
+                                template <typename U> requires Custom::convertible<U, mat> explicit(Custom::Convert<U, mat>::is_explicit) constexpr mat(const U &obj) {*this = Custom::Convert<U, mat>{}(obj);}
+                                template <typename U> requires Custom::convertible<mat, U> explicit(Custom::Convert<mat, U>::is_explicit) operator U() const {return Custom::Convert<mat, U>{}(*this);}
                             )");
                         }
 

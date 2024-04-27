@@ -3,7 +3,6 @@
 #include <array>
 #include <cstddef>
 #include <functional>
-#include <map>
 #include <vector>
 
 #include "reflection/full.h"

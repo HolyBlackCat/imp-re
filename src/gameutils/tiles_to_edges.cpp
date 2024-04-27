@@ -1,5 +1,7 @@
 #include "tiles_to_edges.h"
 
+#include <map>
+
 #include "strings/format.h"
 #include "utils/bit_vectors.h"
 #include "utils/multiarray.h"
