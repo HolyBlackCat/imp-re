@@ -77,4 +77,7 @@ namespace GameUtils::TilesToEdges
 
     // Performs the tiles->edges conversion.
     void Convert(const Params &params);
+
+    // Wraps a `Params::output_vertex` callback to skip redundant points.
+    [[nodiscard]] OutputCallback SimplifyStraightEdgesWrapper(OutputCallback func);
 }
