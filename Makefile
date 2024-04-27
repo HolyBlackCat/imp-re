@@ -231,7 +231,7 @@ override LibraryStub = \
 
 # Known library setting names.
 # `archive` isn't here, because it's set directly by `Library`.
-override lib_setting_names := cflags cxxflags ldflags common_flags deps build_system cmake_flags configure_vars configure_flags copy_files bad_pkgconfig only_pkgconfig_files
+override lib_setting_names := cflags cxxflags ldflags common_flags deps build_system cmake_flags configure_vars configure_flags copy_files bad_pkgconfig only_pkgconfig_files source_subdir
 # On success, assigns $2 to variable `__libsetting_$1_<lib>`. Otherwise causes an error.
 # Settings are:
 # * {c,cxx,ld,common_}flags - per-library flag customization.
@@ -244,6 +244,8 @@ override lib_setting_names := cflags cxxflags ldflags common_flags deps build_sy
 #                Must be a space-separated list of `src->dst`, where `src` is relative to source and `dst` is relative to the install prefix. Both can be files or directories.
 # * bad_pkgconfig - if not empty (or 0), destroy the pkg-config files for the library. This causes us to fall back to the automatic flag detection.
 # * only_pkgconfig_files - if specified, use those pkgconfig files instead of all available ones. A space-separated list without extensions.
+# * source_subdir - if specified, use this subdirectory for the sources, instead of the top-level one (note that we automatically recurse
+#                   into lone directories even without this). This is needed if the build script is in a nested directory.
 override LibrarySetting = \
 	$(if $(filter-out $(lib_setting_names),$1)$(filter-out 1,$(words $1)),$(error Invalid library setting `$1`, expected one of: $(lib_setting_names)))\
 	$(if $(filter 0,$(words $(all_libs))),$(error Must specify library settings after a library))\
@@ -840,7 +842,7 @@ $(__log_path_final): $(__ar_path) $(call lib_name_to_log_path,$(filter-out $(all
 	$(call log_now,[Library] >>> Extracting $(__ar_type) archive: $(__ar_name))
 	$(call safe_shell_exec,$(call archive_extract-$(__ar_type),$(__ar_path),$(__tmp_source_dir)))
 	$(call, ### Move the most-nested source dir to the proper location, then remove the remaining junk.)
-	$(call safe_shell_exec,mv $(call quote,$(call most_nested,$(__tmp_source_dir))) $(call quote,$(__source_dir)))
+	$(call safe_shell_exec,mv $(call quote,$(call most_nested,$(__tmp_source_dir))$(if $(__libsetting_source_subdir_$(__lib_name)),/$(__libsetting_source_subdir_$(__lib_name)))) $(call quote,$(__source_dir)))
 	$(call safe_shell_exec,rm -rf $(call quote,$(__tmp_source_dir)))
 	$(call, ### Detect build system.)
 	$(call var,__build_sys := $(strip $(if $(__libsetting_build_system_$(__lib_name)),\
