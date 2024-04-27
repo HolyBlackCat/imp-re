@@ -37,9 +37,8 @@
                 "catch throw",
                 // Register pretty-printers.
                 // Normally they are auto-loaded, but it doesn't work when libstdc++'s `.so` is in a non-default path.
-                // Following force-loads the printers, but the command is gcc version-dependent.
-                // NOTE: If GDB says `ModuleNotFoundError: No module named 'libstdcxx'`, then you need to update the path given to `sys.path.insert()`.
-                "python import sys; sys.path.insert(0, '/usr/share/gcc-13/python'); from libstdcxx.v6.printers import register_libstdcxx_printers; register_libstdcxx_printers(None)",
+                // Following force-loads the printers. We automatically glob the path for the newest installed GCC, but you could also hardcode the path.
+                "python import glob; import sys; sys.path.insert(0, max(glob.glob('/usr/share/gcc*/python'))); from libstdcxx.v6.printers import register_libstdcxx_printers; register_libstdcxx_printers(None)",
             ],
             "env": {/*<ENV_JSON>*/},
         },
