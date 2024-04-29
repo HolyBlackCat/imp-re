@@ -12,7 +12,7 @@
 
 // Converts a tile map to multiple oriented edge lists, suitable for Box2D (or something else).
 
-namespace GameUtils::TilesToEdges
+namespace Geom::TilesToEdges
 {
     // Describes a tile set, i.e. shapes of specific tiles.
     struct TileSet
@@ -77,7 +77,4 @@ namespace GameUtils::TilesToEdges
 
     // Performs the tiles->edges conversion.
     void Convert(const Params &params);
-
-    // Wraps a `Params::output_vertex` callback to skip redundant points.
-    [[nodiscard]] OutputCallback SimplifyStraightEdgesWrapper(OutputCallback func);
 }

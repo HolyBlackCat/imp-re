@@ -6,7 +6,7 @@
 #include "utils/bit_vectors.h"
 #include "utils/multiarray.h"
 
-namespace GameUtils::TilesToEdges
+namespace Geom::TilesToEdges
 {
     TileSet::TileSet(Params params)
         : tile_size(params.tile_size), vertices(std::move(params.vertices)), tile_vertices(std::move(params.tiles))
@@ -307,58 +307,6 @@ namespace GameUtils::TilesToEdges
             }
         }
     }
-
-    OutputCallback SimplifyStraightEdgesWrapper(OutputCallback func)
-    {
-        return [
-            func = std::move(func),
-            prev_pos = ivec2(), // Previous `pos` argument, to determine the current edge.
-            prev_corner = ivec2(), // Previous non-redundant point, or the first (maybe redundant) point of a loop.
-            prev_dir = ivec2(), // Direction starting from `prev_corner`.
-            point_index_in_loop = 0, // Index of vertex in this edge loop, not greater than 2.
-            first_corner = ivec2(), // The first non-redundant point of a loop (which can be after the first `prev_corner`).
-            waiting_for_first_corner = true // The next corner will be the first corner of the loop.
-        ](ivec2 pos, bool last) mutable
-        {
-            if (point_index_in_loop == 0)
-            {
-                point_index_in_loop++;
-                prev_corner = pos;
-            }
-            else if (point_index_in_loop == 1)
-            {
-                point_index_in_loop++;
-                prev_dir = pos - prev_corner;
-            }
-            else
-            {
-                if ((pos - prev_corner) /cross/ prev_dir != 0)
-                {
-                    func(prev_pos, false);
-                    prev_corner = prev_pos;
-                    prev_dir = pos - prev_pos;
-                    if (waiting_for_first_corner)
-                    {
-                        first_corner = prev_pos;
-                        waiting_for_first_corner = false;
-                    }
-                }
-            }
-
-            if (last)
-            {
-                if ((first_corner - pos) /cross/ (pos - prev_pos) != 0)
-                    func(pos, false); // If the starting vertex is a corner, need to explicitly emit it here.
-                func(first_corner, true);
-                waiting_for_first_corner = true;
-                point_index_in_loop = 0;
-            }
-            else
-            {
-                prev_pos = pos;
-            }
-        };
-    }
 }
 
 /* Some test cases:
@@ -441,13 +389,13 @@ Array2D<std::size_t> map(Meta::value_list<20,6>{},
     }
 );
 
-auto tileset_params = Refl::FromString<GameUtils::TilesToEdges::TileSet::Params>(tileset_str);
-GameUtils::TilesToEdges::TileSet tileset(tileset_params);
-GameUtils::TilesToEdges::Params params;
+auto tileset_params = Refl::FromString<Geom::TilesToEdges::TileSet::Params>(tileset_str);
+Geom::TilesToEdges::TileSet tileset(tileset_params);
+Geom::TilesToEdges::Params params;
 params.tileset = &tileset;
 params.tiles = map;
 params.output_vertex = [&](ivec2 pos, bool last){std::cout << pos << last << '\n';};
 
-GameUtils::TilesToEdges::Convert(params);
+Geom::TilesToEdges::Convert(params);
 
 */
