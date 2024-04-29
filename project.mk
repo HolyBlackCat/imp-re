@@ -124,16 +124,6 @@ _win_is_x32 :=
 _win_sdl2_arch := $(if $(_win_is_x32),i686-w64-mingw32,x86_64-w64-mingw32)
 
 # Disable unnecessary stuff.
-# I'd also pass `-DBUILD_CLSOCKET:BOOL=OFF -DBUILD_CPU_DEMOS:BOOL=OFF -DBUILD_ENET:BOOL=OFF`, but CMake considers them unused,
-# even though they appear in the cache even if not specified. Maybe they're related to the things we've removed from the Bullet distribution?
-_bullet_flags := -DBUILD_BULLET2_DEMOS:BOOL=OFF -DBUILD_EXTRAS:BOOL=OFF -DBUILD_OPENGL3_DEMOS:BOOL=OFF -DBUILD_UNIT_TESTS:BOOL=OFF
-# Use doubles instead of floats.
-_bullet_flags += -DUSE_DOUBLE_PRECISION:BOOL=ON
-# Disable shared libraries. This should be the default behavior (with the flags above), but we also set it for a good measure.
-_bullet_flags += -DBUILD_SHARED_LIBS:BOOL=OFF
-# This defaults to off if the makefile flavor is not exactly "Unix Makefiles", which is silly.
-# That used to cause 'make install' to not install anything useful.
-_bullet_flags += -DINSTALL_LIBS:BOOL=ON
 
 _openal_flags := -DALSOFT_EXAMPLES=FALSE
 # Disable helper executables. Otherwise Windows builds fails because of missing Qt.
@@ -147,37 +137,27 @@ ifeq ($(TARGET_OS),windows)
 _zlib_env_vars += uname=linux
 endif
 
-# When you update this, check if they:
-# 1. Added a switch to disable tests, so we can use it and stop patching tests ouf ot CMakeLists.txt.
-# 2. Fixed unconditional FetchConcent (check with -DFETCHCONTENT_QUIET=0 to see logs).
-# 3. Added installation rules for headers.
-$(call Library,box2c,box2c-41e47c6-2024-04-21.zip)
-  $(call LibrarySetting,cmake_flags,-DBOX2D_SAMPLES:BOOL=OFF)
+# When you update this, check if they added installation rules for headers.
+# To generate the new archive filename when updating (commit hash and date), you can use the comment at the beginning of our `box2c.hpp`.
+$(call Library,box2c,box2c-0c30b82-2024-04-26.zip)
+  $(call LibrarySetting,cmake_flags,-DBOX2D_SAMPLES:BOOL=OFF -DBOX2D_UNIT_TESTS:BOOL=OFF)
   $(call LibrarySetting,build_system,box2c)
 override buildsystem-box2c =\
-	$(call log_now,[Library] >>> Patching CMakeLists.txt...)\
-	$(call, ### Disable tests [which isn't currently necessary because they're auto-disabled when building shared libs for some reason...])\
-	$(call, ### and disable downloading enkiTS, which is only needed for tests and samples.)\
-	$(call safe_shell_exec,awk -i inplace '/FetchContent_Declare/||/# Tests need static linkage/{x=1} {if (!x) print $0} /FetchContent_MakeAvailable/||/endif/{x=0}' $(call quote,$(__source_dir)/CMakeLists.txt))\
 	$(call, ### Forward to CMake.)\
 	$(buildsystem-cmake)\
 	$(call, ### Install headers.)\
 	$(call safe_shell_exec,cp -rT $(call quote,$(__source_dir)/include) $(call quote,$(__install_dir)/include))
 
-#$(call Library,box2d,box2d-2.4.1.tar.gz)
+# Delaunay triangulation library.
+# It supports pre-baking the algorithms into a library, but that requires setting a global macro, which we don't have a convenient way of doing yet.
+# So instead we use it in header-only mode...
+# This also lets us move their headers to a `CDT` subdirectory, otherwise they have too much junk at the top level `include/`.
+$(call Library,cdt,CDT-1.4.0.tar.gz)
+  $(call LibrarySetting,build_system,copy_files)
+  $(call LibrarySetting,copy_files,CDT/include/*->include/CDT)
+
+# $(call Library,box2d,box2d-2.4.1.tar.gz)
 #  $(call LibrarySetting,cmake_flags,-DBOX2D_BUILD_UNIT_TESTS:BOOL=OFF -DBOX2D_BUILD_TESTBED:BOOL=OFF)
-
-ifeq ($(TARGET_OS),emscripten)
-$(call LibraryStub,bullet,-sUSE_BULLET=1)
-else
-$(call Library,bullet,bullet3-3.25_no-examples.tar.gz)
-  # The `_no-examples` suffix on the archive indicates that following directories were removed from it: `./data`, and everything in `./examples` except `CommonInterfaces`.
-  # This decreases the archive size from 170+ mb to 10+ mb.
-  $(call LibrarySetting,cmake_flags,$(_bullet_flags))
-endif
-
-$(call Library,doctest,doctest-2.4.11.tar.gz)
-  $(call LibrarySetting,cmake_flags,-DDOCTEST_WITH_TESTS:BOOL=OFF)# Tests don't compile because of their `-Werror`. Last tested on doctest-2.4.11, Clang 16.0.1.
 
 $(call Library,cglfl,cglfl-74b2fcf.zip)
   $(call LibrarySetting,build_system,cglfl)
@@ -204,6 +184,9 @@ override buildsystem-cglfl = \
 	$(call safe_shell_exec,$(call MAKE_STATIC_LIB,$(__install_dir)/lib/$(PREFIX_static)cglfl$(EXT_static),$(call quote,$(__build_dir)/cglfl.o)) >>$(call quote,$(__log_path)))\
 	$(call log_now,[Library] >>> Cleaning up...)
 
+$(call Library,doctest,doctest-2.4.11.tar.gz)
+  $(call LibrarySetting,cmake_flags,-DDOCTEST_WITH_TESTS:BOOL=OFF)# Tests don't compile because of their `-Werror`. Last tested on doctest-2.4.11, Clang 16.0.1.
+
 $(call Library,double-conversion,double-conversion-3.3.0.tar.gz)
 
 $(call Library,enkits,enkiTS-6474b35-2024-03-05-with-mingw-patch.zip)
@@ -218,6 +201,20 @@ else
 $(call Library,freetype,freetype-2.13.2.tar.gz)
   $(call LibrarySetting,deps,zlib)
 endif
+
+# When updating: Destroy directory `GTE/Samples` to save space!
+# They have CMakeLists.txt, but:
+#   1. It's nested in GTE/GTL subdirectories (that's two variants of the library, old and new respectively), so our makefile doesn't find the automatically.
+#   2. It doesn't seem to actually install anything?
+# I manually copy the directories, using those weird globs to skip VS project files and documentation.
+# Note that GTE is installed into the root `include/`, and GTL to its own subdirectory. That's because GTE wants to have `GTE/` in the include path. D:
+# $(call Library,geometrictools,GeometricTools-a7e69d6-2024-03-26_nosamples.zip)
+#   $(call LibrarySetting,build_system,copy_files)
+#   $(call LibrarySetting,copy_files,\
+#     GTE/Mathematics*->include\
+# 	GTL/Mathematics/*/->include/GTL/Mathematics\
+# 	GTL/Utility/*.h->include/GTL/Utility\
+#   )
 
 $(call Library,imgui,imgui-1.90.4.tar.gz)
   $(call LibrarySetting,build_system,imgui)
