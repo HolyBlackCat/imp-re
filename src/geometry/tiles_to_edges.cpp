@@ -173,12 +173,12 @@ namespace Geom::TilesToEdges
         // The outer vector is used in case the mask doesn't fit into a single `bits_t`.
         std::vector<Array2D<bits_t>> valid_edges((tileset.edge_points.size() + BitVec::bit_width<bits_t> - 1) / BitVec::bit_width<bits_t>);
         for (Array2D<bits_t> &arr : valid_edges)
-            arr = Array2D<bits_t>(params.tiles.size());
+            arr = Array2D<bits_t>(params.map_size);
 
         // Fill the edge bit array, and remove the conflicting edges.
-        for (ivec2 tile_pos : vector_range(ivec2(params.tiles.size())))
+        for (ivec2 tile_pos : vector_range(ivec2(params.map_size)))
         {
-            std::size_t tile = params.tiles.unsafe_at(tile_pos);
+            std::uint32_t tile = params.GetTile(tile_pos);
             if (tile >= tileset.tile_vertices.size())
                 throw std::runtime_error(FMT("Tile index {} at {} is out of range.", tile, tile_pos));
 
@@ -193,7 +193,7 @@ namespace Geom::TilesToEdges
                     ivec2 other_tile_pos = tile_pos + ivec2::dir8(dir + 4);
 
                     // Note that we don't check the upper limit of Y here, because the offset can never have a positive Y.
-                    if ((other_tile_pos < 0).any() || other_tile_pos.x >= params.tiles.size().x)
+                    if ((other_tile_pos < 0).any() || other_tile_pos.x >= params.map_size.x)
                         continue; // No tile in that direction.
 
                     std::size_t other_edge = tileset.symmetric_edges[edge][dir];
@@ -221,9 +221,9 @@ namespace Geom::TilesToEdges
         }
 
         // Generate loops from the edges.
-        for (const ivec2 starting_tile_pos : vector_range(ivec2(params.tiles.size())))
+        for (const ivec2 starting_tile_pos : vector_range(ivec2(params.map_size)))
         {
-            const std::size_t starting_tile = params.tiles.unsafe_at(starting_tile_pos);
+            const std::uint32_t starting_tile = params.GetTile(starting_tile_pos);
 
             for (const auto &vertex_loop : tileset.tile_vertices[starting_tile])
             for (const std::size_t pre_starting_vertex : vertex_loop)
@@ -271,10 +271,10 @@ namespace Geom::TilesToEdges
                         if (i != -1 && next_vertex_a == -1zu)
                             continue; // No matching vertex.
                         ivec2 next_tile_pos = tile_pos + (i == -1 ? ivec2() : ivec2::dir8(i));
-                        if (i != -1 && ((next_tile_pos < 0).any() || (next_tile_pos >= params.tiles.size()).any()))
+                        if (i != -1 && ((next_tile_pos < 0).any() || (next_tile_pos >= params.map_size).any()))
                             continue; // Out of bounds.
 
-                        std::size_t next_tile = params.tiles.safe_nonthrowing_at(next_tile_pos);
+                        std::size_t next_tile = params.GetTile(next_tile_pos);
                         std::size_t next_edge = tileset.edge_starting_at.safe_nonthrowing_at(xvec2(next_tile, next_vertex_a));
                         if (next_edge == -1zu)
                             continue; // No edge.

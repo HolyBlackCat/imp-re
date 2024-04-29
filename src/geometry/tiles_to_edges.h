@@ -68,7 +68,32 @@ namespace Geom::TilesToEdges
         const TileSet *tileset = nullptr;
 
         // The map itself.
-        Array2D<std::size_t> tiles;
+        const std::uint32_t *tiles = nullptr;
+        std::size_t column_stride = 4; // Byte step between columns in a row (4 in a tight array).
+        std::size_t row_stride = 0; // Byte step between rows.
+        xvec2 map_size; // Map size in tiles.
+
+        // Initializes map points to point to an array element.
+        // `offset_in_elem` is the offset in bytes of the index relative to the array element.
+        template <typename T, typename U>
+        void PointToArray(const Array2D<T, U> &arr, std::size_t offset_in_elem)
+        {
+            map_size = arr.size();
+            if (map_size(any) == 0)
+                return;
+
+            tiles = reinterpret_cast<const std::uint32_t *>(reinterpret_cast<const char *>(&arr.safe_nonthrowing_at(vec2<U>{})) + offset_in_elem);
+            column_stride = sizeof(T);
+            row_stride = sizeof(T) * map_size.x;
+        }
+
+        // Returns a tile from the `tiles` pointer.
+        [[nodiscard]] std::uint32_t GetTile(xvec2 point) const
+        {
+            assert(point(all) >= 0 && point(all) < map_size);
+            return *reinterpret_cast<const std::uint32_t *>(reinterpret_cast<const char *>(tiles) + column_stride * point.x + row_stride * point.y);
+        }
+
 
         // The resulting edge vertices will be piped to this function.
         // Vertices form loops. `last == true` ends the loop, in that case `pos` will be the same as the first vertex in the loop.
