@@ -124,11 +124,7 @@ namespace Meta
             return *this;
         }
 
-        ~AssignableWrapper()
-        {
-            // Manually destroy the object.
-            Get().T::~T(); // Using a qualified destructor call to avoid possible unnecessary virtual dispatch.
-        }
+        ~AssignableWrapper() {}
 
         // Forward the `()` operator to the value, why not.
         template <typename ...P> [[nodiscard]] decltype(auto) operator()(P &&... params)       {return Get()(std::forward<P>(params)...);}
