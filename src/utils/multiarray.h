@@ -13,7 +13,7 @@
 #include "utils/mat.h"
 
 
-template <int D, typename T, typename Index = std::ptrdiff_t>
+template <int D, typename T, std::signed_integral Index = std::ptrdiff_t>
 class MultiArray
 {
   public:
@@ -47,7 +47,7 @@ class MultiArray
             size_vec = {};
     }
     template <typename A, A ...I>
-    MultiArray(Meta::value_list<I...>, std::array<type, index_vec_t(I...).prod()> data) : size_vec(I...), storage(data.begin(), data.end())
+    MultiArray(Meta::value_list<I...>, const std::array<type, index_vec_t(I...).prod()> &data) : size_vec(I...), storage(data.begin(), data.end())
     {
         static_assert(std::is_integral_v<A>, "Indices must be integral.");
         static_assert(((I >= 0) && ...), "Invalid multiarray size.");
