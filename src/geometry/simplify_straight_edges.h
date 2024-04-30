@@ -1,5 +1,7 @@
 #pragma once
 
+#include "utils/mat.h"
+
 namespace Geom
 {
     // Given a `TilesToEdges`-compatible functor, returns a similar functor that skips redundant points,
