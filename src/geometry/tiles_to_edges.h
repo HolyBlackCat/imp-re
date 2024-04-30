@@ -18,7 +18,7 @@
 // NOTE: The resulting points can be redundant, consider feeding them to `SimplifyStraightEdges()`
 //   (but NOT if you're converting them to polygons with `EdgesToPolygons`, that simplifies them automatically).
 
-namespace Geom::TilesToEdges2
+namespace Geom::TilesToEdges
 {
     struct Tileset
     {

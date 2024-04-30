@@ -1,8 +1,8 @@
-#include "tiles_to_edges_2.h"
+#include "tiles_to_edges.h"
 
 #include <parallel_hashmap/phmap.h>
 
-namespace Geom::TilesToEdges2
+namespace Geom::TilesToEdges
 {
     BakedTileset::BakedTileset(Tileset &&input)
         : tile_size(input.tile_size), vertices(std::move(input.vertices))
