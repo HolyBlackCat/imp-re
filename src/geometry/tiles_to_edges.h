@@ -1,5 +1,6 @@
 #pragma once
 
+#include "geometry/common.h"
 #include "utils/mat.h"
 #include "utils/multiarray.h"
 
@@ -174,7 +175,7 @@ namespace Geom::TilesToEdges
     // `region_size` is the tile rectangle size we're processing.
     // `input` is `(ivec2 pos) -> SomeIntegralType`, it reads the tile as the specified coordinates. The result will be casted to `BakedTileset::TileId`.
     // NOTE: When `mode == open`, `pos` can be one tile outside of the specified bounds.
-    // `output` receives the resulting vertices. It's `(ivec2 pos, bool last) -> void`, and it's meaning depends on the `mode` (see above).
+    // `output` receives the resulting vertices. It's `(ivec2 pos, PointInfo info) -> void`, and it's meaning depends on the `mode` (see above).
     template <typename F, typename G>
     void ConvertTilesToEdges(const BakedTileset &tileset, Mode mode, ivec2 region_size, F &&input, G &&output)
     {
@@ -268,15 +269,20 @@ namespace Geom::TilesToEdges
 
                     auto PointEmittingLoop = [&](bool loop_is_closed)
                     {
-                        bool skip_one_visited_write = !loop_is_closed;
+                        bool first_when_open = !loop_is_closed;
                         do
                         {
                             // Output vertex.
-                            output(tileset.GetVertexPos(tileset.GetEdgeInfo(cursor.edge).vert_a) + cursor.tile_pos * tileset.tile_size, false);
+                            output(tileset.GetVertexPos(tileset.GetEdgeInfo(cursor.edge).vert_a) + cursor.tile_pos * tileset.tile_size,
+                                PointInfo{
+                                    .type = first_when_open ? PointType::extra_edge_first : PointType::normal,
+                                    .closed = loop_is_closed,
+                                }
+                            );
 
                             // Mark edge as visited.
-                            if (skip_one_visited_write)
-                                skip_one_visited_write = false;
+                            if (first_when_open)
+                                first_when_open = false;
                             else
                                 visited_edges.safe_nonthrowing_at(cursor.tile_pos) |= 1 << std::to_underlying(cursor.edge);
 
@@ -286,11 +292,23 @@ namespace Geom::TilesToEdges
                         while (loop_is_closed ? !CursorIsAtStart() : TileIsInBounds(cursor.tile_pos));
 
                         // Output the final vertex.
-                        output(tileset.GetVertexPos(tileset.GetEdgeInfo(cursor.edge).vert_a) + cursor.tile_pos * tileset.tile_size, loop_is_closed);
+                        output(tileset.GetVertexPos(tileset.GetEdgeInfo(cursor.edge).vert_a) + cursor.tile_pos * tileset.tile_size,
+                            PointInfo{
+                                .type = loop_is_closed ? PointType::last : PointType::extra_edge_pre_last,
+                                .closed = loop_is_closed,
+                            }
+                        );
 
                         // When in an open loop, output the actually final vertex.
                         if (!loop_is_closed)
-                            output(tileset.GetVertexPos(tileset.GetEdgeInfo(cursor.edge).vert_b) + cursor.tile_pos * tileset.tile_size, true);
+                        {
+                            output(tileset.GetVertexPos(tileset.GetEdgeInfo(cursor.edge).vert_b) + cursor.tile_pos * tileset.tile_size,
+                                PointInfo{
+                                    .type = PointType::last,
+                                    .closed = loop_is_closed,
+                                }
+                            );
+                        }
                     };
 
                     if (mode == Mode::closed)

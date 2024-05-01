@@ -1,5 +1,6 @@
 #pragma once
 
+#include "geometry/common.h"
 #include "geometry/simplify_straight_edges.h"
 #include "utils/sparse_set.h"
 
@@ -15,20 +16,18 @@
 
 /* How to use (an example with Box2D).
 
-TilesToEdges::Params convert_params;
-// Fill `convert_params`, except for `.output_vertex`.
-
 Geom::EdgesToPolygons::TriangulationInput<int> tri_input; // Usually either `int` or `float` here, it's the coordiante type.
-convert_params.output_vertex = tri_input.InsertionCallback();
+
+Geom::TilesToEdges::ConvertTilesToEdges(..., tri_input.InsertionCallback());
 
 TilesToEdges::Convert(convert_params);
 
 b2Hull hull{};
 b2::Shape::Params shape_params;
 // Here `float` is the internal coordinate type for triangulation, CDT library requires it to be floating-point`.
-Geom::EdgesToPolygons::ConvertToPolygons<float>(tri_input, b2_maxPolygonVertices, [&](ivec2 pos, bool last)
+Geom::EdgesToPolygons::ConvertToPolygons<float>(tri_input, b2_maxPolygonVertices, [&](ivec2 pos, Geom::PointInfo info)
 {
-    if (last)
+    if (info.type == Geom::PointType::last)
     {
         body.CreateShape(b2::DestroyWithParent, shape_params, b2MakePolygon(&hull, 0));
         hull.count = 0;
@@ -68,7 +67,7 @@ namespace Geom::EdgesToPolygons
 
         // Returns a callback to insert new elements, compatible with `TilesToEdges`.
         // Automatically removes redundant points.
-        // The returned callback is `(vec2<T> pos, bool last) -> void`. Loops must be closed by repeating the first vertex with `last == true`.
+        // The returned callback is `(vec2<T> pos, PointInfo info) -> void`. Loops must be closed by repeating the first vertex with `info.last == true`.
         [[nodiscard]] auto InsertionCallback()
         {
             return SimplifyStraightEdges<T>([
@@ -76,14 +75,17 @@ namespace Geom::EdgesToPolygons
                 i = VertIndex{},
                 prev_dir = vec2<T>{},
                 first_vertex = VertIndex{}
-            ](vec2<T> pos, bool last, bool convex) mutable
+            ](vec2<T> pos, PointInfo info, bool convex) mutable
             {
+                assert(info.closed == 1 && "The input contours must be closed.");
+                assert((info.type == PointType::normal || info.type == PointType::last) && "Weird point type.");
+
                 if (i == 0)
                     first_vertex = VertIndex(points.size());
                 else
-                    edges.push_back({VertIndex(points.size() - 1), last ? first_vertex : VertIndex(points.size())});
+                    edges.push_back({VertIndex(points.size() - 1), info.type == PointType::last ? first_vertex : VertIndex(points.size())});
 
-                if (last)
+                if (info.type == PointType::last)
                 {
                     i = 0;
                     point_convexity[first_vertex] = convex;
@@ -247,8 +249,8 @@ namespace Geom::EdgesToPolygons
             };
 
             std::vector<EdgeEntry> edge_queue;
-            // Divide by two because we skip mirrored edges. We also don't need space for the contour edges.
-            edge_queue.reserve(edge_set.ElemCount() / 2 - input.edges.size());
+            // Divide by two because we skip mirrored edges. We also don't need space for the contour edges, hence the subtraction.
+            edge_queue.reserve((edge_set.ElemCount() - input.edges.size()) / 2);
 
             // Whether merging the two faces would produce a face with number of edges (same as verts) <= `max_verts_per_polygon + extra_allowance`.
             auto SumVertsNumberIsOk = [&](FaceId a, FaceId b, int extra_allowance) -> bool
@@ -343,7 +345,7 @@ namespace Geom::EdgesToPolygons
         }
 
         // Output each polygin into `func`. Takes vertex coordinates from `input`.
-        // `func` is `(vec2<T> pos, bool last)`, and the first point of each loop is repeated at the end of it with `last == true`.
+        // `func` is `(vec2<T> pos, PointInfo info)`, and the first point of each loop is repeated at the end of it with `last == true`.
         // NOTE: Since `CombineToConvexPolygons()` can result in redundant edges (several edges in a row in the same direction),
         //   consider piping the output through `SimplifyStraightEdges()` to fix that.
         template <typename T, typename F>
@@ -362,12 +364,12 @@ namespace Geom::EdgesToPolygons
                 do
                 {
                     if (!cur->origin_vert_is_flat)
-                        func(input.points[std::to_underlying(cur->origin_vert)], false);
+                        func(input.points[std::to_underlying(cur->origin_vert)], PointInfo{.type = PointType::normal, .closed = true});
                     cur = &GetEdge(cur->next);
                 }
                 while (cur != first);
 
-                func(input.points[std::to_underlying(cur->origin_vert)], true);
+                func(input.points[std::to_underlying(cur->origin_vert)], PointInfo{.type = PointType::last, .closed = true});
             }
         }
 
@@ -489,8 +491,8 @@ namespace Geom::EdgesToPolygons
     //   It doesn't have to match the coordinate type (of `tri_input`), which can be e.g. `int` (or `float` too).
     // `tri_input` holds the input data.
     // `max_verts_per_polygon`, if positive, limits the number of vertices per polygon (use `b2_maxPolygonVertices` for Box2D).
-    // `output` receives the output vertices. It's `(vec2<T> pos, bool last) -> void`.
-    //   It receives vertex loops, with the last vertex of each loop being the same as the first one, with `last == true`.
+    // `output` receives the output vertices. It's `(vec2<T> pos, PointInfo info) -> void`.
+    //   It receives vertex loops, with the last vertex of each loop being the same as the first one, with `info.last == true`.
     // NOTE: Both input and output is automatically stripped of redundant vertices, you DON'T need to use `SimplifyStraightEdges`.
     template <std::floating_point T, typename U, typename F>
     void ConvertToPolygons(const TriangulationInput<U> &tri_input, int max_verts_per_polygon, F &&output)
