@@ -7,7 +7,7 @@
 #include <sstream>
 #include <type_traits>
 
-#define VERSION "3.23"
+#define VERSION "3.24"
 
 #pragma GCC diagnostic ignored "-Wpragmas" // Silence GCC warning about the next line disabling a warning that GCC doesn't have.
 #pragma GCC diagnostic ignored "-Wstring-plus-int" // Silence clang warning about `1+R"()"` pattern.
@@ -1861,7 +1861,7 @@ int main(int argc, char **argv)
                             output("[[nodiscard]] constexpr floating_point_t<vec> norm() const {if (auto l = len()) return *this / l; else return vec(0);}\n");
 
                             // Approximate length and normalization.
-                            output("[[nodiscard]] constexpr auto approx_len() const {return floating_point_t<type>(len_sq() + 1) / 2;} // Accurate only around `len()==1`.\n");
+                            output("[[nodiscard]] constexpr auto approx_len() const {return floating_point_t<type>(len_sq() + 1) / 2;} // Accurate only around `len()==1`. Always greater or equal than the true length.\n");
                             output("[[nodiscard]] constexpr auto approx_inv_len() const {return 2 / floating_point_t<type>(len_sq() + 1);}\n");
                             output("[[nodiscard]] constexpr auto approx_norm() const {return *this * approx_inv_len();} // Guaranteed to converge to `len()==1` eventually, when starting from any finite `len_sq()`.\n");
                         }

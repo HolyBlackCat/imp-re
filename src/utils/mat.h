@@ -1,6 +1,6 @@
 // mat.h
 // Vector and matrix math
-// Version 3.23
+// Version 3.24
 // Generated, don't touch.
 
 #pragma once
@@ -1668,7 +1668,7 @@ namespace Math
             [[nodiscard]] constexpr auto len_sq() const {return x*x + y*y;}
             [[nodiscard]] constexpr floating_point_t<type> len() const {return std::sqrt(floating_point_t<type>(len_sq()));}
             [[nodiscard]] constexpr floating_point_t<vec> norm() const {if (auto l = len()) return *this / l; else return vec(0);}
-            [[nodiscard]] constexpr auto approx_len() const {return floating_point_t<type>(len_sq() + 1) / 2;} // Accurate only around `len()==1`.
+            [[nodiscard]] constexpr auto approx_len() const {return floating_point_t<type>(len_sq() + 1) / 2;} // Accurate only around `len()==1`. Always greater or equal than the true length.
             [[nodiscard]] constexpr auto approx_inv_len() const {return 2 / floating_point_t<type>(len_sq() + 1);}
             [[nodiscard]] constexpr auto approx_norm() const {return *this * approx_inv_len();} // Guaranteed to converge to `len()==1` eventually, when starting from any finite `len_sq()`.
             [[nodiscard]] static constexpr vec axis(int a, type len = 1) {vec ret{}; ret[mod_ex(a,2)] = len; return ret;}
@@ -1745,7 +1745,7 @@ namespace Math
             [[nodiscard]] constexpr auto len_sq() const {return x*x + y*y + z*z;}
             [[nodiscard]] constexpr floating_point_t<type> len() const {return std::sqrt(floating_point_t<type>(len_sq()));}
             [[nodiscard]] constexpr floating_point_t<vec> norm() const {if (auto l = len()) return *this / l; else return vec(0);}
-            [[nodiscard]] constexpr auto approx_len() const {return floating_point_t<type>(len_sq() + 1) / 2;} // Accurate only around `len()==1`.
+            [[nodiscard]] constexpr auto approx_len() const {return floating_point_t<type>(len_sq() + 1) / 2;} // Accurate only around `len()==1`. Always greater or equal than the true length.
             [[nodiscard]] constexpr auto approx_inv_len() const {return 2 / floating_point_t<type>(len_sq() + 1);}
             [[nodiscard]] constexpr auto approx_norm() const {return *this * approx_inv_len();} // Guaranteed to converge to `len()==1` eventually, when starting from any finite `len_sq()`.
             [[nodiscard]] static constexpr vec axis(int a, type len = 1) {vec ret{}; ret[mod_ex(a,3)] = len; return ret;}
@@ -1811,7 +1811,7 @@ namespace Math
             [[nodiscard]] constexpr auto len_sq() const {return x*x + y*y + z*z + w*w;}
             [[nodiscard]] constexpr floating_point_t<type> len() const {return std::sqrt(floating_point_t<type>(len_sq()));}
             [[nodiscard]] constexpr floating_point_t<vec> norm() const {if (auto l = len()) return *this / l; else return vec(0);}
-            [[nodiscard]] constexpr auto approx_len() const {return floating_point_t<type>(len_sq() + 1) / 2;} // Accurate only around `len()==1`.
+            [[nodiscard]] constexpr auto approx_len() const {return floating_point_t<type>(len_sq() + 1) / 2;} // Accurate only around `len()==1`. Always greater or equal than the true length.
             [[nodiscard]] constexpr auto approx_inv_len() const {return 2 / floating_point_t<type>(len_sq() + 1);}
             [[nodiscard]] constexpr auto approx_norm() const {return *this * approx_inv_len();} // Guaranteed to converge to `len()==1` eventually, when starting from any finite `len_sq()`.
             [[nodiscard]] static constexpr vec axis(int a, type len = 1) {vec ret{}; ret[mod_ex(a,4)] = len; return ret;}
