@@ -1,6 +1,7 @@
 #pragma once
 
 #include "macros/enum_flag_operators.h"
+#include "utils/mat.h" // Not needed for the base algorithm, only for the variants with predefined heuristics.
 
 #include <parallel_hashmap/phmap.h>
 
@@ -110,7 +111,7 @@ namespace Graph::Pathfinding
         //      This adjusts the greediness, with 0 = maximum greed. The resulting path is no longer optimal (this is a non-admissible heuristic),
         //      but this can potentially boost performance in some cases.
         // There's no feedback loop in the heuristic, so you can get away with it being jank.
-        Result Step(Flags flags, auto &&neighbors, auto &&heuristic)
+        [[nodiscard]] Result Step(Flags flags, auto &&neighbors, auto &&heuristic)
         {
             if (remaining_nodes_heap.empty())
                 return Result::fail;
@@ -187,5 +188,40 @@ namespace Graph::Pathfinding
         // Returns the map with some node information.
         // You can use this to see which nodes were visited.
         [[nodiscard]] const NodeInfoMap &GetNodeInfoMap() const {return node_info;}
+    };
+
+    // A version of `Pathfinder` with a good predefined heuristic for 4-way grid movement.
+    template <typename CoordType = ivec2>
+    class Pathfinder_4Way : public Pathfinder<CoordType, typename CoordType::type, std::pair<typename CoordType::type, typename CoordType::type>>
+    {
+        using CostType = typename CoordType::type;
+        using Base = Pathfinder<CoordType, CostType, std::pair<CostType, CostType>>;
+
+      public:
+        using Base::Base;
+
+        // Runs a single pathfinding step, by calling into the base class with predefined heuristics.
+        // Call repeatedly until it stops returning `Result::incomplete`.
+        // `tile_is_solid` is `(CoordType pos) -> bool` that returns true if the tile is solid and can't be moved through.
+        [[nodiscard]] Result Step(Flags flags, auto &&tile_is_solid)
+        {
+            return Base::Step(
+                flags,
+                [&](CoordType pos, auto func)
+                {
+                    for (int i = 0; i < 4; i++)
+                    {
+                        CoordType next_pos = pos + CoordType::dir4(i);
+                        if (!bool(tile_is_solid(std::as_const(next_pos))))
+                            func(next_pos, CostType(1));
+                    }
+                },
+                [&](CostType cost, CoordType pos) -> std::pair<CostType, CostType>
+                {
+                    CoordType delta = this->GetGoal() - pos;
+                    return {cost + delta.abs().sum(), delta.len_sq()};
+                }
+            );
+        }
     };
 }
