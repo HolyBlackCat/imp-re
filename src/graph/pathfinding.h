@@ -16,9 +16,9 @@ namespace Graph::Pathfinding
 {
     enum class Result
     {
+        incomplete, // Need more iterations. This should be first, to be the default value.
         success, // Found the path.
         fail, // There is no path.
-        incomplete, // Need more iterations.
     };
 
     enum class Flags
@@ -39,6 +39,10 @@ namespace Graph::Pathfinding
     class Pathfinder
     {
       public:
+        using coord_t = CoordType;
+        using cost_t = CostType;
+        using estimated_cost_t = EstimatedCostType;
+
         struct Node
         {
             CoordType coord{};
@@ -54,6 +58,17 @@ namespace Graph::Pathfinding
             CostType cost{};
             // The next node towards the starting point. In the starting point, it points at itself.
             CoordType prev_node{};
+
+            // We're using this to avoid processing the same node more than once.
+            // This improves performance, but my current understanding that it can result in
+            //   suboptimal final path for non-"consistent" heuristics (see definitions below)
+            //   (without this admissable but non-consistent heuristics can get optimal paths,
+            //   but non-admissable heuristics produce more or less suboptimal paths either way);
+            //   avoiding that requires a honest deduplication of items in `remaining_nodes_heap` (wikipedia suggests
+            //   using a hashmap to know the position of each node in the queue, and then there's an algorithm to increase/decrease
+            //   the priority of an element in the heap (not in `std::` though?); alternatively they suggest fibonacci heaps,
+            //   or I assume you could use a binary search tree instead of a heap, such as phmap's btree).
+            bool finished = false;
         };
         using NodeInfoMap = phmap::flat_hash_map<CoordType, NodeInfo>;
 
@@ -116,6 +131,7 @@ namespace Graph::Pathfinding
             if (remaining_nodes_heap.empty())
                 return Result::fail;
 
+          retry:
             CoordType this_node = remaining_nodes_heap.front().coord;
 
             if (!bool(flags & Flags::can_continue_after_goal) && this_node == goal)
@@ -127,7 +143,13 @@ namespace Graph::Pathfinding
             if (bool(flags & Flags::can_continue_after_goal) && this_node == goal)
                 return Result::success;
 
-            const NodeInfo &this_node_info = node_info.at(this_node);
+            NodeInfo &this_node_info = node_info.at(this_node);
+
+            // Avoid processing the same node twice.
+            // This is an optimization, see the comment on `.finished` for details.
+            if (this_node_info.finished)
+                goto retry;
+            this_node_info.finished = true;
 
             neighbors(std::as_const(this_node), [&](CoordType neighbor_coord, CostType step_cost)
             {
