@@ -7,7 +7,7 @@
 #include <sstream>
 #include <type_traits>
 
-#define VERSION "3.24"
+#define VERSION "3.25"
 
 #pragma GCC diagnostic ignored "-Wpragmas" // Silence GCC warning about the next line disabling a warning that GCC doesn't have.
 #pragma GCC diagnostic ignored "-Wstring-plus-int" // Silence clang warning about `1+R"()"` pattern.
@@ -2418,7 +2418,9 @@ int main(int argc, char **argv)
                         [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr vec_type size() const {return b - a;}
                         [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr vec_type center() const {return a + size() / 2;}
                         [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool has_length() const {return (b > a).any();}
-                        [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool has_area() const {return (b > a).all();}
+                        [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool has_area() const {return (b > a).sum() >= 2;}
+                        [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool has_volume() const requires(D >= 3) {return (b > a).sum() >= 3;}
+                        [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr bool has_4d_volume() const requires(D >= 4) {return (b > a).sum() >= 4;}
                         [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect fix() const {rect ret = *this; sort_two_var(ret.a, ret.b); return ret;} // Swap components of `a` and `b` to order them correctly.
                         // Offsetting.
                         template <scalar U = T> [[nodiscard]] IMP_MATH_SMALL_FUNC constexpr rect<D,larger_t<T,U>> offset_a(vec<D,U> x) const {rect<D,larger_t<T,U>> ret = *this; ret.a += x; return ret;}

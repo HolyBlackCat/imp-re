@@ -130,7 +130,7 @@ namespace Geom::TilesToEdges
         {
             assert(tile >= TileId{} && tile < TileId(NumTileTypes()));
             assert(edge >= EdgeId{} && edge < EdgeId(NumEdgeTypes()));
-            return edge_connectivity.safe_nonthrowing_at(xvec2(std::to_underlying(edge), std::to_underlying(tile)));
+            return edge_connectivity.at(xvec2(std::to_underlying(edge), std::to_underlying(tile)));
         }
 
         // Whether a specific tile type has a specific edge.
@@ -239,7 +239,7 @@ namespace Geom::TilesToEdges
             {
                 tileset.ForEveryEdgeInEdgeLoop(tile, loop_starting_edge, [&](const BakedTileset::EdgeId starting_edge)
                 {
-                    if ((visited_edges.safe_nonthrowing_at(starting_tile_pos) >> std::to_underlying(starting_edge)) & 1)
+                    if ((visited_edges.at(starting_tile_pos) >> std::to_underlying(starting_edge)) & 1)
                         return false; // Already visited this edge.
 
                     const BakedTileset::EdgeType &starting_edge_info = tileset.GetEdgeInfo(starting_edge);
@@ -284,7 +284,7 @@ namespace Geom::TilesToEdges
                             if (first_when_open)
                                 first_when_open = false;
                             else
-                                visited_edges.safe_nonthrowing_at(cursor.tile_pos) |= 1 << std::to_underlying(cursor.edge);
+                                visited_edges.at(cursor.tile_pos) |= 1 << std::to_underlying(cursor.edge);
 
                             // Move to the next edge.
                             MoveToNextEdge(cursor, true);

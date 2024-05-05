@@ -102,8 +102,8 @@ namespace Geom::TilesToEdges
                     EdgeId e1 = vert_ids_to_edge_id.at({v1, v2});
                     EdgeId e2 = vert_ids_to_edge_id.at({v2, v3});
 
-                    edge_connectivity.safe_nonthrowing_at(xvec2(std::to_underlying(e1), i)).next = e2;
-                    edge_connectivity.safe_nonthrowing_at(xvec2(std::to_underlying(e2), i)).prev = e1;
+                    edge_connectivity.at(xvec2(std::to_underlying(e1), i)).next = e2;
+                    edge_connectivity.at(xvec2(std::to_underlying(e2), i)).prev = e1;
                 }
             }
         }

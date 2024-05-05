@@ -50,7 +50,7 @@ namespace Tiled
 
         for (int y = 0; y < ret.size().y; y++)
         for (int x = 0; x < ret.size().x; x++)
-            ret.unsafe_at(ivec2(x,y)) = array_view[index++].GetInt();
+            ret.at(ivec2(x,y)) = array_view[index++].GetInt();
 
         return ret;
     }

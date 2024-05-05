@@ -118,14 +118,14 @@ struct Application : Program::DefaultBasicState
         {
             if (!pf.GetRemainingNodesHeap().empty())
                 pf_true_visited.insert(pf.GetRemainingNodesHeap().front().coord);
-            res = pf.Step(Graph::Pathfinding::Flags::can_continue_after_goal, [&](ivec2 pos) -> bool {return grid.pos_in_range(pos) ? grid.safe_nonthrowing_at(pos) : true;});
+            res = pf.Step(Graph::Pathfinding::Flags::can_continue_after_goal, [&](ivec2 pos) -> bool {return grid.pos_in_range(pos) ? grid.at(pos) : true;});
             // res = pf.Step(Graph::Pathfinding::Flags::can_continue_after_goal,
             //     [&](ivec2 pos, auto func)
             //     {
             //         for (int i = 0; i < 4; i++)
             //         {
             //             ivec2 next_pos = pos + ivec2::dir4(i);
-            //             if (grid.pos_in_range(next_pos) && !grid.safe_nonthrowing_at(pos))
+            //             if (grid.pos_in_range(next_pos) && !grid.at(pos))
             //                 func(next_pos, 1);
             //         }
             //     },
@@ -177,7 +177,7 @@ struct Application : Program::DefaultBasicState
             bool is_path = pf_path.contains(pos);
             bool is_heap = pf_heap.contains(pos);
             bool is_visited = pf.GetNodeInfoMap().contains(pos);
-            bool is_wall = grid.safe_nonthrowing_at(pos);
+            bool is_wall = grid.at(pos);
 
             ImVec4 cell_color =
                 is_start ? ImVec4(0,1,0,1) :
@@ -221,10 +221,10 @@ struct Application : Program::DefaultBasicState
                         goal = pos;
                         break;
                       case MouseMode::wall:
-                        grid.safe_nonthrowing_at(pos) = 1;
+                        grid.at(pos) = 1;
                         break;
                       case MouseMode::empty:
-                        grid.safe_nonthrowing_at(pos) = 0;
+                        grid.at(pos) = 0;
                         break;
                     }
                 }
