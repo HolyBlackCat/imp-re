@@ -7,7 +7,7 @@
 #include <sstream>
 #include <type_traits>
 
-#define VERSION "3.25"
+#define VERSION "3.27"
 
 #pragma GCC diagnostic ignored "-Wpragmas" // Silence GCC warning about the next line disabling a warning that GCC doesn't have.
 #pragma GCC diagnostic ignored "-Wstring-plus-int" // Silence clang warning about `1+R"()"` pattern.
@@ -964,7 +964,7 @@ int main(int argc, char **argv)
 
                         template <int D, typename T> vector_range_t<vec<D,T>> operator()(rect<D,T> r) const
                         {
-                            return vector_range_t<vec<D,T>>(r.a, r.size());
+                            return vector_range_t<vec<D,T>>(r.a, r.b);
                         }
 
                         template <integral_vector_or_scalar T> friend vector_range_halfbound<T> operator<=(T point, vector_range_factory)
@@ -2490,6 +2490,7 @@ int main(int argc, char **argv)
             output(1+R"(
                 using Vector::vec; // Vector and matrix definitions. We use this instead of `using namespace Vector` to avoid bringing...
                 using Vector::mat; // ...the overloaded operators into the global namespace, mostly for better error messages and build speed.
+                using Vector::rect;
                 using namespace Alias; // Convenient type aliases.
                 using namespace Common; // Common functions.
 

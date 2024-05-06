@@ -1,6 +1,6 @@
 // mat.h
 // Vector and matrix math
-// Version 3.25
+// Version 3.27
 // Generated, don't touch.
 
 #pragma once
@@ -945,7 +945,7 @@ namespace Math
 
             template <int D, typename T> vector_range_t<vec<D,T>> operator()(rect<D,T> r) const
             {
-                return vector_range_t<vec<D,T>>(r.a, r.size());
+                return vector_range_t<vec<D,T>>(r.a, r.b);
             }
 
             template <integral_vector_or_scalar T> friend vector_range_halfbound<T> operator<=(T point, vector_range_factory)
@@ -2465,6 +2465,7 @@ namespace Math
     {
         using Vector::vec; // Vector and matrix definitions. We use this instead of `using namespace Vector` to avoid bringing...
         using Vector::mat; // ...the overloaded operators into the global namespace, mostly for better error messages and build speed.
+        using Vector::rect;
         using namespace Alias; // Convenient type aliases.
         using namespace Common; // Common functions.
 
