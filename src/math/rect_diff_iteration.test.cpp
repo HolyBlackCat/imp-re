@@ -8,7 +8,7 @@
 
 TEST_CASE("math.rect_diff_iteration")
 {
-    static_assert(std::bidirectional_iterator<Math2::RectDiffIterator<ivec2>>);
+    static_assert(std::bidirectional_iterator<Math2::RectDiffIterator<2,int>>);
 
     auto TestCase = [](irect2 a, irect2 b, const Array2D<int> &target)
     {
@@ -26,7 +26,7 @@ TEST_CASE("math.rect_diff_iteration")
             int i = 1;
             if (!backwards)
             {
-                for (ivec2 pos : Math2::RectDiffIterator<ivec2>(a, b))
+                for (ivec2 pos : Math2::RectDiffIterator(a, b))
                 {
                     // std::cout << i << pos << '\n';
                     CAPTURE(pos);
@@ -42,7 +42,7 @@ TEST_CASE("math.rect_diff_iteration")
                 for (xvec2 pos : vector_range(target.size()))
                     target_fixed.at(pos) = target.at(pos) ? max_value + 1 - target.at(pos) : 0;
 
-                for (auto it = Math2::RectDiffIterator<ivec2>(a, b, true); it != std::default_sentinel; --it)
+                for (auto it = Math2::RectDiffIterator(a, b, true); it != std::default_sentinel; --it)
                 {
                     ivec2 pos = *it;
                     std::cout << i << pos << '\n';

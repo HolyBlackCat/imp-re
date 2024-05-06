@@ -10,14 +10,16 @@
 
 namespace Math2
 {
+    // Use this with CTAD.
     // This is a range and a bidirectional iterator for itself at the same time.
-    // `.begin()` returns itself, while `.end()` returns std::default_sentinel`, but a default-constructed iterator can be used as a sentinel too.
+    // `.begin()` returns itself, while `.end()` returns `std::default_sentinel`, but a default-constructed iterator can be used as a sentinel too.
     // You can decrement beyond the starting position, and that also returns `.end()`.
-    template <typename T>
-    requires (Math::vec_size_v<T> == 2) && std::integral<Math::vec_base_t<T>>
+    // The construct puts the iterator at the first element by default, pass `start_at_end = false` to construct at the last element.
+    template <int D, Math::scalar T>
+    requires (D == 2) // Only 2D for now, for simplicity.
     class RectDiffIterator
     {
-        using rect_t = T::rect_type;
+        using rect_t = rect<D,T>;
 
         rect_t rect;
         rect_t sub_rect;
@@ -36,11 +38,11 @@ namespace Math2
 
         Bits bits = Bits::invalid;
 
-        T cur_pos{};
+        vec<D,T> cur_pos{};
 
       public:
         // The minimal set of typedefs for the `std::bidirectional_iterator` concept.
-        using value_type = T;
+        using value_type = vec<D,T>;
         using difference_type = std::ptrdiff_t;
 
         constexpr RectDiffIterator() {}
@@ -74,8 +76,8 @@ namespace Math2
                 return;
             }
 
-            bool corner_01_removed = sub_rect.contains(T(rect.a.x, rect.b.y - 1));
-            bool corner_10_removed = sub_rect.contains(T(rect.b.x - 1, rect.a.y));
+            bool corner_01_removed = sub_rect.contains(value_type(rect.a.x, rect.b.y - 1));
+            bool corner_10_removed = sub_rect.contains(value_type(rect.b.x - 1, rect.a.y));
 
             if (corner_10_removed && corner_11_removed)
             {
@@ -145,12 +147,12 @@ namespace Math2
         }
 
         // Returns the start or end point of the iteration.
-        [[nodiscard]] T starting_point(bool backwards) const
+        [[nodiscard]] value_type starting_point(bool backwards) const
         {
             if (backwards)
-                return bool(bits & Bits::corner_b_removed) ? T(sub_rect.a.x - 1, rect.b.y - 1) : rect.b - 1;
+                return bool(bits & Bits::corner_b_removed) ? value_type(sub_rect.a.x - 1, rect.b.y - 1) : rect.b - 1;
             else
-                return bool(bits & Bits::corner_a_removed) ? T(sub_rect.b.x, rect.a.y) : rect.a;
+                return bool(bits & Bits::corner_a_removed) ? value_type(sub_rect.b.x, rect.a.y) : rect.a;
         }
 
         // Acts as ++ or --.
@@ -295,7 +297,7 @@ namespace Math2
             }
         }
 
-        [[nodiscard]] const T &operator*() const {return cur_pos;}
+        [[nodiscard]] const value_type &operator*() const {return cur_pos;}
 
         RectDiffIterator &operator++()
         {
