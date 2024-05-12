@@ -139,7 +139,7 @@ endif
 
 # When you update this, check if they added installation rules for headers.
 # To generate the new archive filename when updating (commit hash and date), you can use the comment at the beginning of our `box2c.hpp`.
-$(call Library,box2c,box2c-0c30b82-2024-04-26.zip)
+$(call Library,box2c,box2c-2088c28-2024-05-11.zip)
   $(call LibrarySetting,cmake_flags,-DBOX2D_SAMPLES:BOOL=OFF -DBOX2D_UNIT_TESTS:BOOL=OFF)
   $(call LibrarySetting,build_system,box2c)
 override buildsystem-box2c =\
