@@ -1169,14 +1169,16 @@ remember:
 	$(file >>$(LOCAL_CONFIG),APP := $(APP))\
 	$(file >>$(LOCAL_CONFIG),ARGS := $(subst #,\#,$(subst $,$$$$,$(ARGS))))\
 	$(call, ### Convert the list of runtime env variables to JSON, to bake into the generated files.)\
-	$(call var,__env_as_json := $(foreach x,$(PROJ_RUNTIME_ENV) $(__projsetting_runtime_env_$(APP)),$(call var,__name := $(firstword $(subst =, ,$x)))"$(__name)":"$(patsubst $(__name)=%,%,$x)"$(comma)))
+	$(call var,__env_as_json_dict := $(foreach x,$(PROJ_RUNTIME_ENV) $(__projsetting_runtime_env_$(APP)),$(call var,__name := $(firstword $(subst =, ,$x)))"$(__name)":"$(patsubst $(__name)=%,%,$x)"$(comma)))
+	$(call var,__env_as_json_arr := $(foreach x,$(PROJ_RUNTIME_ENV),"$x"$(comma)))\
 	$(call, ### Regenerate some files.)\
 	$(foreach x,$(GENERATE_ON_TARGET_CHANGE),\
 		$(call safe_shell_exec,cp $(call quote,$(call generation_source_for_file,$x)) $(call quote,$x))\
 		$(call safe_shell_exec,sed -i 's|<EXECUTABLE>|$(call proj_output_filename,$(APP))|' $(call quote,$x))\
 		$(call, ### Note that we replace \->\\ twice. The first replacement is for JSON, and the second is for Sed.)\
 		$(call safe_shell_exec,sed -i 's|<ARGS>|'$(call quote,$(subst \,\\,$(subst ",\",$(subst \,\\,$(ARGS)))))'|' $(call quote,$x))\
-		$(call safe_shell_exec,sed -i 's|/\*<ENV_JSON>\*/|'$(call quote,$(subst \,\\,$(__env_as_json)))'|' $(call quote,$x))\
+		$(call safe_shell_exec,sed -i 's|/\*<ENV_JSON_DICT>\*/|'$(call quote,$(subst \,\\,$(__env_as_json_dict)))'|' $(call quote,$x))\
+		$(call safe_shell_exec,sed -i 's|/\*<ENV_JSON_ARR>\*/|'$(call quote,$(subst \,\\,$(__env_as_json_arr)))'|' $(call quote,$x))\
 	)
 	@true
 
