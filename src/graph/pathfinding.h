@@ -1,6 +1,5 @@
 #pragma once
 
-#include "macros/enum_flag_operators.h"
 #include "utils/mat.h" // Not needed for the base algorithm, only for the variants with predefined heuristics.
 
 #include <parallel_hashmap/phmap.h>
@@ -14,27 +13,23 @@
 
 namespace Graph::Pathfinding
 {
-    enum class Result
-    {
-        incomplete, // Need more iterations. This should be first, to be the default value.
-        success, // Found the path.
-        fail, // There is no path.
-    };
-
-    enum class Flags
-    {
-        // This lets you perform more iterations after reaching the goal, to explore the near nodes.
-        // If this is true, you can run the search after it returns `ok`, which will give you more nodes,
-        // until it finally fails after exhausting all nodes.
-        can_continue_after_goal = 1 << 0,
-    };
-    IMP_ENUM_FLAG_OPERATORS(Flags)
-
     // `CoordType` is normally the coordinate type, such as `ivec2`. But it can be anything that represents a position in your graph.
     // `CostType` is the true cost type, it's normally `int` or `float`, but can also be anything.
     // `EstimatedCostType` is the true plus estimated cost type. It's usually `std::pair<int, int>` (with the second value used as a tiebreaker, see more below).
     // `CostType` must overload `+` and be default-constructible (probably to a zero value, but it's not really necessary).
     // `EstimatedCostType` must overload `<`.
+    //
+    // How to use:
+    // * Set the starting point, either using the constructor or `SetNewTask()`.
+    // * Run the following loop:
+    //       while (p.HasUnvisitedNodes()) // If this condition fails, there's no path.
+    //       {
+    //           if (p.CurrentNode() == goal)
+    //               break; // Found path.
+    //           p.Step(...);
+    //       }
+    // * On success, dump the path using `p.DumpPathBackwards()`.
+    // * You can limit the number of loop iterations.
     template <typename CoordType, typename CostType, typename EstimatedCostType = CostType>
     class Pathfinder
     {
@@ -73,8 +68,6 @@ namespace Graph::Pathfinding
         using NodeInfoMap = phmap::flat_hash_map<CoordType, NodeInfo>;
 
       private:
-        CoordType goal{};
-
         // It seems this can contain duplicate nodes, even with good heuristics.
         // I'm not sure if pruning them can result in suboptimal path, so let's keep them.
         RemainingNodesHeap remaining_nodes_heap;
@@ -82,24 +75,54 @@ namespace Graph::Pathfinding
         NodeInfoMap node_info;
 
       public:
+        // Initializes with capacity 0 (this only affects performance).
+        // When using this constructor, must call `SetNewTask()` before using the object.
         Pathfinder() {}
 
-        // The tree spreads out from `start`, but the resulting path goes from `goal` towards `start`.
-        // So you might want to swap the two if you need the path to start from `goal`.
-        Pathfinder(CoordType start, CoordType goal, std::size_t starting_capacity = 16)
-            : goal(std::move(goal))
+        // Initializes with custom capacity (which only affects performance).
+        // When using this constructor, must call `SetNewTask()` before using the object.
+        explicit Pathfinder(std::size_t starting_capacity)
         {
             remaining_nodes_heap.reserve(starting_capacity);
             node_info.reserve(starting_capacity);
+        }
 
-            remaining_nodes_heap.emplace_back().coord = start;
+        // Set the starting point and optionally capacity (which only affects performance).
+        // The tree spreads out from `start`, but the resulting path goes from the goal towards `start`.
+        // So you might want to swap the two if you need the path to start from the `start`.
+        explicit Pathfinder(CoordType start, std::size_t starting_capacity = 16)
+            : Pathfinder(starting_capacity)
+        {
+            SetNewTask(start);
+        }
 
-            node_info.try_emplace(start).first->second.prev_node = start;
+        // Resets the object, preparing for a new pathfinding task. But preserves the capacity.
+        // The tree spreads out from `start`, but the resulting path goes from the goal towards `start`.
+        // So you might want to swap the two if you need the path to start from the `start`.
+        void SetNewTask(CoordType new_start)
+        {
+            remaining_nodes_heap.clear();
+            node_info.clear();
+
+            remaining_nodes_heap.emplace_back().coord = new_start;
+            node_info.try_emplace(new_start).first->second.prev_node = new_start;
+        }
+
+        // Whether we have more nodes to visit.
+        // If this becomes false before reaching the goal, there's no path.
+        [[nodiscard]] bool HasUnvisitedNodes() const
+        {
+            return !remaining_nodes_heap.empty();
+        }
+
+        // The next node to visit. Initially the starting point.
+        // If `HasUnvisitedNodes() == false`, throws.
+        [[nodiscard]] CoordType CurrentNode() const
+        {
+            return remaining_nodes_heap.at(0).coord;
         }
 
         // Runs a single pathfinding step.
-        // Run this in a loop until it returns something other than `incomplete`.
-        // `flags` can be just `{}`, or see `enum class Flags` for possible flags.
         // `neighbors` iterates over each viable neighbor of a point, it's `(CoordType pos, auto func) -> void`,
         //   where `func` must be called for every neighbor, it's `(CoordType neighbor_coord, CostType step_cost) -> void`.
         // `heuristic` is `(CostType cost, CoordType pos) -> EstimatedCostType`.
@@ -126,22 +149,16 @@ namespace Graph::Pathfinding
         //      This adjusts the greediness, with 0 = maximum greed. The resulting path is no longer optimal (this is a non-admissible heuristic),
         //      but this can potentially boost performance in some cases.
         // There's no feedback loop in the heuristic, so you can get away with it being jank.
-        [[nodiscard]] Result Step(Flags flags, auto &&neighbors, auto &&heuristic)
+        void Step(auto &&neighbors, auto &&heuristic)
         {
-            if (remaining_nodes_heap.empty())
-                return Result::fail;
+            if (!HasUnvisitedNodes())
+                return;
 
           retry:
             CoordType this_node = remaining_nodes_heap.front().coord;
 
-            if (!bool(flags & Flags::can_continue_after_goal) && this_node == goal)
-                return Result::success;
-
             std::ranges::pop_heap(remaining_nodes_heap, std::greater{}, &Node::estimated_total_cost);
             remaining_nodes_heap.pop_back();
-
-            if (bool(flags & Flags::can_continue_after_goal) && this_node == goal)
-                return Result::success;
 
             NodeInfo &this_node_info = node_info.at(this_node);
 
@@ -175,36 +192,26 @@ namespace Graph::Pathfinding
                     std::ranges::push_heap(remaining_nodes_heap, std::greater{}, &Node::estimated_total_cost);
                 }
             });
-
-            return Result::incomplete;
         }
 
-        // Dumps the resulting path backwards to `func`, which is `(CoordType point) -> void`.
-        // Because it's returned backwards, you can swap the start and the goal (in the constructor) to receive the path in the right direction here.
+        // Dumps the resulting path backwards, from `goal` to the starting point.
+        // Passes each coordinate to `func`, which is `(CoordType point) -> void`.
         // If the goal matches the start, just outputs that coordinate once.
-        void DumpPathBackwards(auto &&func) const
-        {
-            DumpPathBackwards(goal, func);
-        }
-        // This overload starts from an arbitrary node rather than the goal.
-        // So you can use this one even before computing the full path.
-        void DumpPathBackwards(CoordType starting_node, auto &&func) const
+        void DumpPathBackwards(CoordType goal, auto &&func) const
         {
             while (true)
             {
-                func(std::as_const(starting_node));
+                func(std::as_const(goal));
 
-                const NodeInfo &info = node_info.at(starting_node);
-                if (info.prev_node == starting_node)
+                const NodeInfo &info = node_info.at(goal);
+                if (info.prev_node == goal)
                     return; // This is the starting node.
-                starting_node = info.prev_node;
+                goal = info.prev_node;
             }
         }
 
         // Various getters:
 
-        // Returns the goal position, as passed to the constructor.
-        [[nodiscard]] const CoordType &GetGoal() const {return goal;}
         // Returns the nodes that we still need to visit, as a "min heap" (the first node is the next one, while the rest are in a semi-sorted order).
         [[nodiscard]] const RemainingNodesHeap &GetRemainingNodesHeap() const {return remaining_nodes_heap;}
         // Returns the map with some node information.
@@ -223,12 +230,10 @@ namespace Graph::Pathfinding
         using Base::Base;
 
         // Runs a single pathfinding step, by calling into the base class with predefined heuristics.
-        // Call repeatedly until it stops returning `Result::incomplete`.
         // `tile_is_solid` is `(CoordType pos) -> bool` that returns true if the tile is solid and can't be moved through.
-        [[nodiscard]] Result Step(Flags flags, auto &&tile_is_solid)
+        void Step(CoordType goal, auto &&tile_is_solid)
         {
             return Base::Step(
-                flags,
                 [&](CoordType pos, auto func)
                 {
                     for (int i = 0; i < 4; i++)
@@ -240,7 +245,7 @@ namespace Graph::Pathfinding
                 },
                 [&](CostType cost, CoordType pos) -> std::pair<CostType, CostType>
                 {
-                    CoordType delta = this->GetGoal() - pos;
+                    CoordType delta = goal - pos;
                     return {cost + delta.abs().sum(), delta.len_sq()};
                 }
             );

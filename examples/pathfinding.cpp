@@ -109,17 +109,21 @@ struct Application : Program::DefaultBasicState
         ImGui::SetNextItemWidth( 60 );
         ImGui::DragInt("Num iterations", &num_iters, 0.5f, 0, 10000);
 
-        Graph::Pathfinding::Pathfinder_4Way<ivec2> pf(start, goal, 1000);
+        Graph::Pathfinding::Pathfinder_4Way<ivec2> pf(start, 1000);
         // Graph::Pathfinding::Pathfinder<ivec2, int, std::pair<int, int>> pf(start, goal, 1000);
-        Graph::Pathfinding::Result res{};
+        bool success = false;
 
         phmap::flat_hash_set<ivec2> pf_true_visited;
-        for (int i = 0; i < num_iters; i++)
+        for (int i = 0; pf.HasUnvisitedNodes() && i < num_iters; i++)
         {
-            if (!pf.GetRemainingNodesHeap().empty())
-                pf_true_visited.insert(pf.GetRemainingNodesHeap().front().coord);
-            res = pf.Step(Graph::Pathfinding::Flags::can_continue_after_goal, [&](ivec2 pos) -> bool {return grid.pos_in_range(pos) ? grid.at(pos) : true;});
-            // res = pf.Step(Graph::Pathfinding::Flags::can_continue_after_goal,
+            pf_true_visited.insert(pf.GetRemainingNodesHeap().front().coord);
+            if (pf.CurrentNode() == goal)
+            {
+                success = true;
+                // break;
+            }
+            pf.Step(goal, [&](ivec2 pos) -> bool {return grid.pos_in_range(pos) ? grid.at(pos) : true;});
+            // pf.Step(Graph::Pathfinding::Flags::can_continue_after_goal,
             //     [&](ivec2 pos, auto func)
             //     {
             //         for (int i = 0; i < 4; i++)
@@ -145,16 +149,16 @@ struct Application : Program::DefaultBasicState
             pf_heap[elem.coord].push_back(elem.estimated_total_cost);
 
         phmap::flat_hash_map<ivec2, int> pf_path;
-        if (res == Graph::Pathfinding::Result::success)
+        if (success)
         {
             pf_path.reserve(num_iters + 1);
-            pf.DumpPathBackwards([&](ivec2 pos){pf_path.try_emplace(pos, pf_path.size());});
+            pf.DumpPathBackwards(goal, [&](ivec2 pos){pf_path.try_emplace(pos, pf_path.size());});
         }
 
         ImGui::SameLine();
         ImGui::TextUnformatted("Result:");
         ImGui::SameLine();
-        ImGui::TextUnformatted(res == Graph::Pathfinding::Result::incomplete ? "incomplete" : res == Graph::Pathfinding::Result::success ? "success" : "fail");
+        ImGui::TextUnformatted(success ? "success" : pf.HasUnvisitedNodes() ? "incomplete" : "fail");
         ImGui::SameLine();
         ImGui::TextUnformatted(FMT("Remaining nodes in heap: {}", pf.GetRemainingNodesHeap().size()).c_str());
 
@@ -187,12 +191,19 @@ struct Application : Program::DefaultBasicState
                 is_visited ? ImVec4(0.8f,0.8f,0.8f,1) :
                 is_wall ? ImVec4(0.1f,0.1f,0.1f,1) : ImVec4(1,1,1,1);
 
+            std::string text;
+            if (is_heap)
+            {
+                auto min = std::ranges::min_element(pf_heap.at(pos));
+                text = FMT("{}/{}", min->first, min->second);
+            }
+
             ImGui::PushStyleColor(ImGuiCol_Button, cell_color);
             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, cell_color);
             ImGui::PushStyleColor(ImGuiCol_ButtonActive, cell_color);
             FINALLY{ImGui::PopStyleColor(3);};
 
-            ImGui::Button(FMT("##{}x{}", pos.x, pos.y).c_str(), cell_size - 1);
+            ImGui::Button(FMT("{}##{}x{}", text, pos.x, pos.y).c_str(), cell_size - 1);
 
             if (ImGui::IsItemClicked())
             {
