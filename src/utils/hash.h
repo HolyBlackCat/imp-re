@@ -59,11 +59,18 @@ namespace Hash
         }
     };
 
-    // Computes hash for a type.
+    // Computes hash for an object.
     template <typename T>
     [[nodiscard]] std::size_t Compute(const T &obj)
     {
         return Hasher<T>{}(obj);
+    }
+
+    // Computes combined hash for several objects.
+    template <typename ...P>
+    [[nodiscard]] std::size_t Compute(const P &... obj)
+    {
+        return Combine({(Compute)(obj)...});
     }
 }
 
