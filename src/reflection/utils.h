@@ -90,7 +90,7 @@ namespace Refl::Utils
 
 
     // Constexpr alternative to `std::strcmp`.
-    constexpr int cexpr_strcmp(const char *a, const char *b)
+    constexpr int const_strcmp(const char *a, const char *b)
     {
         while (*a == *b)
         {
@@ -119,7 +119,7 @@ namespace Refl::Utils
 
         constexpr std::weak_ordering operator<=>(const char *other_name) const
         {
-            return cexpr_strcmp(name, other_name) <=> 0;
+            return const_strcmp(name, other_name) <=> 0;
         }
     };
 

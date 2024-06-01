@@ -147,7 +147,7 @@ namespace Refl
 
                         constexpr bool operator==(const NameToFunc &other) const
                         {
-                            return Utils::cexpr_strcmp(name, other.name) == 0;
+                            return Utils::const_strcmp(name, other.name) == 0;
                         }
                         constexpr bool operator!=(const NameToFunc &other) const
                         {
@@ -156,7 +156,7 @@ namespace Refl
 
                         constexpr bool operator<(const NameToFunc &other) const
                         {
-                            return Utils::cexpr_strcmp(name, other.name) < 0;
+                            return Utils::const_strcmp(name, other.name) < 0;
                         }
                     };
 

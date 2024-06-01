@@ -94,7 +94,7 @@ namespace Graphics
             {
                 int attrib_index = 0;
 
-                Meta::cexpr_for<Refl::Class::member_count<T>>([&](auto index)
+                Meta::const_for<Refl::Class::member_count<T>>([&](auto index)
                 {
                     constexpr auto i = index.value;
                     using field_type = Refl::Class::member_type<T, i>;

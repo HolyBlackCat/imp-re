@@ -66,7 +66,7 @@ namespace Meta
     [[nodiscard]] constexpr hash_t TypeHash(hash_t seed = 0)
     {
         constexpr auto name = TypeName<T>();
-        return cexpr_hash(name.data(), name.size(), seed);
+        return const_hash(name.data(), name.size(), seed);
     }
 
     // Hash test:

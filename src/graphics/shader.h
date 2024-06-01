@@ -141,7 +141,7 @@ namespace Graphics
 
                 std::string header;
 
-                Meta::cexpr_for<Refl::Class::member_count<T>>([&](auto index)
+                Meta::const_for<Refl::Class::member_count<T>>([&](auto index)
                 {
                     constexpr auto i = index.value;
                     using field_type = Refl::Class::member_type<T, i>;
@@ -170,7 +170,7 @@ namespace Graphics
 
                 std::string header;
 
-                Meta::cexpr_for<Refl::Class::member_count<T>>([&](auto index)
+                Meta::const_for<Refl::Class::member_count<T>>([&](auto index)
                 {
                     constexpr int i = index.value;
                     using field_type = typename Refl::Class::member_type<T, i>::type;
@@ -216,7 +216,7 @@ namespace Graphics
 
                 std::vector<std::string> ret;
 
-                Meta::cexpr_for<Refl::Class::member_count<T>>([&](auto index)
+                Meta::const_for<Refl::Class::member_count<T>>([&](auto index)
                 {
                     ret.push_back(pref.attribute_prefix + Refl::Class::MemberName<T>(index.value));
                 });
@@ -338,7 +338,7 @@ namespace Graphics
             {
                 static_assert(Refl::Class::member_names_known<UniformsT>);
 
-                Meta::cexpr_for<Refl::Class::member_count<UniformsT>>([&](auto index)
+                Meta::const_for<Refl::Class::member_count<UniformsT>>([&](auto index)
                 {
                     constexpr auto i = index.value;
                     // Note that we don't need to check the return value. Even if a uniform is not found and -1 location is returned, glUniform* will silently no-op on it.

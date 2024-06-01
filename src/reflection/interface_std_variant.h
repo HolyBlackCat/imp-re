@@ -34,7 +34,7 @@ namespace Refl
             }
             else
             {
-                return Meta::cexpr_generate_array<std::variant_size_v<T>>([](auto index)
+                return Meta::const_generate_array<std::variant_size_v<T>>([](auto index)
                 {
                     return Class::name<std::variant_alternative_t<index.value, T>>;
                 });
@@ -47,7 +47,7 @@ namespace Refl
             if (object.valueless_by_exception())
                 throw std::runtime_error(output.GetExceptionPrefix() + "Unable to serialize variant: Valueless by exception.");
 
-            Meta::with_cexpr_value<std::variant_size_v<T>>(object.index(), [&](auto index)
+            Meta::with_const_value<std::variant_size_v<T>>(object.index(), [&](auto index)
             {
                 constexpr auto i = index.value;
                 using this_type = std::variant_alternative_t<i, T>;
@@ -68,7 +68,7 @@ namespace Refl
 
             Utils::SkipWhitespaceAndComments(input);
 
-            Meta::with_cexpr_value<std::variant_size_v<T>>(index, [&](auto index)
+            Meta::with_const_value<std::variant_size_v<T>>(index, [&](auto index)
             {
                 constexpr auto i = index.value;
                 using this_type = std::variant_alternative_t<i, T>;
@@ -95,7 +95,7 @@ namespace Refl
             impl::variant_index_binary_t index = object.index(); // No range validation is necessary, since we have a static_assert.
             output.WriteWithByteOrder<impl::variant_index_binary_t>(impl::variant_index_byte_order, index);
 
-            Meta::with_cexpr_value<std::variant_size_v<T>>(index, [&](auto index)
+            Meta::with_const_value<std::variant_size_v<T>>(index, [&](auto index)
             {
                 constexpr auto i = index.value;
                 using this_type = std::variant_alternative_t<i, T>;
@@ -109,7 +109,7 @@ namespace Refl
             if (Robust::greater_eq(index, std::variant_size_v<T>))
                 throw std::runtime_error(input.GetExceptionPrefix() + "Variant alternative index is too large.");
 
-            Meta::with_cexpr_value<std::variant_size_v<T>>(index, [&](auto index)
+            Meta::with_const_value<std::variant_size_v<T>>(index, [&](auto index)
             {
                 constexpr auto i = index.value;
                 using this_type = std::variant_alternative_t<i, T>;

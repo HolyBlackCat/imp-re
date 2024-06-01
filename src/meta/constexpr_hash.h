@@ -8,7 +8,7 @@ namespace Meta
     using hash_t = std::uint32_t;
 
     // Constexpr implementation of MurmurHash3, adapted from `https://github.com/aappleby/smhasher/blob/master/src/MurmurHash3.cpp`.
-    [[nodiscard]] constexpr hash_t cexpr_hash(const char *data, std::size_t len, hash_t seed = 0)
+    [[nodiscard]] constexpr hash_t const_hash(const char *data, std::size_t len, hash_t seed = 0)
     {
         const std::size_t nblocks = len / 4;
 
@@ -62,14 +62,14 @@ namespace Meta
         return h1;
     }
 
-    [[nodiscard]] constexpr hash_t cexpr_hash(std::string_view view, std::uint32_t seed = 0)
+    [[nodiscard]] constexpr hash_t const_hash(std::string_view view, std::uint32_t seed = 0)
     {
-        return cexpr_hash(view.data(), view.size(), seed);
+        return const_hash(view.data(), view.size(), seed);
     }
 
     // Some tests:
-    // static_assert(Meta::cexpr_hash("abcd", 42) == 3898664396);
-    // static_assert(Meta::cexpr_hash("abcde", 42) == 2933533680);
-    // static_assert(Meta::cexpr_hash("abcdef", 42) == 2449278475);
-    // static_assert(Meta::cexpr_hash("abcdefg", 42) == 1781200409);
+    // static_assert(Meta::const_hash("abcd", 42) == 3898664396);
+    // static_assert(Meta::const_hash("abcde", 42) == 2933533680);
+    // static_assert(Meta::const_hash("abcdef", 42) == 2449278475);
+    // static_assert(Meta::const_hash("abcdefg", 42) == 1781200409);
 }

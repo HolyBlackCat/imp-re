@@ -418,7 +418,7 @@ namespace Refl
                 }
                 else
                 {
-                    return Meta::cexpr_generate_array<Meta::list_size<L>>([](auto index)
+                    return Meta::const_generate_array<Meta::list_size<L>>([](auto index)
                     {
                         using type = Meta::list_type_at<L, index.value>;
                         static_assert(Class::name_known<type>, "Name of this class is not known.");

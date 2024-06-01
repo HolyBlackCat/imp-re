@@ -239,66 +239,66 @@ namespace Meta
 
     // Constexpr replacement for the for loop.
 
-    template <typename Integer, Integer ...I, typename F> constexpr void cexpr_for_each(std::integer_sequence<Integer, I...>, F &&func)
+    template <typename Integer, Integer ...I, typename F> constexpr void const_for_each(std::integer_sequence<Integer, I...>, F &&func)
     {
         (func(std::integral_constant<Integer, I>{}) , ...);
     }
-    template <typename Integer, Integer ...I, typename F> constexpr bool cexpr_any_of(std::integer_sequence<Integer, I...>, F &&func)
+    template <typename Integer, Integer ...I, typename F> constexpr bool const_any_of(std::integer_sequence<Integer, I...>, F &&func)
     {
         return (func(std::integral_constant<Integer, I>{}) || ...);
     }
-    template <typename Integer, Integer ...I, typename F> constexpr bool cexpr_all_of(std::integer_sequence<Integer, I...>, F &&func)
+    template <typename Integer, Integer ...I, typename F> constexpr bool const_all_of(std::integer_sequence<Integer, I...>, F &&func)
     {
         return (func(std::integral_constant<Integer, I>{}) && ...);
     }
 
-    template <auto N, typename F> constexpr void cexpr_for(F &&func)
+    template <auto N, typename F> constexpr void const_for(F &&func)
     {
         if constexpr (N > 0)
-            cexpr_for_each(std::make_integer_sequence<decltype(N), N>{}, std::forward<F>(func));
+            const_for_each(std::make_integer_sequence<decltype(N), N>{}, std::forward<F>(func));
     }
-    template <auto N, typename F> constexpr bool cexpr_any(F &&func)
+    template <auto N, typename F> constexpr bool const_any(F &&func)
     {
         if constexpr (N > 0)
-            return cexpr_any_of(std::make_integer_sequence<decltype(N), N>{}, std::forward<F>(func));
+            return const_any_of(std::make_integer_sequence<decltype(N), N>{}, std::forward<F>(func));
         else
             return false;
     }
-    template <auto N, typename F> constexpr bool cexpr_all(F &&func)
+    template <auto N, typename F> constexpr bool const_all(F &&func)
     {
         if constexpr (N > 0)
-            return cexpr_all_of(std::make_integer_sequence<decltype(N), N>{}, std::forward<F>(func));
+            return const_all_of(std::make_integer_sequence<decltype(N), N>{}, std::forward<F>(func));
         else
-            return true; // Note vacuous truth, unlike in `cexpr_any`.
+            return true; // Note vacuous truth, unlike in `const_any`.
     }
 
 
     // Helper functions to generate sequences of values by invoking lambdas with constexpr indices as parameters.
 
-    template <typename T, typename Integer, Integer ...I, typename F> constexpr auto cexpr_generate_from_seq(std::integer_sequence<Integer, I...>, F &&func)
+    template <typename T, typename Integer, Integer ...I, typename F> constexpr auto const_generate_from_seq(std::integer_sequence<Integer, I...>, F &&func)
     {
         return T{func(std::integral_constant<Integer, I>{})...};
     }
-    template <template <typename> typename T, typename Integer, Integer ...I, typename F> constexpr auto cexpr_generate_from_seq(std::integer_sequence<Integer, I...>, F &&func)
+    template <template <typename> typename T, typename Integer, Integer ...I, typename F> constexpr auto const_generate_from_seq(std::integer_sequence<Integer, I...>, F &&func)
     {
         return T{func(std::integral_constant<Integer, I>{})...};
     }
-    template <typename Integer, Integer ...I, typename F> constexpr auto cexpr_generate_array_from_seq(std::integer_sequence<Integer, I...>, F &&func)
+    template <typename Integer, Integer ...I, typename F> constexpr auto const_generate_array_from_seq(std::integer_sequence<Integer, I...>, F &&func)
     {
         return std::array{func(std::integral_constant<Integer, I>{})...};
     }
 
-    template <typename T, auto N, typename F> constexpr auto cexpr_generate(F &&func)
+    template <typename T, auto N, typename F> constexpr auto const_generate(F &&func)
     {
-        return cexpr_generate_from_seq<T>(std::make_integer_sequence<decltype(N), N>{}, std::forward<F>(func));
+        return const_generate_from_seq<T>(std::make_integer_sequence<decltype(N), N>{}, std::forward<F>(func));
     }
-    template <template <typename> typename T, auto N, typename F> constexpr auto cexpr_generate(F &&func)
+    template <template <typename> typename T, auto N, typename F> constexpr auto const_generate(F &&func)
     {
-        return cexpr_generate_from_seq<T>(std::make_integer_sequence<decltype(N), N>{}, std::forward<F>(func));
+        return const_generate_from_seq<T>(std::make_integer_sequence<decltype(N), N>{}, std::forward<F>(func));
     }
-    template <auto N, typename F> constexpr auto cexpr_generate_array(F &&func)
+    template <auto N, typename F> constexpr auto const_generate_array(F &&func)
     {
-        return cexpr_generate_array_from_seq(std::make_integer_sequence<decltype(N), N>{}, std::forward<F>(func));
+        return const_generate_array_from_seq(std::make_integer_sequence<decltype(N), N>{}, std::forward<F>(func));
     }
 
 
@@ -307,7 +307,7 @@ namespace Meta
     // `i` has to be in the range `0..N-1`, otherwise the behavior is undefined (likely a crash if the `std::array` bounds checking is disabled).
 
     template <auto N, typename F>
-    [[nodiscard]] constexpr decltype(auto) with_cexpr_value(decltype(N) i, F &&func)
+    [[nodiscard]] constexpr decltype(auto) with_const_value(decltype(N) i, F &&func)
     {
         if constexpr (N <= 0)
         {
@@ -316,7 +316,7 @@ namespace Meta
         }
         else
         {
-            return cexpr_generate_array<N>([&](auto value)
+            return const_generate_array<N>([&](auto value)
             {
                 return +[](F &&func) -> decltype(auto)
                 {
@@ -330,30 +330,30 @@ namespace Meta
     // Invoke a funciton with a set of constexpr-ized boolean flags.
     // (Beware that 2^n instantinations of the function will be generated.)
     // Example usage:
-    //     T result = Meta::with_cexpr_flags(0,1,1) >> [](auto a, auto b, auto c) {return a.value + b.value + c.value};
+    //     T result = Meta::with_const_flags(0,1,1) >> [](auto a, auto b, auto c) {return a.value + b.value + c.value};
 
     namespace impl
     {
-        using cexpr_flag_bits_t = unsigned int;
+        using const_flag_bits_t = unsigned int;
 
         template <typename F, int ...I>
-        constexpr decltype(auto) with_cexpr_flags(cexpr_flag_bits_t flags, F &&func, std::integer_sequence<int, I...>)
+        constexpr decltype(auto) with_const_flags(const_flag_bits_t flags, F &&func, std::integer_sequence<int, I...>)
         {
-            static_assert(sizeof...(I) <= sizeof(cexpr_flag_bits_t) * 8);
-            constexpr cexpr_flag_bits_t func_count = (cexpr_flag_bits_t)1 << (cexpr_flag_bits_t)(sizeof...(I));
-            return with_cexpr_value<func_count>(flags, [&](auto index) -> decltype(auto)
+            static_assert(sizeof...(I) <= sizeof(const_flag_bits_t) * 8);
+            constexpr const_flag_bits_t func_count = (const_flag_bits_t)1 << (const_flag_bits_t)(sizeof...(I));
+            return with_const_value<func_count>(flags, [&](auto index) -> decltype(auto)
             {
-                constexpr cexpr_flag_bits_t i = index;
-                return std::forward<F>(func)(std::bool_constant<bool(i & cexpr_flag_bits_t(cexpr_flag_bits_t(1) << cexpr_flag_bits_t(I)))>{}...);
+                constexpr const_flag_bits_t i = index;
+                return std::forward<F>(func)(std::bool_constant<bool(i & const_flag_bits_t(const_flag_bits_t(1) << const_flag_bits_t(I)))>{}...);
             });
         }
 
         template <typename L>
-        class cexpr_flags_expr
+        class const_flags_expr
         {
             L lambda;
           public:
-            constexpr cexpr_flags_expr(L lambda) : lambda(lambda) {}
+            constexpr const_flags_expr(L lambda) : lambda(lambda) {}
 
             template <typename F>
             constexpr decltype(auto) operator>>(F &&func) const
@@ -364,17 +364,17 @@ namespace Meta
     }
 
     template <typename ...P> requires (std::is_convertible_v<const P &, bool> && ...)
-    [[nodiscard]] constexpr auto with_cexpr_flags(const P &... params)
+    [[nodiscard]] constexpr auto with_const_flags(const P &... params)
     {
-        impl::cexpr_flag_bits_t flags = 0, mask = 1;
+        impl::const_flag_bits_t flags = 0, mask = 1;
         ((flags |= mask * bool(params), mask <<= 1) , ...);
 
         auto lambda = [flags](auto &&func) -> decltype(auto)
         {
-            return impl::with_cexpr_flags(flags, decltype(func)(func), std::make_integer_sequence<int, sizeof...(P)>{});
+            return impl::with_const_flags(flags, decltype(func)(func), std::make_integer_sequence<int, sizeof...(P)>{});
         };
 
-        return impl::cexpr_flags_expr(lambda);
+        return impl::const_flags_expr(lambda);
     }
 
 

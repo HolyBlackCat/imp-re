@@ -34,7 +34,7 @@ namespace Refl
                 skip = false;
 
             // It at least one of the members is not skipped, then don't skip.
-            Meta::cexpr_for<Refl::Class::member_count<T>>([&](auto index)
+            Meta::const_for<Refl::Class::member_count<T>>([&](auto index)
             {
                 constexpr auto i = index.value;
                 if (!ShouldSkipLow<Refl::Class::member_type<T, i>, false>())
@@ -44,7 +44,7 @@ namespace Refl
             // It at least one of the bases is not skipped, then don't skip.
             // If the class itself is a base class, don't consider virtual bases.
             using base_list = std::conditional_t<IsBase, Refl::Class::regular_bases<T>, Refl::Class::combined_bases<T>>;
-            Meta::cexpr_for<Meta::list_size<base_list>>([&](auto index)
+            Meta::const_for<Meta::list_size<base_list>>([&](auto index)
             {
                 constexpr auto i = index.value;
                 if (!ShouldSkipLow<Meta::list_type_at<base_list, i>, true>())
@@ -102,14 +102,14 @@ namespace Refl
             // Force a single-line representation if member names aren't known and the struct has no members with 'non-short' representation.
             constexpr bool force_single_line = !Class::member_names_known<T> && []{
                 bool ret = true;
-                Meta::cexpr_for<Class::member_count<T>>([&](auto index)
+                Meta::const_for<Class::member_count<T>>([&](auto index)
                 {
                     constexpr auto i = index.value;
                     if (!impl::HasShortStringRepresentation<Class::member_type<T, i>>::value)
                         ret = false;
                 });
 
-                Meta::cexpr_for<Meta::list_size<Class::combined_bases<T>>>([&](auto index)
+                Meta::const_for<Meta::list_size<Class::combined_bases<T>>>([&](auto index)
                 {
                     constexpr auto i = index.value;
                     if (!impl::HasShortStringRepresentation<Meta::list_type_at<Class::combined_bases<T>, i>>::value)
@@ -171,7 +171,7 @@ namespace Refl
             if (state.NeedVirtualBases())
             {
                 using virt_bases = Class::virtual_bases<T>;
-                Meta::cexpr_for<Meta::list_size<virt_bases>>([&](auto index)
+                Meta::const_for<Meta::list_size<virt_bases>>([&](auto index)
                 {
                     constexpr auto i = index.value;
                     WriteBase(Meta::tag<Meta::list_type_at<virt_bases, i>>{});
@@ -180,14 +180,14 @@ namespace Refl
 
             // Output regular bases.
             using bases = Class::regular_bases<T>;
-            Meta::cexpr_for<Meta::list_size<bases>>([&](auto index)
+            Meta::const_for<Meta::list_size<bases>>([&](auto index)
             {
                 constexpr auto i = index.value;
                 WriteBase(Meta::tag<Meta::list_type_at<bases, i>>{});
             });
 
             // Output members.
-            Meta::cexpr_for<Class::member_count<T>>([&](auto index)
+            Meta::const_for<Class::member_count<T>>([&](auto index)
             {
                 constexpr auto i = index.value;
                 using type = const Class::member_type<T, i>;
@@ -282,7 +282,7 @@ namespace Refl
                         if (base_index == std::size_t(-1))
                             throw std::runtime_error(input.GetExceptionPrefix() + "Unknown base class: `" + name + "`.");
 
-                        Meta::with_cexpr_value<combined_base_count>(base_index, [&](auto index)
+                        Meta::with_const_value<combined_base_count>(base_index, [&](auto index)
                         {
                             constexpr auto i = index.value;
                             if (!state.NeedVirtualBases() && i >= Meta::list_size<Class::regular_bases<T>>)
@@ -317,7 +317,7 @@ namespace Refl
                         if (member_index == std::size_t(-1))
                             throw std::runtime_error(input.GetExceptionPrefix() + "Unknown field: `" + name + "`.");
 
-                        Meta::with_cexpr_value<Class::member_count<T>>(member_index, [&](auto index)
+                        Meta::with_const_value<Class::member_count<T>>(member_index, [&](auto index)
                         {
                             constexpr auto i = index.value;
                             if (obtained_members[i])
@@ -353,7 +353,7 @@ namespace Refl
                 if (!options.ignore_missing_fields)
                 {
                     // Check fields.
-                    Meta::cexpr_for<Class::member_count<T>>([&](auto index)
+                    Meta::const_for<Class::member_count<T>>([&](auto index)
                     {
                         constexpr auto i = index.value;
                         if constexpr (!Class::member_has_attrib<T, i, Optional> && !impl::Class::skip_member<Class::member_type<T, i>>)
@@ -364,7 +364,7 @@ namespace Refl
                     });
 
                     // Check bases.
-                    Meta::cexpr_for<combined_base_count>([&](auto index)
+                    Meta::const_for<combined_base_count>([&](auto index)
                     {
                         constexpr auto i = index.value;
                         using this_base = Meta::list_type_at<combined_bases, i>;
@@ -406,7 +406,7 @@ namespace Refl
                 if (state.NeedVirtualBases())
                 {
                     using virt_bases = Class::virtual_bases<T>;
-                    Meta::cexpr_for<Meta::list_size<virt_bases>>([&](auto index)
+                    Meta::const_for<Meta::list_size<virt_bases>>([&](auto index)
                     {
                         constexpr auto i = index.value;
                         using base_type = Meta::list_type_at<virt_bases, i>;
@@ -417,7 +417,7 @@ namespace Refl
 
                 // Read regular bases.
                 using bases = Class::regular_bases<T>;
-                Meta::cexpr_for<Meta::list_size<bases>>([&](auto index)
+                Meta::const_for<Meta::list_size<bases>>([&](auto index)
                 {
                     constexpr auto i = index.value;
                     using base_type = Meta::list_type_at<bases, i>;
@@ -426,7 +426,7 @@ namespace Refl
                 });
 
                 // Read members.
-                Meta::cexpr_for<Class::member_count<T>>([&](auto index)
+                Meta::const_for<Class::member_count<T>>([&](auto index)
                 {
                     constexpr auto i = index.value;
                     using type = const Class::member_type<T, i>;
@@ -475,7 +475,7 @@ namespace Refl
             if (state.NeedVirtualBases())
             {
                 using virt_bases = Class::virtual_bases<T>;
-                Meta::cexpr_for<Meta::list_size<virt_bases>>([&](auto index)
+                Meta::const_for<Meta::list_size<virt_bases>>([&](auto index)
                 {
                     constexpr auto i = index.value;
                     using base_type = Meta::list_type_at<virt_bases, i>;
@@ -486,7 +486,7 @@ namespace Refl
 
             // Write regular bases.
             using bases = Class::regular_bases<T>;
-            Meta::cexpr_for<Meta::list_size<bases>>([&](auto index)
+            Meta::const_for<Meta::list_size<bases>>([&](auto index)
             {
                 constexpr auto i = index.value;
                 using base_type = Meta::list_type_at<bases, i>;
@@ -495,7 +495,7 @@ namespace Refl
             });
 
             // Write members.
-            Meta::cexpr_for<Class::member_count<T>>([&](auto index)
+            Meta::const_for<Class::member_count<T>>([&](auto index)
             {
                 constexpr auto i = index.value;
                 using type = const Class::member_type<T, i>;
@@ -538,7 +538,7 @@ namespace Refl
             if (state.NeedVirtualBases())
             {
                 using virt_bases = Class::virtual_bases<T>;
-                Meta::cexpr_for<Meta::list_size<virt_bases>>([&](auto index)
+                Meta::const_for<Meta::list_size<virt_bases>>([&](auto index)
                 {
                     constexpr auto i = index.value;
                     using base_type = Meta::list_type_at<virt_bases, i>;
@@ -549,7 +549,7 @@ namespace Refl
 
             // Write regular bases.
             using bases = Class::regular_bases<T>;
-            Meta::cexpr_for<Meta::list_size<bases>>([&](auto index)
+            Meta::const_for<Meta::list_size<bases>>([&](auto index)
             {
                 constexpr auto i = index.value;
                 using base_type = Meta::list_type_at<bases, i>;
@@ -558,7 +558,7 @@ namespace Refl
             });
 
             // Write members.
-            Meta::cexpr_for<Class::member_count<T>>([&](auto index)
+            Meta::const_for<Class::member_count<T>>([&](auto index)
             {
                 constexpr auto i = index.value;
                 using type = const Class::member_type<T, i>;
@@ -599,7 +599,7 @@ namespace Refl
                 bool value = true;
 
                 // Check members.
-                Meta::cexpr_for<Refl::Class::member_count<T>>([&](auto index)
+                Meta::const_for<Refl::Class::member_count<T>>([&](auto index)
                 {
                     if (!impl::HasShortStringRepresentation<Refl::Class::member_type<T, index.value>>::value)
                         value = false;
@@ -607,7 +607,7 @@ namespace Refl
 
                 // Check bases.
                 using combined_bases = Refl::Class::combined_bases<T>;
-                Meta::cexpr_for<Meta::list_size<combined_bases>>([&](auto index)
+                Meta::const_for<Meta::list_size<combined_bases>>([&](auto index)
                 {
                     if (!impl::HasShortStringRepresentation<Meta::list_type_at<combined_bases, index.value>>::value)
                         value = false;
