@@ -395,20 +395,6 @@ namespace Meta
     };
 
 
-    // Non-copyable and non-movable base class.
-
-    template <typename T> struct stationary // Use this as a CRTP base.
-    {
-        // Here we use CRTP to make sure the empty base class optimization is never defeated.
-        constexpr stationary() noexcept = default;
-        stationary(const stationary &) = delete;
-        stationary(stationary &&) = delete;
-        stationary &operator=(const stationary &) = delete;
-        stationary &operator=(stationary &&) = delete;
-        ~stationary() = default;
-    };
-
-
     // Polymorphic base class.
 
     template <typename T> struct with_virtual_destructor // Use this as a CRTP base.
