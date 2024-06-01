@@ -116,6 +116,25 @@ namespace Meta
     template <typename T>
     using member_pointer_owner_t = typename impl::MemPtrTraits<T>::owner;
 
+
+    // Returns the first type that's not `void` (`fallback_from_void<P...>`)
+    // or in general that's not a specific type (`fallback_from<BadType, P...>`).
+
+    namespace impl
+    {
+        template <typename Bad, typename ...P> struct fallback_from {using type = Bad;};
+        template <typename Bad, typename T, typename ...P> struct fallback_from<Bad, T, P...> {using type = T;};
+        template <typename Bad, typename ...P> struct fallback_from<Bad, Bad, P...> : fallback_from<Bad, P...> {};
+    }
+
+    // Returns the first type in `P...` that is not `Bad`, or if none returns `Bad`.
+    template <typename Bad, typename ...P>
+    using fallback_from = typename impl::fallback_from<Bad, P...>::type;
+    // Returns the first type in `P...` that is not `void`, or if none returns `void`.
+    template <typename ...P>
+    using fallback_from_void = fallback_from<void, P...>;
+
+
     // A helper function that invokes a callback.
     // If the callback returns void, the function returns `default_var` explicitly converted to `R`.
     // Otherwise returns the return value of of the callback, explicitly converted to `R` .
@@ -189,6 +208,7 @@ namespace Meta
 
 
     // A replacement for `std::experimental::is_detected`.
+    // `is_detected<A, B...>` returns true if `A<B...>` is a valid type. Usually `A` would be a templated `using`.
 
     namespace impl
     {
