@@ -44,7 +44,6 @@ PROJ_CXXFLAGS += -includesrc/program/common_macros.h -includesrc/program/parachu
 PROJ_CXXFLAGS += -Isrc
 PROJ_CXXFLAGS += -Ideps/sub/box2cpp/include
 PROJ_CXXFLAGS += -DIMGUI_USER_CONFIG=\"third_party_connectors/imconfig.h\"# Custom ImGui config.
-PROJ_CXXFLAGS += -DFMT_DEPRECATED_OSTREAM# See issue: https://github.com/fmtlib/fmt/issues/3088
 
 ifeq ($(TARGET_OS),windows)
 PROJ_LDFLAGS += $(_win_subsystem)

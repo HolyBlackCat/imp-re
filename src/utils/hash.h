@@ -59,11 +59,18 @@ namespace Hash
         }
     };
 
-    // Computes hash for a type.
+    // Computes hash for an object.
     template <typename T>
     [[nodiscard]] std::size_t Compute(const T &obj)
     {
         return Hasher<T>{}(obj);
+    }
+
+    // Computes combined hash for several objects.
+    template <typename ...P>
+    [[nodiscard]] std::size_t Compute(const P &... obj)
+    {
+        return Combine({(Compute)(obj)...});
     }
 }
 
@@ -72,34 +79,31 @@ namespace Hash
 {
     namespace impl
     {
-        // Dummy ADL target for the hashing function.
-        inline std::size_t adl_hash(/* const T & */) = delete;
-
-        // Invokes `adl_hash` in an ADL-friendly way.
-        template <typename T> requires requires(T t){{adl_hash(t)} -> std::same_as<std::size_t>;}
-        std::size_t CallAdlHash(const T &object)
-        {
-            // No `using` is necessary, since the dummy ADL target is right outside the function.
-            return adl_hash(object);
-        }
-
         // Checks if `std::hash` is specialized for the given type.
         template <typename T>
         concept std_hashable = requires(const T obj){std::hash<T>{}(obj);};
+
+        // Dummy ADL target for the hashing function.
+        inline std::size_t hash_value(/* const T & */) = delete;
+
+        template <typename T>
+        concept adl_hashable = requires(T t){{hash_value(t)} -> std::same_as<std::size_t>;};
     }
 
     // Specialization using `std::hash`.
-    template <typename T> requires impl::std_hashable<T>
+    template <impl::std_hashable T>
     struct Hasher<T>
     {
         [[nodiscard]] std::size_t operator()(const T &obj) const {return std::hash<T>{}(obj);}
     };
 
-    // Specialization using `adl_hash`.
-    template <typename T> requires requires(const T obj){impl::CallAdlHash(obj);}
+    // Specialization using `hash_value()` via ADL.
+    // the name `hash_value` was chosen because it's also used by parallel-hashmap
+    //   (and also `std::filesystem::path`, but that's not important because that also supports `std::hash`).
+    template <impl::adl_hashable T>
     struct Hasher<T>
     {
-        [[nodiscard]] std::size_t operator()(const T &obj) const {return impl::CallAdlHash(obj);}
+        [[nodiscard]] std::size_t operator()(const T &obj) const {using impl::hash_value; return hash_value(obj);}
     };
 
     // Specialization using `.hash()`.
