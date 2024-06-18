@@ -2,13 +2,148 @@
 #include "main.h"
 
 #include "entities.h"
-#include "tile_grids/chunk.h"
+#include "tile_grids/core.h"
+#include "tile_grids/debug_rendering.h"
+#include "tile_grids/entities.h"
+#include "tile_grids/high_level.h"
 #include "utils/json.h"
 #include "utils/ring_multiarray.h"
 #include "box2d_physics/math_adapters.h"
 
 #include <box2cpp/box2c.hpp>
 #include <box2cpp/debug_imgui_renderer.hpp>
+
+namespace Tiles
+{
+    using System = TileGrids::System<TileGrids::DefaultSystemTraits>;
+
+    static constexpr int chunk_size = 8;
+
+    enum class Tile
+    {
+        empty,
+        wall,
+    };
+
+    struct Cell
+    {
+        Tile tile{};
+    };
+
+    struct GridEntity : Meta::with_virtual_destructor<GridEntity>
+    {
+        IMP_STANDALONE_COMPONENT(Game)
+
+        TileGrids::ChunkGrid<System, chunk_size, Cell> grid;
+        b2::Body body;
+
+        void LoadTiles(Stream::ReadOnlyData data);
+    };
+
+    struct BasicHighLevelTraits
+    {
+        // For `tile_grids/entities.h`:
+
+        // The tag for the entity system.
+        using EntityTag = Game;
+        // The entity that will store the grid.
+        using GridEntity = Tiles::GridEntity;
+
+        // This is called when splitting a grid to copy the basic parameters.
+        static void FinishGridInitAfterSplit(typename EntityTag::Controller& world, const GridEntity &from, GridEntity &to)
+        {
+            (void)world;
+            (void)from;
+            (void)to;
+        }
+
+        // For `tile_grids/high_level.h`:
+
+        // Each tile of a chunk stores this.
+        using CellType = Cell;
+        // Returns true if the cell isn't empty, for the purposes of splitting unconnected grids. Default-constructed cells must count as empty.
+        [[nodiscard]] static bool CellIsNonEmpty(const CellType &cell)
+        {
+            return cell.tile != Tile::empty;
+        }
+        // Returns the connectivity mask of a cell in the specified direction, for the purposes of splitting unconnected grids.
+        // The bit order should NOT be reversed when flipping direction, it's always the same.
+        [[nodiscard]] static System::TileEdgeConnectivity CellConnectivity(const CellType &cell, int dir)
+        {
+            (void)dir;
+            switch (cell.tile)
+            {
+              case Tile::empty:
+                return 0;
+              case Tile::wall:
+                return 1;
+            }
+            ASSERT(false, "Invalid tile enum.");
+            return 0;
+        }
+
+        // Returns our data from a grid.
+        [[nodiscard]] static TileGrids::ChunkGrid<System, chunk_size, CellType> &GridToData(GridEntity &grid)
+        {
+            return grid.grid;
+        }
+    };
+    using HighLevelTraits = TileGrids::EntityHighLevelTraits<BasicHighLevelTraits>;
+
+    struct DirtyListsEntity
+    {
+        IMP_STANDALONE_COMPONENT(Game)
+
+        TileGrids::DirtyChunkLists<System, HighLevelTraits> dirty;
+    };
+
+    void GridEntity::LoadTiles(Stream::ReadOnlyData data)
+    {
+        Json json(data.string(), 32);
+        auto tiles = Tiled::LoadTileLayer(Tiled::FindLayer(json, "mid"));
+
+        grid.LoadFromArray(
+            game,
+            &game.get<DirtyListsEntity>()->dirty,
+            dynamic_cast<Game::Entity &>(*this).id(),
+            tiles.size().to<System::GlobalTileCoord>(),
+            [&](vec2<System::GlobalTileCoord> pos, Cell &cell)
+            {
+                cell.tile = tiles.at(pos) ? Tile::wall : Tile::empty;
+            }
+        );
+    }
+}
+
+struct PhysicsWorld : Tickable
+{
+    b2::World w;
+
+    b2::DebugImguiRenderer renderer;
+
+    PhysicsWorld()
+    {
+        w = adjust(b2::World::Params{}, .gravity.y *= -1);
+        renderer.camera_pos.x = 12;
+        renderer.camera_pos.y = 8;
+        renderer.camera_scale = 28;
+    }
+
+    void Tick() override
+    {
+        w.Step(1/60.f, 4);
+
+        renderer.DrawShapes(w);
+        renderer.DrawModeToggles();
+        renderer.MouseDrag(w);
+
+        for (const auto &e : game.get<Game::Category<Ent::OrderedList, Tiles::GridEntity>>())
+        {
+            const auto &grid = e.get<Tiles::GridEntity>();
+            TileGrids::ImguiDebugDraw(grid.grid, [&](fvec2 pos){return fvec2(renderer.Box2dToImguiPoint(grid.body.GetWorldPoint(pos)));}, *ImGui::GetBackgroundDrawList(), TileGrids::DebugDrawFlags::all);
+        }
+    }
+};
 
 struct MouseCamera : Camera, Tickable
 {
@@ -18,22 +153,13 @@ struct MouseCamera : Camera, Tickable
     }
 };
 
-namespace Meta
-{
-    template <typename...>
-    struct UniqueEmptyType {};
-
-    template <typename T, typename Tag = value_list<>>
-    struct
-}
-
 struct TestEntity : Tickable, Renderable
 {
     IMP_STANDALONE_COMPONENT(Game)
 
-    b2::World w;
 
-    b2::DebugImguiRenderer renderer;
+
+
 
     struct Cell
     {
@@ -42,45 +168,20 @@ struct TestEntity : Tickable, Renderable
 
     TestEntity()
     {
-        w = adjust(b2::World::Params{}, .gravity.y *= -1);
-        renderer.camera_pos.x = 2;
-        renderer.camera_pos.y = 1;
+        auto &w = game.create<PhysicsWorld>();
+        auto &d = game.create<Tiles::DirtyListsEntity>();
 
-        Json json(Stream::ReadOnlyData(Program::ExeDir() + "assets/map.json").string(), 64);
-        auto layer = Tiled::LoadTileLayer(Tiled::FindLayer(json.GetView(), "mid"));
+        auto &e = game.create<Tiles::GridEntity>();
+        e.LoadTiles(Program::ExeDir() + "assets/map.json");
+        e.body = w.w.CreateBody(b2::OwningHandle, b2::Body::Params{});
 
-        using Chunk = TileGrids::Chunk<10, Cell, int>;
-        Chunk chunk;
-        for (ivec2 pos : vector_range(ivec2(10)))
-        {
-            chunk.at(pos).value = layer.at(pos);
-        }
-
-        Chunk::ConnectedComponentsReusedData reused;
-        Chunk::ComponentsType comps;
-        Chunk::ComponentsType::ComponentType comp;
-        auto func_tile_exists = [](const Cell &c){return c.value != 0;};
-        auto func_tile_conn = [](const Cell &c, int i) {return (Chunk::ComponentsType::TileEdgeConnectivity)bool((std::array{0b0000,0b1111,0b1100,0b0110,0b0011,0b1001}[c.value] << i) & 0b1000);};
-        chunk.ComputeConnectedComponents(reused, comp, []{}, func_tile_exists, func_tile_conn);
-        chunk.ComputeConnectedComponents(reused, comps, []{}, func_tile_exists, func_tile_conn);
-
-        comps.RemoveComponent(TileGrids::ComponentIndex(0));
-
-        TileGrids::ChunkGridSplitter<int> f;
-        f.visited_components.insert({});
-
-        std::cout << &comps << '\n';
+        Tiles::System::Chunk<Tiles::chunk_size, Tiles::Cell>::ComputeConnectedComponentsReusedData reused;
+        d.dirty.HandleGeometryUpdate(game, reused);
     }
 
     void Tick() override
     {
-        ImGui::ShowDemoWindow();
 
-        w.Step(1/60.f, 4);
-
-        renderer.DrawShapes(w);
-        renderer.DrawModeToggles();
-        renderer.MouseDrag(w);
     }
 
     void Render() const override

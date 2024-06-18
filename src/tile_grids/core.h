@@ -17,6 +17,9 @@ namespace TileGrids
 {
     struct DefaultSystemTraits
     {
+        // Tile coordinates across chunks.
+        using GlobalTileCoord = int;
+
         // Tile coordinates inside chunks.
         using CoordInsideChunk = int;
 
@@ -71,6 +74,8 @@ namespace TileGrids
 
             // Index of the component in that chunk.
             ComponentIndex in_chunk_component = ComponentIndex::invalid;
+
+            friend bool operator==(const ComponentCoords &, const ComponentCoords &) = default;
 
             // `phmap` uses this.
             friend std::size_t hash_value(const ComponentCoords &self)
@@ -242,10 +247,12 @@ namespace TileGrids
         template <int N, typename CellType>
         class Chunk
         {
-            std::array<std::array<CellType, N>, N> cells;
-
           public:
             using ComponentsType = ChunkComponents<N>;
+
+            // The first index is Y, the second is X.
+            using UnderlyingArray = std::array<std::array<CellType, N>, N>;
+            UnderlyingArray cells;
 
             static constexpr vec2<CoordInsideChunk> size = vec2<CoordInsideChunk>(N);
 
@@ -263,6 +270,14 @@ namespace TileGrids
                 std::array<vec2<CoordInsideChunk>, N * N> queue{};
                 std::size_t queue_pos = 0;
             };
+
+            // Moves a single connectivity component from the other chunk into this one.
+            // The component itself remains the source vector (`other_comps.components`) to not mess up the indices,
+            //   and must be erased from there later manually (just erase from the vector, no other adjustments are needed.
+            void MoveComponentFrom(ComponentIndex index, ComponentsType &self_comps, Chunk &&other_chunk, ComponentsType &&other_comps)
+            {
+                // self_comps.components.push_back(other_comps.components[]);
+            }
 
             // Compute the individual connectivity components within a chunk.
             void ComputeConnectedComponents(
@@ -306,7 +321,7 @@ namespace TileGrids
                         this_comp_index = ComponentIndex(out.components.size());
 
                     // A reference to the target set of tiles.
-                    typename ComponentsType::ComponentType &out_comp = [&]() -> auto &
+                    Component &out_comp = [&]() -> auto &
                     {
                         if constexpr (output_full_info)
                         {
@@ -320,7 +335,7 @@ namespace TileGrids
                     }();
 
                     // Only meaningful when `output_full_info == true`.
-                    std::vector<typename ComponentsType::ComponentEdgeInfo> *out_border_edges = nullptr;
+                    std::vector<ComponentEdgeInfo> *out_border_edges = nullptr;
                     if constexpr (output_full_info)
                         out_border_edges = &out.components.back().border_edges;
 
@@ -342,14 +357,14 @@ namespace TileGrids
                                 i == 2 ? pos.x == 0 :
                                          pos.y == 0;
 
-                            const typename ComponentsType::TileEdgeConnectivity conn_mask = tile_connectivity(at(pos), std::as_const(i));
+                            const typename SystemTraits::TileEdgeConnectivity conn_mask = tile_connectivity(at(pos), std::as_const(i));
 
                             // Dump information about a chunk edge, if this is one.
                             if constexpr (output_full_info)
                             {
                                 if (is_chunk_edge)
                                 {
-                                    const auto border_edge_index = ComponentsType::MakeBorderEdgeIndex(i, pos[i % 2 == 0]);
+                                    const auto border_edge_index = MakeBorderEdgeIndex(i, pos[i % 2 == 0]);
 
                                     out.border_edge_info[std::to_underlying(border_edge_index)] = {
                                         .component_index = this_comp_index,
@@ -484,10 +499,13 @@ namespace TileGrids
                 emitted_components.reserve(num_components); // This could be less, but it doesn't hurt.
             }
 
+            // A default argument for `AddInitialComponent()`, see below.
+            static constexpr int default_per_component_capacity = 8;
+
             // Adds a component that needs to be updated. Don't add the same component multiple times.
             // `per_component_capacity` is how many individual components you expect to merge into the final component. Any small value should work.
             // Call this at the beginning before running `Step()`.
-            void AddInitialComponent(vec2<WholeChunkCoord> chunk_coord, ComponentIndex in_chunk_component, std::size_t per_component_capacity = 8)
+            void AddInitialComponent(vec2<WholeChunkCoord> chunk_coord, ComponentIndex in_chunk_component, std::size_t per_component_capacity = default_per_component_capacity)
             {
                 GlobalComponentIndex this_comp_index = GlobalComponentIndex(components.size());
 
@@ -507,13 +525,26 @@ namespace TileGrids
                 known_nodes.try_emplace(node.coords, this_comp_index);
             }
 
+            // Iterates over all coordinates that are yet to be visited.
+            // This is especially useful right after finishing `AddInitialComponent()` calls to iterate over the initial components.
+            // `func` is `(vec2<WholeChunkCoord> chunk_coord, ComponentIndex in_chunk_component) -> bool`. If it returns true, the loop stops and the whole function returns true.
+            bool ForEachCoordToVisit(auto &&func) const
+            {
+                for (const NodeToVisit &node : nodes_to_visit_heap)
+                {
+                    if (func(node.coords.chunk_coord, node.coords.in_chunk_component))
+                        return true;
+                }
+                return false;
+            }
+
             // Call this in a loop until it returns true.
             // `get_chunk` is `(vec2<WholeChunkCoord> chunk_coord) -> const ChunkComponents<N> &`,
             // it should return one chunk component from the
             [[nodiscard]] bool Step(auto &&get_chunk)
             {
                 if (components_set.ElemCount() <= 1)
-                    return true; // Only one component remaining. Zero components shouldn't normally happen.
+                    return true; // Only one component remaining. Zero components shouldn't normally happen, unless you didn't call `AddInitialComponent()` at all.
 
                 if (nodes_to_visit_heap.empty())
                     return true; // No more nodes. This shouldn't normally happen, since we should run out of components (except the last one) first.
