@@ -63,7 +63,12 @@ namespace TileGrids
         // Extract a 4-dir from a border edge index.
         [[nodiscard]] static int GetDirFromBorderEdgeIndex(BorderEdgeIndex index)
         {
-            return int(std::to_underlying(index) & 2);
+            return int(std::to_underlying(index) & 3);
+        }
+        // Extract the coordinate along one of the four chunk edges from a border edge index.
+        [[nodiscard]] static CoordInsideChunk GetCoordFromBorderEdgeIndex(BorderEdgeIndex index)
+        {
+            return CoordInsideChunk(std::to_underlying(index) >> 2);
         }
 
         // Chunk coordinates, plus a component index inside of it,

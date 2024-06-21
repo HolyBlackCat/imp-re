@@ -13,10 +13,12 @@ namespace TileGrids
         chunk_grid_bounds = 1 << 0,
         // Bounds of individual chunks.
         chunk_bounds = 1 << 1,
-        // Connectivity components inside chunks.
+        // Connectivity components inside chunks (an index over each tile).
         chunk_components = 1 << 2,
+        // Which connectivity component each edge belongs to.
+        chunk_border_edges = 1 << 3,
 
-        all = chunk_grid_bounds | chunk_bounds | chunk_components,
+        all = chunk_grid_bounds | chunk_bounds | chunk_components | chunk_border_edges,
     };
     IMP_ENUM_FLAG_OPERATORS(DebugDrawFlags)
 
@@ -56,8 +58,8 @@ namespace TileGrids
             {
                 const auto base_pos = chunk_pos * N;
 
-                int comp_index = 1;
-                if (const auto &comps = grid.GetChunkComponents(chunk_pos))
+                int comp_index = 0;
+                if (auto comps = grid.GetChunkComponents(chunk_pos))
                 {
                     for (const auto &comp : comps->components)
                     {
@@ -68,6 +70,43 @@ namespace TileGrids
                             list.AddText(ImVec2(local_to_screen_coords(center) - fvec2(ImGui::CalcTextSize(text.c_str())) / 2), ImColor(1.f,0.f,0.f,1.f), text.c_str());
                         }
                         comp_index++;
+                    }
+                }
+            }
+        }
+
+        if (bool(flags & DebugDrawFlags::chunk_border_edges))
+        {
+            if (bool(flags & DebugDrawFlags::chunk_components))
+            {
+                for (auto chunk_pos : vector_range(bounds))
+                {
+                    if (auto comps = grid.GetChunkComponents(chunk_pos))
+                    {
+                        const auto base_pos = fvec2(chunk_pos * N);
+
+                        for (int i = 0; i < N * 4; i++)
+                        {
+                            auto index = comps->border_edge_info[i].component_index;
+                            if (index == System::ComponentIndex::invalid)
+                                continue;
+
+                            int dir = System::GetDirFromBorderEdgeIndex(typename System::BorderEdgeIndex(i));
+                            auto offset = System::GetCoordFromBorderEdgeIndex(typename System::BorderEdgeIndex(i));
+
+                            fvec2 pos(base_pos);
+                            if (dir == 0)
+                                pos.x += N;
+                            else if (dir == 1)
+                                pos.y += N;
+
+                            pos[dir % 2 == 0] += offset + 0.5f;
+                            pos -= fvec2::dir4(dir, 0.3f);
+
+                            std::string text = fmt::format("{}", std::to_underlying(index));
+
+                            list.AddText(local_to_screen_coords(pos) - fvec2(ImGui::CalcTextSize(text.c_str())) / 2, ImColor(0.f,1.f,1.f,1.f), text.c_str());
+                        }
                     }
                 }
             }

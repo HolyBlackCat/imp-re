@@ -250,6 +250,7 @@ namespace TileGrids
                 for (auto pos_in_chunk : vector_range(clamp_max(tile_size - base_tile_pos, N)))
                     load_tile(base_tile_pos + vec2<typename System::GlobalTileCoord>(pos_in_chunk), chunk->chunk.at(pos_in_chunk));
 
+                // Setting dirty flags individually is not too efficient. Ideally we'd query the entity dirty lists once, and then populate them.
                 if (dirty)
                     dirty->SetDirtyFlags(ChunkDirtyFlags::geometry_changed, world, grid_handle, chunk_pos);
             }
