@@ -175,8 +175,12 @@ struct TestEntity : Tickable, Renderable
         e.LoadTiles(Program::ExeDir() + "assets/map.json");
         e.body = w.w.CreateBody(b2::OwningHandle, b2::Body::Params{});
 
-        Tiles::System::Chunk<Tiles::chunk_size, Tiles::Cell>::ComputeConnectedComponentsReusedData reused;
-        d.dirty.HandleGeometryUpdate(game, reused);
+        Tiles::System::Chunk<Tiles::chunk_size, Tiles::Cell>::ComputeConnectedComponentsReusedData reused_comps;
+        d.dirty.HandleGeometryUpdate(game, reused_comps);
+
+        Tiles::System::ComputeConnectivityBetweenChunksReusedData reused_conn;
+        Tiles::System::ChunkGridSplitter reused_splitter;
+        d.dirty.HandleEdgesUpdateAndSplit(game, reused_conn, reused_splitter);
     }
 
     void Tick() override

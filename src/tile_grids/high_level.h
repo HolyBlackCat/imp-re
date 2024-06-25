@@ -321,12 +321,12 @@ namespace TileGrids
                     else if (bit == ChunkDirtyFlags::update_edge_2)
                     {
                         // Edges 2 and 3 are handled differently.
-                        dual_chunk = chunk; chunk = data.GetChunk(chunk_coord + vec2<typename System::WholeChunkCoord>(-1,0));
+                        dual_chunk = chunk; chunk = data.GetChunk(chunk_coord -= vec2<typename System::WholeChunkCoord>(1,0));
                         dual_bit = bit; bit = ChunkDirtyFlags::update_edge_0;
                     }
                     else if (bit == ChunkDirtyFlags::update_edge_3)
                     {
-                        dual_chunk = chunk; chunk = data.GetChunk(chunk_coord + vec2<typename System::WholeChunkCoord>(0,-1));
+                        dual_chunk = chunk; chunk = data.GetChunk(chunk_coord -= vec2<typename System::WholeChunkCoord>(0,1));
                         dual_bit = bit; bit = ChunkDirtyFlags::update_edge_1;
                     }
 
@@ -384,7 +384,8 @@ namespace TileGrids
         }
 
         // Handle `geometry_changed` flag.
-        // This doesn't automatically set `update_edge_??` dirty flags, because manual setting can be more precise.
+        // This automatically sets `update_edge_??` dirty flags. Even though we could manually set those flags only if
+        // you modified a tile next to an edge, this is not sufficient because a modification elsewhere in the chunk can mess up the component indices.
         void HandleGeometryUpdate(
             typename HighLevelTraits::WorldRef world,
             // This is `DirtyChunkLists<__>::System::Chunk<__>::ComputeConnectedComponentsReusedData`.
@@ -419,6 +420,9 @@ namespace TileGrids
                         if (chunk_coord.x == grid_data.chunks.bounds().a.x) shrink_side[2] = true;
                         if (chunk_coord.y == grid_data.chunks.bounds().a.y) shrink_side[3] = true;
                     }
+
+                    // Set dirty flags for the edges. See the comment on this whole function.
+                    grid_entry.SetDirtyFlagsLow(ChunkDirtyFlags::update_edge_all, grid_ref, chunk_coord);
                 }
 
                 // Shrink the chunk grid if any of the border chunks were destroyed.
@@ -492,8 +496,8 @@ namespace TileGrids
                 typename HighLevelTraits::GridRef grid_ref = HighLevelTraits::HandleToGrid(world, grid_handle);
                 auto &grid_data = HighLevelTraits::GridToData(grid_ref);
 
-                auto &chunk_coord_list_0 = grid_entry.chunk_coords[BitToIndex(ChunkDirtyFlags::update_edge_0)];
-                auto &chunk_coord_list_1 = grid_entry.chunk_coords[BitToIndex(ChunkDirtyFlags::update_edge_1)];
+                auto &chunk_coord_list_0 = grid_entry.lists[BitToIndex(ChunkDirtyFlags::update_edge_0)];
+                auto &chunk_coord_list_1 = grid_entry.lists[BitToIndex(ChunkDirtyFlags::update_edge_1)];
 
                 for (bool vertical : {false, true})
                 {
@@ -502,8 +506,10 @@ namespace TileGrids
                     for (const auto chunk_coord_a : list)
                     {
                         auto chunk_coord_b = chunk_coord_a + vec2<typename System::WholeChunkCoord>::dir4(vertical);
-                        auto *chunk_a = grid_data.GetChunk(chunk_coord_a).get();
-                        auto *chunk_b = grid_data.GetChunk(chunk_coord_b).get();
+                        auto *chunk_ptr_a = grid_data.GetChunk(chunk_coord_a);
+                        auto *chunk_ptr_b = grid_data.GetChunk(chunk_coord_b);
+                        auto *chunk_a = chunk_ptr_a ? chunk_ptr_a->get() : nullptr;
+                        auto *chunk_b = chunk_ptr_b ? chunk_ptr_b->get() : nullptr;
 
                         System::ComputeConnectivityBetweenChunks(reused, chunk_a ? &chunk_a->components : nullptr, chunk_b ? &chunk_b->components : nullptr, vertical);
 
@@ -514,14 +520,14 @@ namespace TileGrids
                         if (chunk_a && !bool(chunk_a->dirty_flags & ChunkDirtyFlags::try_splitting_to_components_from_here))
                         {
                             chunk_a->dirty_flags |= ChunkDirtyFlags::try_splitting_to_components_from_here;
-                            for (std::size_t i = 0; i < chunk_a->components.size(); i++)
-                                splitter.AddInitialComponent(chunk_coord_a, System::ComponentIndex(i), splitter_per_component_capacity);
+                            for (std::size_t i = 0; i < chunk_a->components.components.size(); i++)
+                                splitter.AddInitialComponent(chunk_coord_a, typename System::ComponentIndex(i), splitter_per_component_capacity);
                         }
                         if (chunk_b && !bool(chunk_b->dirty_flags & ChunkDirtyFlags::try_splitting_to_components_from_here))
                         {
                             chunk_b->dirty_flags |= ChunkDirtyFlags::try_splitting_to_components_from_here;
-                            for (std::size_t i = 0; i < chunk_b->components.size(); i++)
-                                splitter.AddInitialComponent(chunk_coord_b, System::ComponentIndex(i), splitter_per_component_capacity);
+                            for (std::size_t i = 0; i < chunk_b->components.components.size(); i++)
+                                splitter.AddInitialComponent(chunk_coord_b, typename System::ComponentIndex(i), splitter_per_component_capacity);
                         }
                     }
                 }
@@ -533,8 +539,9 @@ namespace TileGrids
                 splitter.ForEachCoordToVisit([&](vec2<typename System::WholeChunkCoord> coord, System::ComponentIndex index)
                 {
                     (void)index;
-                    if (auto chunk = grid_data.GetChunk(coord).get())
-                        chunk->dirty_flags &= ~ChunkDirtyFlags::try_splitting_to_components_from_here;
+                    if (auto chunk = grid_data.GetChunk(coord); chunk && *chunk)
+                        (*chunk)->dirty_flags &= ~ChunkDirtyFlags::try_splitting_to_components_from_here;
+                    return false;
                 });
 
                 // while (!splitter.Step()) {}

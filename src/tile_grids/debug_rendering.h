@@ -14,11 +14,12 @@ namespace TileGrids
         // Bounds of individual chunks.
         chunk_bounds = 1 << 1,
         // Connectivity components inside chunks (an index over each tile).
-        chunk_components = 1 << 2,
+        tile_components = 1 << 2,
         // Which connectivity component each edge belongs to.
         chunk_border_edges = 1 << 3,
 
-        all = chunk_grid_bounds | chunk_bounds | chunk_components | chunk_border_edges,
+
+        all = chunk_grid_bounds | chunk_bounds | tile_components | chunk_border_edges,
     };
     IMP_ENUM_FLAG_OPERATORS(DebugDrawFlags)
 
@@ -52,7 +53,7 @@ namespace TileGrids
             }
         }
 
-        if (bool(flags & DebugDrawFlags::chunk_components))
+        if (bool(flags & DebugDrawFlags::tile_components))
         {
             for (auto chunk_pos : vector_range(bounds))
             {
@@ -77,35 +78,84 @@ namespace TileGrids
 
         if (bool(flags & DebugDrawFlags::chunk_border_edges))
         {
-            if (bool(flags & DebugDrawFlags::chunk_components))
+            for (auto chunk_pos : vector_range(bounds))
             {
-                for (auto chunk_pos : vector_range(bounds))
+                if (auto comps = grid.GetChunkComponents(chunk_pos))
                 {
-                    if (auto comps = grid.GetChunkComponents(chunk_pos))
+                    const auto base_pos = fvec2(chunk_pos * N);
+
+                    for (int i = 0; i < N * 4; i++)
                     {
-                        const auto base_pos = fvec2(chunk_pos * N);
+                        auto index = comps->border_edge_info[i].component_index;
+                        if (index == System::ComponentIndex::invalid)
+                            continue;
 
-                        for (int i = 0; i < N * 4; i++)
+                        int dir = System::GetDirFromBorderEdgeIndex(typename System::BorderEdgeIndex(i));
+                        auto offset = System::GetCoordFromBorderEdgeIndex(typename System::BorderEdgeIndex(i));
+
+                        fvec2 pos(base_pos);
+                        if (dir == 0)
+                            pos.x += N;
+                        else if (dir == 1)
+                            pos.y += N;
+
+                        pos[dir % 2 == 0] += offset + 0.5f;
+                        pos -= fvec2::dir4(dir, 0.3f);
+
+                        std::string text = fmt::format("{}", std::to_underlying(index));
+
+                        list.AddText(local_to_screen_coords(pos) - fvec2(ImGui::CalcTextSize(text.c_str())) / 2, ImColor(0.f,1.f,1.f,1.f), text.c_str());
+                    }
+                }
+            }
+        }
+
+        if (bool(flags & DebugDrawFlags::chunk_border_edges))
+        {
+            phmap::flat_hash_map<typename System::ComponentCoords, fvec2> component_screen_coords;
+
+            auto GetComponentScreenCoords = [&](typename System::ComponentCoords coords) -> fvec2
+            {
+                auto [iter, is_new] = component_screen_coords.try_emplace(coords);
+                if (is_new)
+                {
+                    const auto &tiles = grid.GetChunkComponents(coords.chunk_coord)->components.at(std::to_underlying(coords.in_chunk_component)).component.GetTiles();
+                    fvec2 pos;
+                    for (auto coord : tiles)
+                        pos += fvec2(coord);
+                    pos /= tiles.size();
+                    pos += coords.chunk_coord * N;
+                    pos += 0.5f;
+                    iter->second = round(local_to_screen_coords(pos));
+                }
+                return iter->second;
+            };
+
+            for (auto chunk_pos : vector_range(bounds))
+            {
+                if (auto comps = grid.GetChunkComponents(chunk_pos))
+                {
+                    for (std::size_t i = 0; i < comps->components.size(); i++)
+                    {
+                        // The component itself.
+                        fvec2 pos = GetComponentScreenCoords({.chunk_coord = chunk_pos, .in_chunk_component = typename System::ComponentIndex(i)});
+                        float radius = ImGui::GetTextLineHeight();
+                        list.AddCircle(pos, radius, ImColor(1.f,1.f,1.f,1.f));
+                        std::string text = FMT("{}", i);
+                        list.AddText(pos - fvec2(ImGui::CalcTextSize(text.c_str())) / 2, ImColor(1.f,1.f,1.f,1.f), text.c_str());
+
+                        for (int dir = 0; dir < 4; dir++)
                         {
-                            auto index = comps->border_edge_info[i].component_index;
-                            if (index == System::ComponentIndex::invalid)
-                                continue;
+                            if (comps->neighbor_components[dir].empty())
+                                continue; // This means the components weren't computed yet? Shouldn't normally happen if you handle all the dirty flags.
 
-                            int dir = System::GetDirFromBorderEdgeIndex(typename System::BorderEdgeIndex(i));
-                            auto offset = System::GetCoordFromBorderEdgeIndex(typename System::BorderEdgeIndex(i));
-
-                            fvec2 pos(base_pos);
-                            if (dir == 0)
-                                pos.x += N;
-                            else if (dir == 1)
-                                pos.y += N;
-
-                            pos[dir % 2 == 0] += offset + 0.5f;
-                            pos -= fvec2::dir4(dir, 0.3f);
-
-                            std::string text = fmt::format("{}", std::to_underlying(index));
-
-                            list.AddText(local_to_screen_coords(pos) - fvec2(ImGui::CalcTextSize(text.c_str())) / 2, ImColor(0.f,1.f,1.f,1.f), text.c_str());
+                            for (typename System::ComponentIndex other_comp : comps->neighbor_components[dir][i])
+                            {
+                                fvec2 other_pos = GetComponentScreenCoords({.chunk_coord = chunk_pos + vec2<typename System::WholeChunkCoord>::dir4(dir), .in_chunk_component = other_comp});
+                                // Draw the line from the source circle to the middle point between source and the target.
+                                // This will hopefully let us see any lack of symmetry, which would be a bug.
+                                list.AddLine(pos + (other_pos - pos).norm() * radius - 0.5f, pos + (other_pos - pos) / 2 - 0.5f, ImColor(1.f,1.f,1.f,1.f));
+                            }
                         }
                     }
                 }

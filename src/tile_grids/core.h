@@ -189,7 +189,7 @@ namespace TileGrids
         // Data that can be reused between calls of `ComputeConnectivityBetweenChunks()`.
         struct ComputeConnectivityBetweenChunksReusedData
         {
-            phmap::flat_hash_set<std::array<ComponentIndex, 2>> visited_pairs;
+            phmap::flat_hash_set<std::array<ComponentIndex, 2>, Hash::Hasher<>> visited_pairs;
         };
 
         // Updates `.neighbor_components` in the two `ChunkComponents` objects to reflect the connectivity between the two.
@@ -208,8 +208,9 @@ namespace TileGrids
             int dir_in_a = int(vertical);
             int dir_in_b = dir_in_a + 2;
 
-            std::vector<ComponentIndex> *neighbors_a = nullptr;
-            std::vector<ComponentIndex> *neighbors_b = nullptr;
+            // Here the first index is the component index. The second index is arbirary, it's just a list of components.
+            std::vector<std::vector<ComponentIndex>> *neighbors_a = nullptr;
+            std::vector<std::vector<ComponentIndex>> *neighbors_b = nullptr;
 
             if (comps_a)
             {
@@ -220,7 +221,7 @@ namespace TileGrids
 
             if (comps_b)
             {
-                neighbors_b = &comps_a->neighbor_components[dir_in_b];
+                neighbors_b = &comps_b->neighbor_components[dir_in_b];
                 neighbors_b->clear();
                 neighbors_b->resize(comps_b->components.size());
             }
@@ -239,8 +240,8 @@ namespace TileGrids
 
                     if (reused.visited_pairs.insert({edge_a.component_index, edge_b.component_index}).second)
                     {
-                        neighbors_a->push_back(edge_b.component_index);
-                        neighbors_b->push_back(edge_a.component_index);
+                        (*neighbors_a)[std::to_underlying(edge_a.component_index)].push_back(edge_b.component_index);
+                        (*neighbors_b)[std::to_underlying(edge_b.component_index)].push_back(edge_a.component_index);
                     }
                 }
             }
