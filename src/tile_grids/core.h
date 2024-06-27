@@ -196,7 +196,6 @@ namespace TileGrids
         // `comps_a` and `comps_b` must be adjacent, and in the correct order (`comps_a` to the left or above the `comps_b`, with `vertical` set appropriately).
         // `reused` can be reused between calls for performance.
         // If both `comp_a` and `comp_b` are null, does nothing. If only one of them is null, zeroes the edge connectivity in the other chunk.
-        //
         template <int N>
         static void ComputeConnectivityBetweenChunks(
             ComputeConnectivityBetweenChunksReusedData &reused, ChunkComponents<N> *comps_a, ChunkComponents<N> *comps_b, bool vertical

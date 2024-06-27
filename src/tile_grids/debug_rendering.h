@@ -84,6 +84,8 @@ namespace TileGrids
                 {
                     const auto base_pos = fvec2(chunk_pos * N);
 
+                    std::vector<phmap::flat_hash_set<typename System::BorderEdgeIndex>> edges_per_component(comps->components.size());
+
                     for (int i = 0; i < N * 4; i++)
                     {
                         auto index = comps->border_edge_info[i].component_index;
@@ -105,6 +107,24 @@ namespace TileGrids
                         std::string text = fmt::format("{}", std::to_underlying(index));
 
                         list.AddText(local_to_screen_coords(pos) - fvec2(ImGui::CalcTextSize(text.c_str())) / 2, ImColor(0.f,1.f,1.f,1.f), text.c_str());
+
+                        { // Assert consistency of global and per-component edge info.
+                            const auto &comp = comps->components[std::to_underlying(index)];
+                            ASSERT(!comp.border_edges.empty());
+                            if (!comp.border_edges.empty())
+                            {
+                                auto &edges = edges_per_component.at(std::to_underlying(index));
+                                if (edges.empty())
+                                {
+                                    for (const auto &edge : comp.border_edges)
+                                    {
+                                        [[maybe_unused]] bool ok = edges.insert(edge.edge_index).second;
+                                        ASSERT(ok, "Duplicate edge in per-component info.");
+                                    }
+                                }
+                                ASSERT(edges.contains(typename System::BorderEdgeIndex(i)), "Consistency check failed for per-chunk vs per-chunk-component edge lists.");
+                            }
+                        }
                     }
                 }
             }
