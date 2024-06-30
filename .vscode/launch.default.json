@@ -18,6 +18,8 @@
                 "command script import ${workspaceRoot}/build/deps/parallel-hashmap-1.3.12/source/phmap_lldb.py",
             ],
             "env": [/*<ENV_JSON_ARR>*/],
+            "enableAutoVariableSummaries": true,
+            "enableSyntheticChildDebugging": true,
             // "disableASLR": false, // For debugging in docker.
         },
         {
