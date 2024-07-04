@@ -50,11 +50,9 @@ namespace TileGrids
         // Must call `init(...)` once with a `GridRef` parameter of a new grid that will be filled with the chunks.
         static void SplitGrid(WorldRef world, GridRef grid, auto init)
         {
-            auto &old_data = BaseTraits::GridToData(grid);
-            typename BaseTraits::GridEntity &new_grid = world.template Create<typename BaseTraits::GridEntity>();
-            auto &new_data = BaseTraits::GridToData(new_grid);
-            init(new_data);
-            FinishGridInitAfterSplit(world, grid, new_grid);
+            typename BaseTraits::GridEntity &new_grid = world.template create<typename BaseTraits::GridEntity>();
+            init(new_grid);
+            BaseTraits::FinishGridInitAfterSplit(world, grid, new_grid);
         }
     };
 }

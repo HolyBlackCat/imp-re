@@ -304,6 +304,7 @@ namespace TileGrids
                     flags &= ~bit;
 
                     auto chunk = common_chunk;
+                    auto chunk_coord_copy = chunk_coord;
 
                     // If this is an edge update that affects the other chunk, find that other chunk and bit.
                     decltype(chunk) dual_chunk = nullptr;
@@ -321,12 +322,12 @@ namespace TileGrids
                     else if (bit == ChunkDirtyFlags::update_edge_2)
                     {
                         // Edges 2 and 3 are handled differently.
-                        dual_chunk = chunk; chunk = data.GetChunk(chunk_coord -= vec2<typename System::WholeChunkCoord>(1,0));
+                        dual_chunk = chunk; chunk = data.GetChunk(chunk_coord_copy -= vec2<typename System::WholeChunkCoord>(1,0));
                         dual_bit = bit; bit = ChunkDirtyFlags::update_edge_0;
                     }
                     else if (bit == ChunkDirtyFlags::update_edge_3)
                     {
-                        dual_chunk = chunk; chunk = data.GetChunk(chunk_coord -= vec2<typename System::WholeChunkCoord>(0,1));
+                        dual_chunk = chunk; chunk = data.GetChunk(chunk_coord_copy -= vec2<typename System::WholeChunkCoord>(0,1));
                         dual_bit = bit; bit = ChunkDirtyFlags::update_edge_1;
                     }
 
@@ -340,7 +341,7 @@ namespace TileGrids
                     // Only write to the list if all existing chunks don't have the bit set.
                     if ((!chunk_valid || !bool((*chunk)->dirty_flags & bit)) && (!dual_chunk_valid || !bool((*dual_chunk)->dirty_flags & dual_bit)))
                     {
-                        lists[DirtyBitToListIndex(bit)].push_back(chunk_coord);
+                        lists[DirtyBitToListIndex(bit)].push_back(chunk_coord_copy);
                     }
 
                     // Regardless, set the bits.
@@ -383,6 +384,21 @@ namespace TileGrids
             grid_map.erase(handle);
         }
 
+        struct ReusedComponentMapEntry
+        {
+            std::vector<typename System::ComponentIndex> comp_indices;
+        };
+        using ReusedComponentMap = phmap::flat_hash_map<vec2<typename System::WholeChunkCoord>, ReusedComponentMapEntry>;
+
+        template <int N, typename CellType>
+        struct ReusedUpdateData
+        {
+            typename System::template Chunk<N, CellType>::ComputeConnectedComponentsReusedData comp_indices;
+            typename System::ComputeConnectivityBetweenChunksReusedData conn;
+            typename System::ChunkGridSplitter splitter;
+            ReusedComponentMap comp_map;
+        };
+
         // Handle `geometry_changed` flag.
         // This automatically sets `update_edge_??` dirty flags. Even though we could manually set those flags only if
         // you modified a tile next to an edge, this is not sufficient because a modification elsewhere in the chunk can mess up the component indices.
@@ -420,10 +436,12 @@ namespace TileGrids
                         if (chunk_coord.x == grid_data.chunks.bounds().a.x) shrink_side[2] = true;
                         if (chunk_coord.y == grid_data.chunks.bounds().a.y) shrink_side[3] = true;
                     }
-
-                    // Set dirty flags for the edges. See the comment on this whole function.
-                    grid_entry.SetDirtyFlagsLow(ChunkDirtyFlags::update_edge_all, grid_ref, chunk_coord);
                 }
+
+                // Set dirty flags for the edges. See the comment on this whole function.
+                // We need a separate loop to properly ignore chunks destroyed during the previous loop.
+                for (auto chunk_coord : chunk_coord_list)
+                    grid_entry.SetDirtyFlagsLow(ChunkDirtyFlags::update_edge_all, grid_ref, chunk_coord);
 
                 // Shrink the chunk grid if any of the border chunks were destroyed.
                 bool shrinked_any = false;
@@ -486,7 +504,10 @@ namespace TileGrids
             typename HighLevelTraits::WorldRef world,
             typename System::ComputeConnectivityBetweenChunksReusedData &reused,
             typename System::ChunkGridSplitter &splitter,
-            std::size_t splitter_per_component_capacity = System::ChunkGridSplitter::default_per_component_capacity
+            ReusedComponentMap &reused_comp_map,
+            std::size_t splitter_per_component_capacity = System::ChunkGridSplitter::default_per_component_capacity,
+            // We expect at most this many components per chunk when splitting.
+            std::size_t expected_num_comps_per_chunk = 8
         )
         {
             for (auto &[grid_handle, grid_entry] : grid_map)
@@ -544,38 +565,83 @@ namespace TileGrids
                     return false;
                 });
 
-                // while (!splitter.Step()) {}
+                while (!splitter.Step(
+                    [&](vec2<typename System::WholeChunkCoord> chunk_coord) -> const auto &
+                    {
+                        return (*grid_data.GetChunk(chunk_coord))->components;
+                    }
+                ))
+                {}
 
-                // std::size_t num_comps = splitter.NumComponentsToEmit();
+                reused_comp_map.clear();
 
-                // for (std::size_t i = 0; i < num_comps; i++)
-                // {
-                //     HighLevelTraits::SplitGrid(world, grid_ref, [&](typename System::GridRef new_grid_ref)
-                //     {
-                //         const auto &global_comp = splitter.GetComponentToEmit(i);
-                //         auto &new_grid_data = HighLevelTraits::GridToData(grid_ref);
+                std::size_t num_comps = splitter.NumComponentsToEmit();
 
-                //         new_grid_data.chunks.resize(global_comp.bounds);
+                // For each splitted entity...
+                for (std::size_t i = 0; i < num_comps; i++)
+                {
+                    auto comp_to_emit = splitter.GetComponentToEmit(i);
 
-                //         for (const typename System::ComponentCoords &comp : global_comp.contents)
-                //         {
-                //             auto *source_chunk = grid_data.chunks.at(comp.chunk_coord).get();
-                //             ASSERT(source_chunk, "Source chunk doesn't exist?");
+                    // Fill the mapping from chunk coordinates to a list of removed component indices, common for all detached components.
+                    reused_comp_map.reserve(comp_to_emit.contents.size());
+                    for (auto coords : comp_to_emit.contents)
+                    {
+                        auto [iter, is_new] = reused_comp_map.try_emplace(coords.chunk_coord);
+                        if (is_new)
+                            iter->second.comp_indices.reserve(expected_num_comps_per_chunk);
+                        iter->second.comp_indices.push_back(coords.in_chunk_component);
+                    }
 
-                //             auto &new_chunk = new_grid_data.chunks.at(comp.chunk_coord);
+                    HighLevelTraits::SplitGrid(world, grid_ref, [&](typename HighLevelTraits::GridRef new_grid_ref)
+                    {
+                        auto &new_grid_data = HighLevelTraits::GridToData(new_grid_ref);
 
-                //             // Allocate the chunk if not allocated yet.
-                //             if (!new_chunk)
-                //                 new_chunk = std::make_unique<std::remove_reference_t<decltype(new_chunk)>::element_type>();
+                        new_grid_data.chunks.resize(comp_to_emit.bounds);
 
-                //             // source_chunk. comp.in_chunk_component
+                        for (auto coords : comp_to_emit.contents)
+                        {
+                            const auto &old_chunk = grid_data.chunks.at(coords.chunk_coord);
+                            auto &new_chunk = new_grid_data.chunks.at(coords.chunk_coord);
+                            if (!new_chunk)
+                                new_chunk = std::make_unique<std::remove_cvref_t<decltype(*new_chunk)>>();
 
-                //             // new_chunk->chunk.at(comp.coords)
-                //         }
-                //     });
-                // }
+                            new_chunk->chunk.MoveComponentFrom(
+                                coords.in_chunk_component,
+                                new_chunk->components,
+                                old_chunk->chunk,
+                                old_chunk->components
+                            );
+                        }
+                    });
+                }
+
+                // Erase the original components that were split.
+                for (auto [chunk_coords, chunk_reused] : reused_comp_map)
+                {
+                    const auto &old_chunk = grid_data.chunks.at(chunk_coords);
+                    auto &old_comps = old_chunk->components;
+
+                    std::sort(chunk_reused.comp_indices.begin(), chunk_reused.comp_indices.end());
+
+                    std::size_t i = 0;
+                    std::size_t j = 0;
+                    for (auto it = old_comps.components.begin(); it != old_comps.components.end();)
+                    {
+                        auto this_comp_index = typename System::ComponentIndex(i++);
+                        if (j < chunk_reused.comp_indices.size() && chunk_reused.comp_indices[j] == this_comp_index)
+                        {
+                            j++;
+                            ++it;
+                        }
+                        else
+                        {
+                            it = old_comps.components.erase(it);
+                        }
+                    }
+                }
             }
 
+            reused_comp_map.clear(); // Clean this up just in case, to not waste memory on nested vectors.
         }
     };
 }

@@ -163,26 +163,36 @@ namespace TileGrids
 
             // Removes a component, by swapping an index with the last component and popping that.
             // NOTE: This invalidates `neighbor_components`.
-            void RemoveComponent(ComponentIndex i)
+            void RemoveComponent(ComponentIndex comp_index)
             {
-                ASSERT(i >= ComponentIndex{} && i < ComponentIndex(components.size()), "Component index is out of range.");
+                ASSERT(comp_index >= ComponentIndex{} && comp_index < ComponentIndex(components.size()), "Component index is out of range.");
 
                 // Clean up edges.
-                ComponentEntry &comp = components[std::to_underlying(i)];
+                ComponentEntry &comp = components[std::to_underlying(comp_index)];
                 for (const ComponentEdgeInfo &edge : comp.border_edges)
                     border_edge_info[std::to_underlying(edge.edge_index)] = {};
 
                 // Do we need to swap with the last component?
-                if (std::to_underlying(i) != components.size() - 1)
+                if (std::to_underlying(comp_index) != components.size() - 1)
                 {
                     // Re-number the edges of the last component.
                     for (const ComponentEdgeInfo &edge : components.back().border_edges)
-                        border_edge_info[std::to_underlying(edge.edge_index)].component_index = i;
+                        border_edge_info[std::to_underlying(edge.edge_index)].component_index = comp_index;
 
                     std::swap(comp, components.back());
                 }
 
                 components.pop_back();
+            }
+
+            // Counts how many connections the component `i` has (to components in other chunks).
+            [[nodiscard]] std::size_t GetNumConnections(ComponentIndex comp_index) const
+            {
+                // We could cache this somehow for a better performance?
+                std::size_t ret = 0;
+                for (int i = 0; i < 4; i++)
+                    ret += neighbor_components[i].at(std::to_underlying(comp_index)).size();
+                return ret;
             }
         };
 
@@ -279,9 +289,29 @@ namespace TileGrids
             // Moves a single connectivity component from the other chunk into this one.
             // The component itself remains the source vector (`other_comps.components`) to not mess up the indices,
             //   and must be erased from there later manually (just erase from the vector, no other adjustments are needed.
-            void MoveComponentFrom(ComponentIndex index, ComponentsType &self_comps, Chunk &&other_chunk, ComponentsType &&other_comps)
+            void MoveComponentFrom(ComponentIndex index, ComponentsType &self_comps, Chunk &other_chunk, ComponentsType &other_comps)
             {
-                // self_comps.components.push_back(other_comps.components[]);
+                ComponentEntry &other_comp = other_comps.components[std::to_underlying(index)];
+                ComponentEntry &new_comp = self_comps.components.emplace_back(std::move(other_comp));
+                other_comp = {};
+
+                // Update border edge info.
+                for (const ComponentEdgeInfo &edge : new_comp.border_edges)
+                {
+                    BorderEdgeInfo &self_edge = self_comps.border_edge_info[std::to_underlying(edge.edge_index)];
+                    BorderEdgeInfo &other_edge = other_comps.border_edge_info[std::to_underlying(edge.edge_index)];
+                    self_edge = std::move(other_edge);
+                    other_edge = {};
+                }
+
+                // Move the cells.
+                for (auto pos : new_comp.component.GetTiles())
+                {
+                    CellType &other_cell = other_chunk.at(pos);
+                    CellType &self_cell = at(pos);
+                    self_cell = std::move(other_cell);
+                    other_cell = {};
+                }
             }
 
             // Compute the individual connectivity components within a chunk.
@@ -528,6 +558,10 @@ namespace TileGrids
                 node.global_component = this_comp_index;
 
                 known_nodes.try_emplace(node.coords, this_comp_index);
+
+                if (components_set.RemainingCapacity() == 0)
+                    components_set.Reserve(std::max((unsigned int)1, components_set.Capacity() * 2));
+                components_set.Insert(std::to_underlying(this_comp_index));
             }
 
             // Iterates over all coordinates that are yet to be visited.
@@ -544,8 +578,8 @@ namespace TileGrids
             }
 
             // Call this in a loop until it returns true.
-            // `get_chunk` is `(vec2<WholeChunkCoord> chunk_coord) -> const ChunkComponents<N> &`,
-            // it should return one chunk component from the
+            // `get_chunk` is `(vec2<WholeChunkCoord> chunk_coord) -> const ChunkComponents<N> &`.
+            // It should never be called with invalid chunk coords, and can crash in that case.
             [[nodiscard]] bool Step(auto &&get_chunk)
             {
                 if (components_set.ElemCount() <= 1)
@@ -561,7 +595,19 @@ namespace TileGrids
                     auto orig_chunk_a = components[std::to_underlying(a.global_component)].origin_chunk_coord;
                     auto orig_chunk_b = components[std::to_underlying(b.global_component)].origin_chunk_coord;
 
-                    return (a.coords.chunk_coord - orig_chunk_a).len_sq() > (b.coords.chunk_coord - orig_chunk_b).len_sq();
+                    // Compare distnaces to the original chunk.
+                    auto dist_a = (a.coords.chunk_coord - orig_chunk_a).len_sq();
+                    auto dist_b = (b.coords.chunk_coord - orig_chunk_b).len_sq();
+                    if (dist_a != dist_b)
+                        return dist_a > dist_b;
+
+                    // Tie-break by the number of connections (smaller is better).
+                    // This is especially important when processing the entire grid when it's initially loaded, since in there
+                    // all distances are likely to be 0.
+                    std::size_t con_a = get_chunk(a.coords.chunk_coord).GetNumConnections(a.coords.in_chunk_component);
+                    std::size_t con_b = get_chunk(b.coords.chunk_coord).GetNumConnections(b.coords.in_chunk_component);
+
+                    return con_a > con_b;
                 };
 
                 const NodeToVisit this_node = nodes_to_visit_heap.front();
@@ -654,37 +700,6 @@ namespace TileGrids
                     .bounds = info.chunk_coord_bounds,
                     .contents = info.contents,
                 };
-            }
-
-            // Removes all emitted components from their respective chunks.
-            // After this, you can still read `GetComponentToEmit()`, but the component indices will be invalidated (can only use the chunk coords).
-            // `get_chunk` is `(vec2<WholeChunkCoord> chunk_coord) -> ChunkComponents<N> &`, same as in `Step()` but must return a non-const reference.
-            // `grid_capacity` is how many chunks (not components) we expect to process.
-            void DestroyEmittedComponents(auto &&get_chunk, std::size_t grid_capacity = 16)
-            {
-                // We need to delete the components in the reverse order in each chunk, to not mess up our own indices in the process.
-                // This looks a bit dumb...
-
-                // Map each chunk coordinate to the list of deleted components.
-                phmap::flat_hash_map<vec2<WholeChunkCoord>, std::vector<ComponentIndex>> grid;
-                grid.reserve(grid_capacity);
-
-                for (auto e : emitted_components)
-                {
-                    for (const ComponentCoords &coords : components[std::to_underlying(e)].contents)
-                        grid[coords.chunk_coord].push_back(coords.in_chunk_component);
-                }
-
-                // Delete the components.
-                for (auto &[coord, indices] : grid)
-                {
-                    auto &comps = get_chunk(coord);
-
-                    // Sort the indices in descending order, to not invalidate anything we're about to delete.
-                    std::sort(indices.begin(), indices.end(), std::greater{});
-                    for (ComponentIndex index : indices)
-                        comps.RemoveComponent(index);
-                }
             }
         };
     };

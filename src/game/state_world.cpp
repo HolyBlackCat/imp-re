@@ -90,11 +90,15 @@ namespace Tiles
     };
     using HighLevelTraits = TileGrids::EntityHighLevelTraits<BasicHighLevelTraits>;
 
+    using DirtyLists = TileGrids::DirtyChunkLists<System, HighLevelTraits>;
+
     struct DirtyListsEntity
     {
         IMP_STANDALONE_COMPONENT(Game)
 
-        TileGrids::DirtyChunkLists<System, HighLevelTraits> dirty;
+        DirtyLists dirty;
+
+        DirtyLists::ReusedUpdateData<chunk_size, Cell> reused_update_data;
     };
 
     void GridEntity::LoadTiles(Stream::ReadOnlyData data)
@@ -175,12 +179,9 @@ struct TestEntity : Tickable, Renderable
         e.LoadTiles(Program::ExeDir() + "assets/map.json");
         e.body = w.w.CreateBody(b2::OwningHandle, b2::Body::Params{});
 
-        Tiles::System::Chunk<Tiles::chunk_size, Tiles::Cell>::ComputeConnectedComponentsReusedData reused_comps;
-        d.dirty.HandleGeometryUpdate(game, reused_comps);
+        d.dirty.HandleGeometryUpdate(game, d.reused_update_data.comp_indices);
 
-        Tiles::System::ComputeConnectivityBetweenChunksReusedData reused_conn;
-        Tiles::System::ChunkGridSplitter reused_splitter;
-        d.dirty.HandleEdgesUpdateAndSplit(game, reused_conn, reused_splitter);
+        d.dirty.HandleEdgesUpdateAndSplit(game, d.reused_update_data.conn, d.reused_update_data.splitter, d.reused_update_data.comp_map);
     }
 
     void Tick() override
