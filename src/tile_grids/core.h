@@ -163,14 +163,23 @@ namespace TileGrids
 
             // Removes a component, by swapping an index with the last component and popping that.
             // NOTE: This invalidates `neighbor_components`.
-            void RemoveComponent(ComponentIndex comp_index)
+            // If `assume_already_empty == true`, the component is expected to be empty (e.g. after `MoveComponentFrom()`),
+            // and we trigger an assertion if it's not.
+            void SwapWithLastAndRemoveComponent(ComponentIndex comp_index, bool assume_already_empty = false)
             {
                 ASSERT(comp_index >= ComponentIndex{} && comp_index < ComponentIndex(components.size()), "Component index is out of range.");
 
                 // Clean up edges.
                 ComponentEntry &comp = components[std::to_underlying(comp_index)];
-                for (const ComponentEdgeInfo &edge : comp.border_edges)
-                    border_edge_info[std::to_underlying(edge.edge_index)] = {};
+                if (assume_already_empty)
+                {
+                    ASSERT(comp.border_edges.empty(), "The component was assumed to be empty, but it's not.");
+                }
+                else
+                {
+                    for (const ComponentEdgeInfo &edge : comp.border_edges)
+                        border_edge_info[std::to_underlying(edge.edge_index)] = {};
+                }
 
                 // Do we need to swap with the last component?
                 if (std::to_underlying(comp_index) != components.size() - 1)
@@ -288,10 +297,12 @@ namespace TileGrids
 
             // Moves a single connectivity component from the other chunk into this one.
             // The component itself remains the source vector (`other_comps.components`) to not mess up the indices,
-            //   and must be erased from there later manually (just erase from the vector, no other adjustments are needed.
+            //   and must be erased from there later manually.
+            // You can erase using `SwapWithLastAndRemoveComponent(index, true)`. Or manually, but then you must update `border_edge_info` mapping.
             void MoveComponentFrom(ComponentIndex index, ComponentsType &self_comps, Chunk &other_chunk, ComponentsType &other_comps)
             {
                 ComponentEntry &other_comp = other_comps.components[std::to_underlying(index)];
+                ComponentIndex new_comp_index = ComponentIndex(self_comps.components.size());
                 ComponentEntry &new_comp = self_comps.components.emplace_back(std::move(other_comp));
                 other_comp = {};
 
@@ -301,6 +312,7 @@ namespace TileGrids
                     BorderEdgeInfo &self_edge = self_comps.border_edge_info[std::to_underlying(edge.edge_index)];
                     BorderEdgeInfo &other_edge = other_comps.border_edge_info[std::to_underlying(edge.edge_index)];
                     self_edge = std::move(other_edge);
+                    self_edge.component_index = new_comp_index; // Override the component index in the copied edge!
                     other_edge = {};
                 }
 
@@ -327,7 +339,7 @@ namespace TileGrids
                 // `() -> void`. This is called after finishing writing each component to `out`.
                 // If `out` is a `Component` you must move it elsewhere in this callback, else it will get overwritten.
                 // If `out` is a `ComponentsType`, you don't have to do anything, as it can store multiple components.
-                //   But you CAN `.RemoveComponent()` the newly added component, e.g. if you just separated it to a new entity.
+                //   But you CAN `.SwapWithLastAndRemoveComponent()` the newly added component, e.g. if you just separated it to a new entity.
                 auto &&component_done,
                 // `(const CellType &cell) -> bool`. Returns true if the tile exists, false if it's empty and can be ignored.
                 auto &&tile_exists,

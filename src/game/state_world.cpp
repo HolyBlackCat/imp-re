@@ -13,6 +13,32 @@
 #include <box2cpp/box2c.hpp>
 #include <box2cpp/debug_imgui_renderer.hpp>
 
+struct PhysicsWorld : Tickable
+{
+    IMP_STANDALONE_COMPONENT(Game)
+
+    b2::World w;
+
+    b2::DebugImguiRenderer renderer;
+
+    PhysicsWorld()
+    {
+        w = adjust(b2::World::Params{}, .gravity.y *= -1);
+        renderer.camera_pos.x = 12;
+        renderer.camera_pos.y = 8;
+        renderer.camera_scale = 28;
+    }
+
+    void Tick() override
+    {
+        w.Step(1/60.f, 4);
+
+        renderer.DrawShapes(w);
+        renderer.DrawModeToggles();
+        renderer.MouseDrag(w);
+    }
+};
+
 namespace Tiles
 {
     using System = TileGrids::System<TileGrids::DefaultSystemTraits>;
@@ -54,7 +80,8 @@ namespace Tiles
         {
             (void)world;
             (void)from;
-            (void)to;
+
+            to.body = world.get<PhysicsWorld>()->w.CreateBody(b2::OwningHandle, b2::Body::Params{});
         }
 
         // For `tile_grids/high_level.h`:
@@ -119,36 +146,6 @@ namespace Tiles
     }
 }
 
-struct PhysicsWorld : Tickable
-{
-    b2::World w;
-
-    b2::DebugImguiRenderer renderer;
-
-    PhysicsWorld()
-    {
-        w = adjust(b2::World::Params{}, .gravity.y *= -1);
-        renderer.camera_pos.x = 12;
-        renderer.camera_pos.y = 8;
-        renderer.camera_scale = 28;
-    }
-
-    void Tick() override
-    {
-        w.Step(1/60.f, 4);
-
-        renderer.DrawShapes(w);
-        renderer.DrawModeToggles();
-        renderer.MouseDrag(w);
-
-        for (const auto &e : game.get<Game::Category<Ent::OrderedList, Tiles::GridEntity>>())
-        {
-            const auto &grid = e.get<Tiles::GridEntity>();
-            TileGrids::ImguiDebugDraw(grid.grid, [&](fvec2 pos){return fvec2(renderer.Box2dToImguiPoint(grid.body.GetWorldPoint(pos)));}, *ImGui::GetBackgroundDrawList(), TileGrids::DebugDrawFlags::all);
-        }
-    }
-};
-
 struct MouseCamera : Camera, Tickable
 {
     void Tick() override
@@ -160,10 +157,6 @@ struct MouseCamera : Camera, Tickable
 struct TestEntity : Tickable, Renderable
 {
     IMP_STANDALONE_COMPONENT(Game)
-
-
-
-
 
     struct Cell
     {
@@ -179,14 +172,18 @@ struct TestEntity : Tickable, Renderable
         e.LoadTiles(Program::ExeDir() + "assets/map.json");
         e.body = w.w.CreateBody(b2::OwningHandle, b2::Body::Params{});
 
-        d.dirty.HandleGeometryUpdate(game, d.reused_update_data.comp_indices);
-
-        d.dirty.HandleEdgesUpdateAndSplit(game, d.reused_update_data.conn, d.reused_update_data.splitter, d.reused_update_data.comp_map);
+        d.dirty.HandleGeometryUpdate(game, d.reused_update_data.comps);
+        d.dirty.HandleEdgesUpdateAndSplit(game, d.reused_update_data.edge);
     }
 
     void Tick() override
     {
-
+        auto &renderer = game.get<PhysicsWorld>()->renderer;
+        for (const auto &e : game.get<Game::Category<Ent::OrderedList, Tiles::GridEntity>>())
+        {
+            const auto &grid = e.get<Tiles::GridEntity>();
+            TileGrids::ImguiDebugDraw(grid.grid, [&](fvec2 pos){return fvec2(renderer.Box2dToImguiPoint(grid.body.GetWorldPoint(pos)));}, *ImGui::GetBackgroundDrawList(), TileGrids::DebugDrawFlags::all);
+        }
     }
 
     void Render() const override

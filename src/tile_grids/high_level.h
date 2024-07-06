@@ -384,21 +384,6 @@ namespace TileGrids
             grid_map.erase(handle);
         }
 
-        struct ReusedComponentMapEntry
-        {
-            std::vector<typename System::ComponentIndex> comp_indices;
-        };
-        using ReusedComponentMap = phmap::flat_hash_map<vec2<typename System::WholeChunkCoord>, ReusedComponentMapEntry>;
-
-        template <int N, typename CellType>
-        struct ReusedUpdateData
-        {
-            typename System::template Chunk<N, CellType>::ComputeConnectedComponentsReusedData comp_indices;
-            typename System::ComputeConnectivityBetweenChunksReusedData conn;
-            typename System::ChunkGridSplitter splitter;
-            ReusedComponentMap comp_map;
-        };
-
         // Handle `geometry_changed` flag.
         // This automatically sets `update_edge_??` dirty flags. Even though we could manually set those flags only if
         // you modified a tile next to an edge, this is not sufficient because a modification elsewhere in the chunk can mess up the component indices.
@@ -499,12 +484,23 @@ namespace TileGrids
             }
         }
 
+        struct ReusedEdgeUpdateData
+        {
+            struct ReusedComponentMapEntry
+            {
+                std::vector<typename System::ComponentIndex> comp_indices;
+            };
+            using ReusedComponentMap = phmap::flat_hash_map<vec2<typename System::WholeChunkCoord>, ReusedComponentMapEntry>;
+
+            typename System::ComputeConnectivityBetweenChunksReusedData conn;
+            typename System::ChunkGridSplitter splitter;
+            ReusedComponentMap comp_map;
+        };
+
         // Handle `update_edge_??` flags, and split the grid if needed.
         void HandleEdgesUpdateAndSplit(
             typename HighLevelTraits::WorldRef world,
-            typename System::ComputeConnectivityBetweenChunksReusedData &reused,
-            typename System::ChunkGridSplitter &splitter,
-            ReusedComponentMap &reused_comp_map,
+            ReusedEdgeUpdateData &reused,
             std::size_t splitter_per_component_capacity = System::ChunkGridSplitter::default_per_component_capacity,
             // We expect at most this many components per chunk when splitting.
             std::size_t expected_num_comps_per_chunk = 8
@@ -512,7 +508,7 @@ namespace TileGrids
         {
             for (auto &[grid_handle, grid_entry] : grid_map)
             {
-                splitter.Reset();
+                reused.splitter.Reset();
 
                 typename HighLevelTraits::GridRef grid_ref = HighLevelTraits::HandleToGrid(world, grid_handle);
                 auto &grid_data = HighLevelTraits::GridToData(grid_ref);
@@ -532,7 +528,7 @@ namespace TileGrids
                         auto *chunk_a = chunk_ptr_a ? chunk_ptr_a->get() : nullptr;
                         auto *chunk_b = chunk_ptr_b ? chunk_ptr_b->get() : nullptr;
 
-                        System::ComputeConnectivityBetweenChunks(reused, chunk_a ? &chunk_a->components : nullptr, chunk_b ? &chunk_b->components : nullptr, vertical);
+                        System::ComputeConnectivityBetweenChunks(reused.conn, chunk_a ? &chunk_a->components : nullptr, chunk_b ? &chunk_b->components : nullptr, vertical);
 
                         // Add all components to the splitter.
                         // Maybe we could skip some components here, but it's easier to add everything.
@@ -542,13 +538,13 @@ namespace TileGrids
                         {
                             chunk_a->dirty_flags |= ChunkDirtyFlags::try_splitting_to_components_from_here;
                             for (std::size_t i = 0; i < chunk_a->components.components.size(); i++)
-                                splitter.AddInitialComponent(chunk_coord_a, typename System::ComponentIndex(i), splitter_per_component_capacity);
+                                reused.splitter.AddInitialComponent(chunk_coord_a, typename System::ComponentIndex(i), splitter_per_component_capacity);
                         }
                         if (chunk_b && !bool(chunk_b->dirty_flags & ChunkDirtyFlags::try_splitting_to_components_from_here))
                         {
                             chunk_b->dirty_flags |= ChunkDirtyFlags::try_splitting_to_components_from_here;
                             for (std::size_t i = 0; i < chunk_b->components.components.size(); i++)
-                                splitter.AddInitialComponent(chunk_coord_b, typename System::ComponentIndex(i), splitter_per_component_capacity);
+                                reused.splitter.AddInitialComponent(chunk_coord_b, typename System::ComponentIndex(i), splitter_per_component_capacity);
                         }
                     }
                 }
@@ -557,7 +553,7 @@ namespace TileGrids
                 chunk_coord_list_1.clear();
 
                 // Reset the `try_splitting_to_components_from_here` for the affected chunks.
-                splitter.ForEachCoordToVisit([&](vec2<typename System::WholeChunkCoord> coord, System::ComponentIndex index)
+                reused.splitter.ForEachCoordToVisit([&](vec2<typename System::WholeChunkCoord> coord, System::ComponentIndex index)
                 {
                     (void)index;
                     if (auto chunk = grid_data.GetChunk(coord); chunk && *chunk)
@@ -565,7 +561,7 @@ namespace TileGrids
                     return false;
                 });
 
-                while (!splitter.Step(
+                while (!reused.splitter.Step(
                     [&](vec2<typename System::WholeChunkCoord> chunk_coord) -> const auto &
                     {
                         return (*grid_data.GetChunk(chunk_coord))->components;
@@ -573,20 +569,20 @@ namespace TileGrids
                 ))
                 {}
 
-                reused_comp_map.clear();
+                reused.comp_map.clear();
 
-                std::size_t num_comps = splitter.NumComponentsToEmit();
+                std::size_t num_comps = reused.splitter.NumComponentsToEmit();
 
                 // For each splitted entity...
                 for (std::size_t i = 0; i < num_comps; i++)
                 {
-                    auto comp_to_emit = splitter.GetComponentToEmit(i);
+                    auto comp_to_emit = reused.splitter.GetComponentToEmit(i);
 
                     // Fill the mapping from chunk coordinates to a list of removed component indices, common for all detached components.
-                    reused_comp_map.reserve(comp_to_emit.contents.size());
+                    reused.comp_map.reserve(comp_to_emit.contents.size());
                     for (auto coords : comp_to_emit.contents)
                     {
-                        auto [iter, is_new] = reused_comp_map.try_emplace(coords.chunk_coord);
+                        auto [iter, is_new] = reused.comp_map.try_emplace(coords.chunk_coord);
                         if (is_new)
                             iter->second.comp_indices.reserve(expected_num_comps_per_chunk);
                         iter->second.comp_indices.push_back(coords.in_chunk_component);
@@ -616,32 +612,30 @@ namespace TileGrids
                 }
 
                 // Erase the original components that were split.
-                for (auto [chunk_coords, chunk_reused] : reused_comp_map)
+                // We do it after everything else, because that messes up the indices.
+                for (auto [chunk_coords, chunk_reused] : reused.comp_map)
                 {
                     const auto &old_chunk = grid_data.chunks.at(chunk_coords);
                     auto &old_comps = old_chunk->components;
 
+                    // Sort to be able to iterate backwards, to make sure we don't mess up the indices while deleting.
                     std::sort(chunk_reused.comp_indices.begin(), chunk_reused.comp_indices.end());
 
-                    std::size_t i = 0;
-                    std::size_t j = 0;
-                    for (auto it = old_comps.components.begin(); it != old_comps.components.end();)
+                    for (std::size_t i = chunk_reused.comp_indices.size(); i-- > 0;)
                     {
-                        auto this_comp_index = typename System::ComponentIndex(i++);
-                        if (j < chunk_reused.comp_indices.size() && chunk_reused.comp_indices[j] == this_comp_index)
-                        {
-                            j++;
-                            ++it;
-                        }
-                        else
-                        {
-                            it = old_comps.components.erase(it);
-                        }
+                        old_comps.SwapWithLastAndRemoveComponent(chunk_reused.comp_indices[i]);
                     }
                 }
             }
 
-            reused_comp_map.clear(); // Clean this up just in case, to not waste memory on nested vectors.
+            reused.comp_map.clear(); // Clean this up just in case, to not waste memory on nested vectors.
         }
+
+        template <int N, typename CellType>
+        struct ReusedUpdateData
+        {
+            typename System::template Chunk<N, CellType>::ComputeConnectedComponentsReusedData comps;
+            ReusedEdgeUpdateData edge;
+        };
     };
 }
