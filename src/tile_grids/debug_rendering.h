@@ -169,6 +169,8 @@ namespace TileGrids
                             if (comps->neighbor_components[dir].empty())
                                 continue; // This means the components weren't computed yet? Shouldn't normally happen if you handle all the dirty flags.
 
+                            ASSERT(comps->neighbor_components[dir].size() == comps->components.size(), "The data about connectivity between chunks has the wrong number of components,");
+
                             for (typename System::ComponentIndex other_comp : comps->neighbor_components[dir][i])
                             {
                                 fvec2 other_pos = GetComponentScreenCoords({.chunk_coord = chunk_pos + vec2<typename System::WholeChunkCoord>::dir4(dir), .in_chunk_component = other_comp});

@@ -158,10 +158,7 @@ struct TestEntity : Tickable, Renderable
 {
     IMP_STANDALONE_COMPONENT(Game)
 
-    struct Cell
-    {
-        int value = 0;
-    };
+    int active_entity_index = -1;
 
     TestEntity()
     {
@@ -179,8 +176,20 @@ struct TestEntity : Tickable, Renderable
     void Tick() override
     {
         auto &renderer = game.get<PhysicsWorld>()->renderer;
-        for (const auto &e : game.get<Game::Category<Ent::OrderedList, Tiles::GridEntity>>())
+
+        auto &list = game.get<Game::Category<Ent::OrderedList, Tiles::GridEntity>>();
+        if (Input::Button(Input::space).pressed())
         {
+            ++active_entity_index;
+            if (active_entity_index >= list.size())
+                active_entity_index = -1;
+        }
+
+        for (int index = 0; const auto &e : list)
+        {
+            if (index++ != active_entity_index && active_entity_index != -1)
+                continue;
+
             const auto &grid = e.get<Tiles::GridEntity>();
             TileGrids::ImguiDebugDraw(grid.grid, [&](fvec2 pos){return fvec2(renderer.Box2dToImguiPoint(grid.body.GetWorldPoint(pos)));}, *ImGui::GetBackgroundDrawList(), TileGrids::DebugDrawFlags::all);
         }

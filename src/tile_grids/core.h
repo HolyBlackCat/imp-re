@@ -714,5 +714,79 @@ namespace TileGrids
                 };
             }
         };
+
+        // Trims a chunk grid, removing empty sides.
+        struct ChunkGridShrinker
+        {
+            rect2<WholeChunkCoord> bounds;
+            std::array<bool, 4> shrink_sides{};
+
+            ChunkGridShrinker() {}
+
+            // Pass the input grid bounds.
+            ChunkGridShrinker(rect2<WholeChunkCoord> bounds)
+                : bounds(bounds)
+            {}
+
+            // Call this for every chunk that seems to be empty.
+            // If it's on one of the 4 edges of the whole grid, the respective bool is enabled.
+            void AddEmptyChunk(vec2<WholeChunkCoord> chunk_coord)
+            {
+                if (chunk_coord.x == bounds.b.x - 1) shrink_sides[0] = true;
+                if (chunk_coord.y == bounds.b.y - 1) shrink_sides[1] = true;
+                if (chunk_coord.x == bounds.a.x) shrink_sides[2] = true;
+                if (chunk_coord.y == bounds.a.y) shrink_sides[3] = true;
+            }
+
+            // Lastly call this. `chunk_is_not_empty` is `(vec2<WholeChunkCoord>) -> bool`, should return false if the chunk is empty.
+            // There can be some redundant calls, so it should be cheap.
+            // Returns true if something needs to be trimmed. Then read `.bounds` and trim accordingly. If `.bounds.has_area() == false`, destroy the whole grid.
+            bool Finish(auto &&chunk_is_not_empty)
+            {
+                bool shrinked_any = false;
+
+                for (int i = 0; i < 4; i++)
+                {
+                    if (!shrink_sides[i])
+                        continue;
+
+                    while (bounds.has_area())
+                    {
+                        bool is_vertical_edge = i % 2 == 0;
+                        typename System::CoordInsideChunk len = bounds.size()[is_vertical_edge];
+
+                        vec2<typename System::CoordInsideChunk> pos(
+                            i == 0 ? bounds.b.x - 1 : bounds.a.x,
+                            i == 1 ? bounds.b.y - 1 : bounds.a.y
+                        );
+
+                        bool ok = true;
+
+                        for (typename System::CoordInsideChunk i = 0; i < len; i++)
+                        {
+                            if (bool(chunk_is_not_empty(std::as_const(pos))))
+                            {
+                                ok = false;
+                                break;
+                            }
+
+                            pos[is_vertical_edge]++;
+                        }
+
+                        if (ok)
+                        {
+                            bounds = bounds.shrink_dir(-vec2<typename System::CoordInsideChunk>::dir4(i));
+                            shrinked_any = true;
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
+                }
+
+                return shrinked_any;
+            }
+        };
     };
 }
