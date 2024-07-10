@@ -53,6 +53,8 @@ namespace TileGrids
         using typename SystemTraits::WholeChunkCoord;
         using typename SystemTraits::TileEdgeConnectivity;
 
+        struct Empty {};
+
         // Bakes 4-dir plus offset along a chunk border into a single integer.
         // The integers are sequental, so we can have an array of them.
         [[nodiscard]] static BorderEdgeIndex MakeBorderEdgeIndex(int dir, CoordInsideChunk x_or_y)
@@ -123,6 +125,7 @@ namespace TileGrids
         };
 
         // Information about a single connectivity component inside of a chunk.
+        template <typename ExtraData = Empty>
         struct ComponentEntry
         {
             // The list of tiles.
@@ -130,6 +133,9 @@ namespace TileGrids
 
             // Which border edges are in this component.
             std::vector<ComponentEdgeInfo> border_edges;
+
+            // Extra per-component data. This usually stores physics colliders.
+            [[no_unique_address]] ExtraData extra_data{};
         };
 
         // Information about what component touches a specific edge on a chunk boundary. Chunks store lists of those.
@@ -145,13 +151,13 @@ namespace TileGrids
 
         // A list of connectivitiy components in a chunk, and the information about which of them touch which border edges.
         // `N` is the chunk size.
-        template <int N>
+        template <int N, typename PerComponentData = Empty>
         struct ChunkComponents
         {
             static constexpr BorderEdgeIndex num_border_edge_indices = BorderEdgeIndex(N * 4);
 
             // For each component, the list of tiles it contains, and the list of broder edges with connectivity masks.
-            std::vector<ComponentEntry> components;
+            std::vector<ComponentEntry<PerComponentData>> components;
 
             // Maps border edge index to component index (if any) and the connectivity mask.
             std::array<BorderEdgeInfo, std::size_t(num_border_edge_indices)> border_edge_info;
@@ -170,7 +176,7 @@ namespace TileGrids
                 ASSERT(comp_index >= ComponentIndex{} && comp_index < ComponentIndex(components.size()), "Component index is out of range.");
 
                 // Clean up edges.
-                ComponentEntry &comp = components[std::to_underlying(comp_index)];
+                ComponentEntry<PerComponentData> &comp = components[std::to_underlying(comp_index)];
                 if (assume_already_empty)
                 {
                     ASSERT(comp.border_edges.empty(), "The component was assumed to be empty, but it's not.");
@@ -215,9 +221,12 @@ namespace TileGrids
         // `comps_a` and `comps_b` must be adjacent, and in the correct order (`comps_a` to the left or above the `comps_b`, with `vertical` set appropriately).
         // `reused` can be reused between calls for performance.
         // If both `comp_a` and `comp_b` are null, does nothing. If only one of them is null, zeroes the edge connectivity in the other chunk.
-        template <int N>
+        template <int N, typename PerComponentData>
         static void ComputeConnectivityBetweenChunks(
-            ComputeConnectivityBetweenChunksReusedData &reused, ChunkComponents<N> *comps_a, ChunkComponents<N> *comps_b, bool vertical
+            ComputeConnectivityBetweenChunksReusedData &reused,
+            ChunkComponents<N, PerComponentData> *comps_a,
+            ChunkComponents<N, PerComponentData> *comps_b,
+            bool vertical
         )
         {
             if (!comps_a && !comps_b)
@@ -267,12 +276,41 @@ namespace TileGrids
             reused.visited_pairs.clear();
         }
 
+        template <int N>
+        struct ComputeConnectedComponentsReusedData
+        {
+            std::array<std::array<bool, N>, N> visited{};
+
+            std::array<vec2<CoordInsideChunk>, N * N> queue{};
+            std::size_t queue_pos = 0;
+        };
+
+        // A fixed-size 2D array that maps coordinates inside a chunk to the respective connectivity component.
+        template <int N>
+        struct TileComponentIndices
+        {
+            std::array<std::array<ComponentIndex, N>, N> array;
+
+            constexpr TileComponentIndices()
+            {
+                for (auto &row : array)
+                for (ComponentIndex &elem : row)
+                    elem = ComponentIndex::invalid;
+            }
+
+            [[nodiscard]] auto at(this auto &&self, vec2<CoordInsideChunk> pos) -> Meta::copy_cv_qualifiers<std::remove_reference_t<decltype(self)>, ComponentIndex> &
+            {
+                return self.array[pos.y][pos.x];
+            }
+        };
+
         // A single chunk as a grid of `CellType` objects of size N*N.
-        template <int N, typename CellType>
+        template <int N, typename CellType, typename PerComponentData = Empty>
         class Chunk
         {
           public:
-            using ComponentsType = ChunkComponents<N>;
+            using ComponentEntry = System::ComponentEntry<PerComponentData>;
+            using ComponentsType = ChunkComponents<N, PerComponentData>;
 
             // The first index is Y, the second is X.
             using UnderlyingArray = std::array<std::array<CellType, N>, N>;
@@ -286,14 +324,6 @@ namespace TileGrids
                 ASSERT(pos(all) >= CoordInsideChunk(0) && pos(all) < CoordInsideChunk(N), "Cell position in a chunk is out of bounds.");
                 return static_cast<Meta::copy_cvref_qualifiers<decltype(self), CellType>>(self.cells[pos.y][pos.x]);
             }
-
-            struct ComputeConnectedComponentsReusedData
-            {
-                std::array<std::array<bool, N>, N> visited{};
-
-                std::array<vec2<CoordInsideChunk>, N * N> queue{};
-                std::size_t queue_pos = 0;
-            };
 
             // Moves a single connectivity component from the other chunk into this one.
             // The component itself remains the source vector (`other_comps.components`) to not mess up the indices,
@@ -329,14 +359,16 @@ namespace TileGrids
             // Compute the individual connectivity components within a chunk.
             void ComputeConnectedComponents(
                 // Just the memory reused between calls for performance. Allocate it once (probably on the heap) and reuse between calls.
-                ComputeConnectedComponentsReusedData &reused,
+                ComputeConnectedComponentsReusedData<N> &reused,
                 // Either a `ComponentsType` or `Component`.
                 // The latter will contain less information, and is a bit cheaper to compute. Use the latter when this is a standalone chunk,
                 //   not a part of a grid.
                 // The latter can hold at most one component at a time, so you must move them elsewhere in `component_done()` (see below).
                 // This is automatically zeroed when the function starts.
                 Meta::same_as_any_of<ComponentsType, Component> auto &out,
-                // `() -> void`. This is called after finishing writing each component to `out`.
+                // Optional. If specified, must point to a default-constructed object. Will write the component indices for each tile to it.
+                TileComponentIndices<N> *out_comp_indices,
+                // Optional. Nullptr or `() -> void`. This is called after finishing writing each component to `out`.
                 // If `out` is a `Component` you must move it elsewhere in this callback, else it will get overwritten.
                 // If `out` is a `ComponentsType`, you don't have to do anything, as it can store multiple components.
                 //   But you CAN `.SwapWithLastAndRemoveComponent()` the newly added component, e.g. if you just separated it to a new entity.
@@ -394,6 +426,8 @@ namespace TileGrids
                     {
                         const vec2<CoordInsideChunk> pos = reused.queue[--reused.queue_pos];
                         out_comp.AddTile(pos);
+                        if (out_comp_indices)
+                            (*out_comp_indices).at(pos) = this_comp_index;
 
                         for (int i = 0; i < 4; i++)
                         {
@@ -440,7 +474,8 @@ namespace TileGrids
                     }
                     while (reused.queue_pos > 0);
 
-                    component_done();
+                    if constexpr (!std::is_null_pointer_v<std::remove_cvref_t<decltype(component_done)>>)
+                        component_done();
                 }
             }
         };

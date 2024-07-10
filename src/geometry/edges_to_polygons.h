@@ -94,7 +94,7 @@ namespace Geom::EdgesToPolygons
                 {
                     i++;
                     points.push_back(pos);
-                    point_convexity.push_back(i == 0 ? 0 : convex); // We fix up the first point later.
+                    point_convexity.push_back(i == 0 ? false : convex); // We fix up the first point later.
                 }
             });
         }

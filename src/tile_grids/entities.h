@@ -28,22 +28,30 @@ namespace TileGrids
     //     [[nodiscard]] static TileEdgeConnectivity CellConnectivity(const CellType &cell, int dir);
     //
     //     // Returns our data from a grid.
-    //     [[nodiscard]] static ChunkGrid<__> &GridToData(GridEntity &grid)
+    //     [[nodiscard]] static ChunkGrid<__> &GridToData(GridEntity &grid);
+    //
+    //     // This is called after updating chunk contents (when handling the `geometry_changed` flag).
+    //     // `comps_per_tile` is the mapping between tile coordinates to component indices.
+    //     static void OnUpdateGridChunkContents(WorldRef world, GridRef grid, vec2<typename System::WholeChunkCoord> chunk_coord, const typename System::TileComponentIndices<N> &comps_per_tile);
     template <typename BaseTraits>
     struct EntityHighLevelTraits : BaseTraits
     {
         using WorldRef = BaseTraits::EntityTag::Controller &;
         using GridHandle = BaseTraits::EntityTag::Id;
-        using GridRef = BaseTraits::GridEntity &;
+        using GridRef = BaseTraits::GridEntity *; // This must be nullable.
 
-        [[nodiscard]] static GridRef HandleToGrid(WorldRef world, GridHandle grid) {return world.get(grid).template get<typename BaseTraits::GridEntity>();}
+        [[nodiscard]] static GridRef HandleToGrid(WorldRef world, GridHandle grid)
+        {
+            auto ptr = world.get_opt(grid);
+            return ptr ? &ptr->template get<typename BaseTraits::GridEntity>() : nullptr;
+        }
 
 
         // Removes a grid from the world, when it was shrinked into nothing. Having both `grid_handle` and `grid_ref` is redundant.
         static void DestroyGrid(WorldRef world, GridHandle grid_handle, GridRef grid_ref)
         {
             (void)grid_handle;
-            world.destroy(grid_ref);
+            world.destroy(*grid_ref);
         }
 
         // Creates a new grid, splitting it from `grid`.
@@ -51,8 +59,8 @@ namespace TileGrids
         static void SplitGrid(WorldRef world, GridRef grid, auto init)
         {
             typename BaseTraits::GridEntity &new_grid = world.template create<typename BaseTraits::GridEntity>();
-            init(new_grid);
-            BaseTraits::FinishGridInitAfterSplit(world, grid, new_grid);
+            init(&new_grid);
+            BaseTraits::FinishGridInitAfterSplit(world, grid, &new_grid);
         }
     };
 }

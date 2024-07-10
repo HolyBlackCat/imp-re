@@ -97,7 +97,7 @@ $(foreach f,$(_codegen_list),$(eval $(call _codegen_target,$(word 1,$(subst :, ,
 # `libjack-dev` was removed from the list, because it caused weird package conflicts on Ubuntu 22.04.
 
 # On Arch/Manjaro, install following for SDL2 (from https://gitlab.archlinux.org/archlinux/packaging/packages/sdl2/-/blob/main/PKGBUILD)
-# pacman -S glibc libxext libxrender libx11 libgl libxcursor hidapi libusb alsa-lib mesa libpulse libxrandr libxinerama wayland libxkbcommon wayland-protocols ibus fcitx5 libxss cmake jack ninja pipewire libdecor
+# pacman -S --needed glibc libxext libxrender libx11 libgl libxcursor hidapi libusb alsa-lib mesa libpulse libxrandr libxinerama wayland libxkbcommon wayland-protocols ibus fcitx5 libxss cmake jack ninja pipewire libdecor
 # This list was last updated for SDL 2.30.2.
 # Not sure if those allow all features to be build, but since we're not going
 #   to distribute Arch binaries anyway, it shouldn't matter.
@@ -117,7 +117,7 @@ $(foreach f,$(_codegen_list),$(eval $(call _codegen_target,$(word 1,$(subst :, ,
 
 # --- Libraries ---
 
-DIST_DEPS_ARCHIVE := https://github.com/HolyBlackCat/imp-re/releases/download/deps-sources/deps_v6.zip
+DIST_DEPS_ARCHIVE := https://github.com/HolyBlackCat/imp-re/releases/download/deps-sources/deps_v7.zip
 
 _win_is_x32 :=
 _win_sdl2_arch := $(if $(_win_is_x32),i686-w64-mingw32,x86_64-w64-mingw32)
@@ -138,7 +138,7 @@ endif
 
 # When you update this, check if they added installation rules for headers.
 # To generate the new archive filename when updating (commit hash and date), you can use the comment at the beginning of our `box2c.hpp`.
-$(call Library,box2c,box2c-2088c28-2024-05-11.zip)
+$(call Library,box2c,box2c-1d7d1cf-2024-05-30.zip)
   $(call LibrarySetting,cmake_flags,-DBOX2D_SAMPLES:BOOL=OFF -DBOX2D_UNIT_TESTS:BOOL=OFF)
   $(call LibrarySetting,build_system,box2c)
 override buildsystem-box2c =\
@@ -151,12 +151,9 @@ override buildsystem-box2c =\
 # It supports pre-baking the algorithms into a library, but that requires setting a global macro, which we don't have a convenient way of doing yet.
 # So instead we use it in header-only mode...
 # This also lets us move their headers to a `CDT` subdirectory, otherwise they have too much junk at the top level `include/`.
-$(call Library,cdt,CDT-1.4.0.tar.gz)
+$(call Library,cdt,CDT-1.4.1+46f1ce1.zip)
   $(call LibrarySetting,build_system,copy_files)
   $(call LibrarySetting,copy_files,CDT/include/*->include/CDT)
-
-# $(call Library,box2d,box2d-2.4.1.tar.gz)
-#  $(call LibrarySetting,cmake_flags,-DBOX2D_BUILD_UNIT_TESTS:BOOL=OFF -DBOX2D_BUILD_TESTBED:BOOL=OFF)
 
 $(call Library,cglfl,cglfl-74b2fcf.zip)
   $(call LibrarySetting,build_system,cglfl)
@@ -188,10 +185,10 @@ $(call Library,doctest,doctest-2.4.11.tar.gz)
 
 $(call Library,double-conversion,double-conversion-3.3.0.tar.gz)
 
-$(call Library,enkits,enkiTS-6474b35-2024-03-05-with-mingw-patch.zip)
+$(call Library,enkits,enkiTS-686d0ec-2024-05-29.zip)
   $(call LibrarySetting,cmake_flags,-DENKITS_INSTALL=ON -DENKITS_BUILD_SHARED=ON -DENKITS_BUILD_EXAMPLES=OFF)
 
-$(call Library,fmt,fmt-10.2.1.zip)
+$(call Library,fmt,fmt-11.0.1.zip)
   $(call LibrarySetting,cmake_flags,-DFMT_TEST=OFF)
 
 ifeq ($(TARGET_OS),emscripten)
@@ -201,21 +198,7 @@ $(call Library,freetype,freetype-2.13.2.tar.gz)
   $(call LibrarySetting,deps,zlib)
 endif
 
-# When updating: Destroy directory `GTE/Samples` to save space!
-# They have CMakeLists.txt, but:
-#   1. It's nested in GTE/GTL subdirectories (that's two variants of the library, old and new respectively), so our makefile doesn't find the automatically.
-#   2. It doesn't seem to actually install anything?
-# I manually copy the directories, using those weird globs to skip VS project files and documentation.
-# Note that GTE is installed into the root `include/`, and GTL to its own subdirectory. That's because GTE wants to have `GTE/` in the include path. D:
-# $(call Library,geometrictools,GeometricTools-a7e69d6-2024-03-26_nosamples.zip)
-#   $(call LibrarySetting,build_system,copy_files)
-#   $(call LibrarySetting,copy_files,\
-#     GTE/Mathematics*->include\
-# 	GTL/Mathematics/*/->include/GTL/Mathematics\
-# 	GTL/Utility/*.h->include/GTL/Utility\
-#   )
-
-$(call Library,imgui,imgui-1.90.4.tar.gz)
+$(call Library,imgui,imgui-1.90.9.tar.gz)
   $(call LibrarySetting,build_system,imgui)
   # `stb` is needed because we delete ImGui's own copy of it, and tell it to use an external one.
   # `freetype` is needed because we enable it in `imconfig.h`.
@@ -290,14 +273,14 @@ $(call Library,phmap,parallel-hashmap-1.3.12.tar.gz)
 ifeq ($(TARGET_OS),emscripten)
 $(call LibraryStub,sdl2,-sUSE_SDL=2)
 else ifeq ($(TARGET_OS),windows)
-$(call Library,sdl2,SDL2-devel-2.30.2-mingw.tar.gz)
+$(call Library,sdl2,SDL2-devel-2.30.5-mingw.tar.gz)
   $(call LibrarySetting,build_system,copy_files)
   $(call LibrarySetting,copy_files,$(_win_sdl2_arch)/*->.)
 $(call Library,sdl2_net,SDL2_net-devel-2.2.0-mingw.tar.gz)
   $(call LibrarySetting,build_system,copy_files)
   $(call LibrarySetting,copy_files,$(_win_sdl2_arch)/*->.)
 else
-$(call Library,sdl2,SDL2-2.30.2.tar.gz)
+$(call Library,sdl2,SDL2-2.30.5.tar.gz)
   # Allow SDL to see system packages. If we were using `configure+make`, we'd need `configure_vars = env -uPKG_CONFIG_PATH -uPKG_CONFIG_LIBDIR` instead.
   $(call LibrarySetting,cmake_flags,-DCMAKE_FIND_USE_CMAKE_SYSTEM_PATH=ON)
   $(call LibrarySetting,common_flags,-fno-sanitize=address -fno-sanitize=undefined)# ASAN/UBSAN cause linker errors in Linux, when making `libSDL2.so`. `-DSDL_ASAN=ON` doesn't help.
@@ -306,7 +289,7 @@ $(call Library,sdl2_net,SDL2_net-2.2.0.tar.gz)
   $(call LibrarySetting,common_flags,-fno-sanitize=address -fno-sanitize=undefined)# See above.
 endif
 
-$(call Library,stb,stb-ae721c5.zip)
+$(call Library,stb,stb-013ac3b-2024-05-31.zip)
   $(call LibrarySetting,build_system,copy_files)
   # Out of those, `rectpack` is used both by us and ImGui.
   # There's also `textedit`, which ImGui uses and we don't but we let ImGui keep its version, since it's slightly patched.

@@ -25,8 +25,8 @@ namespace TileGrids
 
     // Draws debug information for the `grid`, using `list` draw list.
     // `local_to_screen_coords` maps `fvec2` from grid to screen coords. In grid coords the size of a tile is always considered to be 1.
-    template <typename System, int N, typename CellType>
-    void ImguiDebugDraw(const ChunkGrid<System, N, CellType> &grid, auto local_to_screen_coords, ImDrawList &list, DebugDrawFlags flags)
+    template <typename System, int N, typename ...P>
+    void ImguiDebugDraw(const ChunkGrid<System, N, P...> &grid, auto local_to_screen_coords, ImDrawList &list, DebugDrawFlags flags)
     {
         // Should we instead return `ImVec2`?
         static_assert(std::is_same_v<decltype(local_to_screen_coords(fvec2{})), fvec2>, "`local_to_screen_coords` returns the wrong type.");

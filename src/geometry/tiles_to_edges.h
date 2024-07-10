@@ -173,11 +173,14 @@ namespace Geom::TilesToEdges
     // Coverts tiles to edges.
     // See the commends in `enum class Mode` above for the explanation of modes.
     // `region_size` is the tile rectangle size we're processing.
-    // `input` is `(ivec2 pos) -> SomeIntegralType`, it reads the tile as the specified coordinates. The result will be casted to `BakedTileset::TileId`.
+    // `input` is `(ivec2 pos) -> SomeIntegralType`, it reads the tile as the specified coordinates. The result will be cast to `BakedTileset::TileId`.
     // NOTE: When `mode == open`, `pos` can be one tile outside of the specified bounds.
     // `output` receives the resulting vertices. It's `(ivec2 pos, PointInfo info) -> void`, and it's meaning depends on the `mode` (see above).
-    template <typename F, typename G>
-    void ConvertTilesToEdges(const BakedTileset &tileset, Mode mode, ivec2 region_size, F &&input, G &&output)
+    // If `new_contour_starts` is specified, it's called before starting each contour. It's `(ivec2 pos, BakedTileset::EdgeId edge) -> void`.
+    // NOTE: Various contour modifiers can introduce vertex delays, so it's probably a good idea to ASSERT that you're not getting
+    // too many `new_contour_starts()` calls (next call before the current loop finishes), and if that happens, add a little ring buffer (on the calling side).
+    template <typename F, typename G, typename H = std::nullptr_t>
+    void ConvertTilesToEdges(const BakedTileset &tileset, Mode mode, ivec2 region_size, F &&input, G &&output, H &&new_contour_starts = nullptr)
     {
         // Check if `tile_pos` is in bounds.
         auto TileIsInBounds = [&](ivec2 tile_pos) -> bool
@@ -256,6 +259,10 @@ namespace Geom::TilesToEdges
                                 return false; // The opposite edge covers this one, don't visit it.
                         }
                     }
+
+                    // A new contour starts! Run the callback.
+                    if constexpr (!std::is_null_pointer_v<H>)
+                        new_contour_starts(starting_tile_pos, loop_starting_edge);
 
                     Cursor cursor{
                         .tile_pos = starting_tile_pos,
