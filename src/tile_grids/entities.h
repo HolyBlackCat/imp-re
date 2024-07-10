@@ -13,9 +13,10 @@ namespace TileGrids
     //     // The entity that will store the grid.
     //     using GridEntity = ...;
     //
-    //     // This is called when splitting a grid, after copying the tiles so you can finish the initialization of `to` by e.g. copying the grid
-    //     // coordinates or whatever.
-    //     static void FinishGridInitAfterSplit(typename EntityTag::Controller& world, const GridEntity &from, GridEntity &to);
+    //     // This is called when splitting a grid, to create a new grid.
+    //     static GridEntity &CreateSplitGrid(typename EntityTag::Controller& controller, const GridEntity &source_grid);
+    //     // Then we write the tiles into it, and lastly call this to finish the initialization.
+    //     static void FinishSplitGridInit(typename EntityTag::Controller& controller, const GridEntity &from, GridEntity &to);
     //
     //     // Missing members from `high_level.h` traits:
     //
@@ -28,11 +29,14 @@ namespace TileGrids
     //     [[nodiscard]] static TileEdgeConnectivity CellConnectivity(const CellType &cell, int dir);
     //
     //     // Returns our data from a grid.
-    //     [[nodiscard]] static ChunkGrid<__> &GridToData(GridEntity &grid);
+    //     [[nodiscard]] static ChunkGrid<__> &GridToData(GridEntity *grid);
     //
     //     // This is called after updating chunk contents (when handling the `geometry_changed` flag).
     //     // `comps_per_tile` is the mapping between tile coordinates to component indices.
-    //     static void OnUpdateGridChunkContents(WorldRef world, GridRef grid, vec2<typename System::WholeChunkCoord> chunk_coord, const typename System::TileComponentIndices<N> &comps_per_tile);
+    //     static void OnUpdateGridChunkContents(typename EntityTag::Controller& controller, GridEntity *grid, vec2<typename System::WholeChunkCoord> chunk_coord, const typename System::TileComponentIndices<N> &comps_per_tile);
+    //
+    //     // When splitting a grid, this is called before moving a component from chunk to a chunk of a newly created entity.
+    //     static void OnPreMoveComponentBetweenChunks(typename EntityTag::Controller& controller, GridEntity *source_grid, System::ComponentCoords coords, GridEntity *target_grid);
     template <typename BaseTraits>
     struct EntityHighLevelTraits : BaseTraits
     {
@@ -58,9 +62,9 @@ namespace TileGrids
         // Must call `init(...)` once with a `GridRef` parameter of a new grid that will be filled with the chunks.
         static void SplitGrid(WorldRef world, GridRef grid, auto init)
         {
-            typename BaseTraits::GridEntity &new_grid = world.template create<typename BaseTraits::GridEntity>();
+            typename BaseTraits::GridEntity &new_grid = BaseTraits::CreateSplitGrid(world, *grid);
             init(&new_grid);
-            BaseTraits::FinishGridInitAfterSplit(world, grid, &new_grid);
+            BaseTraits::FinishSplitGridInit(world, *grid, new_grid);
         }
     };
 }

@@ -67,6 +67,9 @@ namespace TileGrids
     //     // This is called after updating chunk contents (when handling the `geometry_changed` flag).
     //     // `comps_per_tile` is the mapping between tile coordinates to component indices.
     //     static void OnUpdateGridChunkContents(WorldRef world, GridRef grid, vec2<typename System::WholeChunkCoord> chunk_coord, const typename System::TileComponentIndices<N> &comps_per_tile);
+    //
+    //     // When splitting a grid, this is called before moving a component from chunk to a chunk of a newly created entity.
+    //     static void OnPreMoveComponentBetweenChunks(WorldRef world, GridRef source_grid, System::ComponentCoords coords, GridRef target_grid);
 
     template <typename System, typename HighLevelTraits>
     class DirtyChunkLists;
@@ -576,6 +579,8 @@ namespace TileGrids
                                 auto &new_chunk = new_grid_data.chunks.at(coords.chunk_coord);
                                 if (!new_chunk)
                                     new_chunk = std::make_unique<std::remove_cvref_t<decltype(*new_chunk)>>();
+
+                                HighLevelTraits::OnPreMoveComponentBetweenChunks(world, grid_ref, std::as_const(coords), new_grid_ref);
 
                                 new_chunk->chunk.MoveComponentFrom(
                                     coords.in_chunk_component,

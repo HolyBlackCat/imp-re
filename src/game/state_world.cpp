@@ -111,7 +111,7 @@ namespace Tiles
     {
         struct Polygon
         {
-            b2Hull points{};
+            b2Polygon shape_data{};
 
             b2::Shape shape;
         };
@@ -126,8 +126,23 @@ namespace Tiles
         TileGrids::ChunkGrid<System, chunk_size, Cell, ChunkComponentCollider> grid;
         b2::Body body;
 
+        GridEntity(PhysicsWorld &w, fvec2 pos, float angle)
+        {
+            b2::Body::Params body_params;
+            body_params.type = b2_dynamicBody;
+            body_params.position = pos;
+            body_params.angle = angle;
+
+            body = w.w.CreateBody(b2::OwningHandle, body_params);
+        }
+
         void LoadTiles(Stream::ReadOnlyData data);
     };
+
+    [[nodiscard]] b2::Shape::Params GetShapeParams()
+    {
+        return {};
+    }
 
     // Traits class for `tile_grids/high_level.h`. We wrap it in `EntityHighLevelTraits` below instead of using directly.
     struct BasicHighLevelTraits
@@ -140,12 +155,15 @@ namespace Tiles
         using GridEntity = Tiles::GridEntity;
 
         // This is called when splitting a grid to copy the basic parameters.
-        static void FinishGridInitAfterSplit(EntityTag::Controller& controller, const GridEntity *from, GridEntity *to)
+        static GridEntity &CreateSplitGrid(typename EntityTag::Controller& controller, const GridEntity &source_grid)
+        {
+            return controller.create<GridEntity>(*controller.get<PhysicsWorld>(), fvec2(source_grid.body.GetPosition()), source_grid.body.GetAngle());
+        }
+        static void FinishSplitGridInit(EntityTag::Controller& controller, const GridEntity &from, GridEntity &to)
         {
             (void)controller;
             (void)from;
-
-            to->body = controller.get<PhysicsWorld>()->w.CreateBody(b2::OwningHandle, b2::Body::Params{});
+            (void)to;
         }
 
         // This part is directly for `tile_grids/high_level.h`:
@@ -154,10 +172,7 @@ namespace Tiles
         {
             (void)controller;
 
-            static b2::Shape::Params shape_params = []{
-                b2::Shape::Params shape_params;
-                return shape_params;
-            }();
+            static b2::Shape::Params shape_params = GetShapeParams();
 
             fvec2 chunk_base_offset = fvec2(chunk_coord) * chunk_size;
 
@@ -226,9 +241,9 @@ namespace Tiles
                         if (info.type == Geom::PointType::last)
                         {
                             ChunkComponentCollider::Polygon &new_poly = coll.polygons.emplace_back();
-                            new_poly.points = new_hull;
+                            new_poly.shape_data = b2MakePolygon(&new_hull, 0);
 
-                            grid->body.CreateShape(b2::DestroyWithParent, shape_params, b2MakePolygon(&new_hull, 0));
+                            new_poly.shape = grid->body.CreateShape(b2::OwningHandle, shape_params, b2MakePolygon(&new_hull, 0));
                             new_hull.count = 0;
                         }
                         else
@@ -239,6 +254,15 @@ namespace Tiles
                     }
                 );
             }
+        }
+
+        static void OnPreMoveComponentBetweenChunks(typename EntityTag::Controller& controller, GridEntity *source_grid, System::ComponentCoords coords, GridEntity *target_grid)
+        {
+            (void)controller;
+            ChunkComponentCollider &source_collider = source_grid->grid.GetChunk(coords.chunk_coord)->GetMutComponentExtraData(coords.in_chunk_component);
+            b2::Shape::Params params = GetShapeParams();
+            for (ChunkComponentCollider::Polygon &polygon : source_collider.polygons)
+                polygon.shape = target_grid->body.CreateShape(b2::OwningHandle, params, polygon.shape_data);
         }
 
         // Each tile of a chunk stores this.
@@ -331,11 +355,13 @@ struct TestEntity : Tickable, Renderable
         auto &w = game.create<PhysicsWorld>();
         auto &d = game.create<Tiles::DirtyListsEntity>();
 
-        auto &e = game.create<Tiles::GridEntity>();
+        auto &e = game.create<Tiles::GridEntity>(w, fvec2(0,0), 0);
         e.LoadTiles(Program::ExeDir() + "assets/map.json");
-        e.body = w.w.CreateBody(b2::OwningHandle, b2::Body::Params{});
 
         d.dirty.Update(game, d.reused_update_data);
+
+        b2::BodyRef platform = w.w.CreateBody(b2::DestroyWithParent, adjust(b2::Body::Params{}, .position = fvec2(10,20)));
+        platform.CreateShape(b2::DestroyWithParent, b2::Shape::Params{}, b2MakeBox(20, 1));
     }
 
     void Tick() override
