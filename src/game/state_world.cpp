@@ -186,7 +186,10 @@ namespace Tiles
                 Geom::EdgesToPolygons::TriangulationInput<int> tri_input;
                 decltype(tri_input.InsertionCallback()) callback = tri_input.InsertionCallback();
 
-                CompEntry() {}
+                CompEntry()
+                {
+                    tri_input.Reserve(100);
+                }
                 CompEntry(const CompEntry &) = delete;
                 CompEntry &operator=(const CompEntry &) = delete;
             };

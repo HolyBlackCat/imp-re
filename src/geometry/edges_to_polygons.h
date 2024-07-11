@@ -65,38 +65,102 @@ namespace Geom::EdgesToPolygons
         // Same size as `point`, true if that point is convex.
         std::vector<char/*bool*/> point_convexity;
 
+        // Maps point coordinates to their indices, to deduplicate them.
+        // CDT will assert if `points` contains ANY duplicates, even in different loops.
+        // This is optional, see `InsertionCallback` below.
+        phmap::flat_hash_map<vec2<T>, VertexId> point_map;
+
+        void Reserve(std::size_t num_points, std::size_t num_edges)
+        {
+            points.reserve(num_points);
+            point_convexity.reserve(num_points);
+            point_map.reserve(num_points);
+
+            edges.reserve(num_edges);
+        }
+        // This passes the same number of points and edges. Most of the time this should be good enough.
+        void Reserve(std::size_t n)
+        {
+            Reserve(n, n);
+        }
+
+        // Use this instead of `Reserve()` if you're going to pass `deduplicate_points == false` to `InsertionCallback`.
+        void ReserveNoDuplicates(std::size_t num_points)
+        {
+            points.reserve(num_points);
+            point_convexity.reserve(num_points);
+            edges.reserve(num_points);
+            // Skipping `point_map`.
+        }
+
+        void Reset()
+        {
+            points.clear();
+            point_convexity.clear();
+            point_map.clear();
+
+            edges.clear();
+        }
+
         // Returns a callback to insert new elements, compatible with `TilesToEdges`.
         // Automatically removes redundant points.
         // The returned callback is `(vec2<T> pos, PointInfo info) -> void`. Loops must be closed by repeating the first vertex with `info.last == true`.
-        // NOTE: The callback is stateful, keep it alive for at least one whole loop.
-        [[nodiscard]] auto InsertionCallback()
+        // NOTE: The callback is stateful, keep it alive for all insertion operations (or if `deduplicate_points == false`, for at least one whole loop).
+        // While `deduplicate_points == true` removes zero-length edges, it's not its primary purpose.
+        // You must enable it if you have points with same coordinates anywhere, even not immediately after each other.
+        // CDT (the triangulation library) will assert on duplicate points if you set this to `false` and pass them.
+        [[nodiscard]] auto InsertionCallback(bool deduplicate_points = true)
         {
             return SimplifyStraightEdges<T>([
                 this,
-                i = VertIndex{},
-                prev_dir = vec2<T>{},
-                first_vertex = VertIndex{}
+                prev_vertex = VertexId::invalid,
+                first_vertex = VertexId::invalid,
+                deduplicate_points
             ](vec2<T> pos, PointInfo info, bool convex) mutable
             {
                 assert(info.closed && "The input contours must be closed.");
                 assert((info.type == PointType::normal || info.type == PointType::last) && "Weird point type.");
 
-                if (i == 0)
-                    first_vertex = VertIndex(points.size());
-                else
-                    edges.push_back({VertIndex(points.size() - 1), info.type == PointType::last ? first_vertex : VertIndex(points.size())});
+                bool is_first = first_vertex == VertexId::invalid;
+                bool is_last = info.type == PointType::last;
+                ASSERT(is_first + is_last <= 1, "A degenerate edge loop?");
 
-                if (info.type == PointType::last)
+                VertexId this_vertex;
+                if (is_last)
                 {
-                    i = 0;
-                    point_convexity[first_vertex] = convex;
+                    this_vertex = first_vertex;
                 }
                 else
                 {
-                    i++;
-                    points.push_back(pos);
-                    point_convexity.push_back(i == 0 ? false : convex); // We fix up the first point later.
+                    this_vertex = VertexId(points.size());
+                    bool point_is_new = true;
+                    if (deduplicate_points)
+                    {
+                        if (auto result = point_map.try_emplace(pos, VertexId(this_vertex)); !result.second)
+                        {
+                            this_vertex = result.first->second;
+                            point_is_new = false;
+                        }
+                    }
+                    if (point_is_new)
+                    {
+                        points.push_back(pos);
+                        point_convexity.push_back(convex);
+                    }
+                    if (is_first)
+                        first_vertex = this_vertex;
                 }
+
+                if (!is_first)
+                {
+                    if (!deduplicate_points || prev_vertex != this_vertex)
+                        edges.push_back({VertIndex(prev_vertex), VertIndex(this_vertex)});
+                }
+
+                if (is_last)
+                    first_vertex = VertexId::invalid;
+                else
+                    prev_vertex = this_vertex;
             });
         }
     };
