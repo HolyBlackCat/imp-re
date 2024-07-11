@@ -541,9 +541,11 @@ namespace TileGrids
                 // Repeatedly descend into `canonical_component_index`, and adjust it along the way to shorten the path.
                 // We don't shorten all the way, just one step at a time, to avoid doing two passes or potentially stack-overflowing recursion.
 
-                const ComponentInfo *info = &components[std::to_underlying(i)];
-                while (i != info->canonical_component_index)
+                while (true)
                 {
+                    const ComponentInfo *info = &components[std::to_underlying(i)];
+                    if (i == info->canonical_component_index)
+                        break;
                     const ComponentInfo *next_info = &components[std::to_underlying(info->canonical_component_index)];
                     info->canonical_component_index = next_info->canonical_component_index;
                     i = info->canonical_component_index;

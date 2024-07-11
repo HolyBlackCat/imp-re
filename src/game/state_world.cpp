@@ -1,3 +1,6 @@
+// * Deduplicate vertices, optionally (enum template parameter?)
+// * Automatic mass bool, set temporarily
+
 #include "gameutils/tiled_map.h"
 #include "geometry/edges_to_polygons.h"
 #include "geometry/tiles_to_edges.h"

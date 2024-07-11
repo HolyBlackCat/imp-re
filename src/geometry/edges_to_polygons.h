@@ -68,6 +68,7 @@ namespace Geom::EdgesToPolygons
         // Returns a callback to insert new elements, compatible with `TilesToEdges`.
         // Automatically removes redundant points.
         // The returned callback is `(vec2<T> pos, PointInfo info) -> void`. Loops must be closed by repeating the first vertex with `info.last == true`.
+        // NOTE: The callback is stateful, keep it alive for at least one whole loop.
         [[nodiscard]] auto InsertionCallback()
         {
             return SimplifyStraightEdges<T>([
@@ -77,7 +78,7 @@ namespace Geom::EdgesToPolygons
                 first_vertex = VertIndex{}
             ](vec2<T> pos, PointInfo info, bool convex) mutable
             {
-                assert(info.closed == 1 && "The input contours must be closed.");
+                assert(info.closed && "The input contours must be closed.");
                 assert((info.type == PointType::normal || info.type == PointType::last) && "Weird point type.");
 
                 if (i == 0)
