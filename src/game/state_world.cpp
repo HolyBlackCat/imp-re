@@ -379,7 +379,7 @@ struct TestEntity : Tickable, Renderable
         {
             ++active_entity_index;
             if (active_entity_index >= list.size())
-                active_entity_index = -1;
+                active_entity_index = -2;
         }
 
         for (int index = 0; const auto &e : list)
