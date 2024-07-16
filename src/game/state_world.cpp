@@ -135,6 +135,7 @@ namespace Tiles
             body_params.type = b2_dynamicBody;
             body_params.position = pos;
             body_params.angle = angle;
+            body_params.automaticMass = false; // We update it in `FinalizeGridAfterChange()`.
 
             body = w.w.CreateBody(b2::OwningHandle, body_params);
         }
@@ -158,11 +159,11 @@ namespace Tiles
         using GridEntity = Tiles::GridEntity;
 
         // This is called when splitting a grid to copy the basic parameters.
-        static GridEntity &CreateSplitGrid(typename EntityTag::Controller& controller, const GridEntity &source_grid)
+        static GridEntity *CreateSplitGrid(typename EntityTag::Controller& controller, const GridEntity *source_grid)
         {
-            return controller.create<GridEntity>(*controller.get<PhysicsWorld>(), fvec2(source_grid.body.GetPosition()), source_grid.body.GetAngle());
+            return &controller.create<GridEntity>(*controller.get<PhysicsWorld>(), fvec2(source_grid->body.GetPosition()), source_grid->body.GetAngle());
         }
-        static void FinishSplitGridInit(EntityTag::Controller& controller, const GridEntity &from, GridEntity &to)
+        static void FinishSplitGridInit(EntityTag::Controller& controller, const GridEntity *from, GridEntity *to)
         {
             (void)controller;
             (void)from;
@@ -269,6 +270,12 @@ namespace Tiles
             b2::Shape::Params params = GetShapeParams();
             for (ChunkComponentCollider::Polygon &polygon : source_collider.polygons)
                 polygon.shape = target_grid->body.CreateShape(b2::OwningHandle, params, polygon.shape_data);
+        }
+
+        static void FinalizeGridAfterChange(typename EntityTag::Controller& controller, GridEntity *grid)
+        {
+            (void)controller;
+            grid->body.ApplyMassFromShapes();
         }
 
         // Each tile of a chunk stores this.

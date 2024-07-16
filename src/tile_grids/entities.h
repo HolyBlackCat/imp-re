@@ -13,11 +13,6 @@ namespace TileGrids
     //     // The entity that will store the grid.
     //     using GridEntity = ...;
     //
-    //     // This is called when splitting a grid, to create a new grid.
-    //     static GridEntity &CreateSplitGrid(typename EntityTag::Controller& controller, const GridEntity &source_grid);
-    //     // Then we write the tiles into it, and lastly call this to finish the initialization.
-    //     static void FinishSplitGridInit(typename EntityTag::Controller& controller, const GridEntity &from, GridEntity &to);
-    //
     //     // Missing members from `high_level.h` traits:
     //
     //     // Each tile of a chunk stores this.
@@ -37,6 +32,10 @@ namespace TileGrids
     //
     //     // When splitting a grid, this is called before moving a component from chunk to a chunk of a newly created entity.
     //     static void OnPreMoveComponentBetweenChunks(typename EntityTag::Controller& controller, GridEntity *source_grid, System::ComponentCoords coords, GridEntity *target_grid);
+    //
+    //     // This is caleld to finalize a grid after it's updated, and AFTER the splitting if any.
+    //     // This is ALSO called for the grids created by `SplitGrid`.
+    //     static void FinalizeGridAfterChange(typename EntityTag::Controller& controller, GridEntity *grid);
     template <typename BaseTraits>
     struct EntityHighLevelTraits : BaseTraits
     {
@@ -56,15 +55,6 @@ namespace TileGrids
         {
             (void)grid_handle;
             world.destroy(*grid_ref);
-        }
-
-        // Creates a new grid, splitting it from `grid`.
-        // Must call `init(...)` once with a `GridRef` parameter of a new grid that will be filled with the chunks.
-        static void SplitGrid(WorldRef world, GridRef grid, auto init)
-        {
-            typename BaseTraits::GridEntity &new_grid = BaseTraits::CreateSplitGrid(world, *grid);
-            init(&new_grid);
-            BaseTraits::FinishSplitGridInit(world, *grid, new_grid);
         }
     };
 }
