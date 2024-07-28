@@ -22,7 +22,6 @@
 #include "strings/escape.h"
 #include "strings/format.h"
 #include "strings/symbol_position.h"
-#include "utils/bit_manip.h"
 #include "utils/byte_order.h"
 #include "utils/robust_math.h"
 #include "utils/unicode.h"
@@ -369,7 +368,7 @@ namespace Stream
             data.name = std::move(name);
             data.size = size;
             data.read = std::move(read_func);
-            data.buffer_capacity = BitManip::RoundDownToPositivePowerOfTwo(std::size_t(buffer_capacity));
+            data.buffer_capacity = std::size_t(1) << std::countr_zero(std::size_t(buffer_capacity));
             data.buffer_storage = std::make_unique<std::uint8_t[]>(data.buffer_capacity * 2);
             data.buffer_a.storage = data.buffer_storage.get();
             data.buffer_b.storage = data.buffer_storage.get() + data.buffer_capacity;
