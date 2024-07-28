@@ -6,18 +6,6 @@
 
 namespace BitManip
 {
-    // Returns true if `value` is a non-negative power of two, or 0.
-    template <typename T> [[nodiscard]] constexpr bool IsPowerOfTwoOrZero(T value)
-    {
-        static_assert(std::is_integral_v<T>);
-
-        if constexpr (std::is_signed_v<T>)
-            if (value == std::numeric_limits<T>::min())
-                return false;
-
-        return (value & (value - 1)) == 0;
-    }
-
     // Returns `log2(value)`, truncated.
     // For non-positive values returns 0.
     template <typename T> [[nodiscard]] constexpr T Log2Truncated(T value)

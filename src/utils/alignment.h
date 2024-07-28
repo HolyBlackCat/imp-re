@@ -1,12 +1,11 @@
 #pragma once
 
+#include <bit>
 #include <cstddef>
-
-#include "utils/bit_manip.h"
 
 namespace Storage
 {
-    template <std::size_t A> inline constexpr bool is_valid_alignment_v = A > 0 && BitManip::IsPowerOfTwoOrZero(A);
+    template <std::size_t A> inline constexpr bool is_valid_alignment_v = std::has_single_bit(A);
 
     enum class AlignDir {up, down};
 
@@ -22,7 +21,7 @@ namespace Storage
         }
         else
         {
-            constexpr std::size_t p = BitManip::Log2Truncated(Alignment);
+            constexpr std::size_t p = std::countr_zero(Alignment);
             return (value + (Dir == AlignDir::up ? Alignment - 1 : 0)) & (std::size_t(-1) << p);
         }
     }

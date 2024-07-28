@@ -1,6 +1,3 @@
-// * Deduplicate vertices, optionally (enum template parameter?)
-// * Automatic mass bool, set temporarily
-
 #include "gameutils/tiled_map.h"
 #include "geometry/edges_to_polygons.h"
 #include "geometry/tiles_to_edges.h"
@@ -58,6 +55,7 @@ namespace Tiles
         wall_slope_b, // \|
         wall_slope_c, // /|
         wall_slope_d, // |\ .
+        wall_slope_ac, // |/ /|
         _count,
     };
 
@@ -76,6 +74,7 @@ namespace Tiles
         slope_b, // \|
         slope_c, // /|
         slope_d, // |\ .
+        slope_ac, // |\ .
     };
 
     [[nodiscard]] static CellShape GetCellShape(const Cell &cell)
@@ -88,6 +87,7 @@ namespace Tiles
             case Tile::wall_slope_b: return CellShape::slope_b;
             case Tile::wall_slope_c: return CellShape::slope_c;
             case Tile::wall_slope_d: return CellShape::slope_d;
+            case Tile::wall_slope_ac: return CellShape::slope_ac;
             case Tile::_count: break; // Should be unreachable.
         }
         ASSERT(false, "Must specify shape for this cell.");
@@ -106,6 +106,7 @@ namespace Tiles
             {{0,1,2}},    // \|
             {{1,2,3}},    // /|
             {{0,2,3}},    // |\ .
+            {{0,1,3}, {1,2,3}},    // |/ /|
         };
         return Geom::TilesToEdges::BakedTileset(std::move(tileset));
     }();
@@ -298,6 +299,7 @@ namespace Tiles
                 case CellShape::slope_b: return std::array{1,0,0,1}[dir];
                 case CellShape::slope_c: return std::array{1,1,0,0}[dir];
                 case CellShape::slope_d: return std::array{0,1,1,0}[dir];
+                case CellShape::slope_ac: return 1;
             }
             ASSERT(false, "Invalid tile shape enum.");
             return 0;

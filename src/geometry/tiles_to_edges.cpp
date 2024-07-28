@@ -99,10 +99,10 @@ namespace Geom::TilesToEdges
 
         // Compute edge connectivity for every tile type:
 
-        edge_connectivity.resize(xvec2(vert_ids_to_edge_id.size(), input.tiles.size()));
+        per_tile_edge_info.resize(xvec2(vert_ids_to_edge_id.size(), input.tiles.size()));
         for (std::size_t i = 0; i < input.tiles.size(); i++)
         {
-            for (const auto &loop : input.tiles[i])
+            for (int loop_id = 0; const auto &loop : input.tiles[i])
             {
                 for (std::size_t j = 0; j < loop.size(); j++)
                 {
@@ -113,9 +113,16 @@ namespace Geom::TilesToEdges
                     EdgeId e1 = vert_ids_to_edge_id.at({v1, v2});
                     EdgeId e2 = vert_ids_to_edge_id.at({v2, v3});
 
-                    edge_connectivity.at(xvec2(std::to_underlying(e1), i)).next = e2;
-                    edge_connectivity.at(xvec2(std::to_underlying(e2), i)).prev = e1;
+                    auto &this_info = per_tile_edge_info.at(xvec2(std::to_underlying(e1), i));
+                    auto &next_info = per_tile_edge_info.at(xvec2(std::to_underlying(e2), i));
+
+                    this_info.next = e2;
+                    next_info.prev = e1;
+
+                    this_info.loop_id = loop_id;
                 }
+
+                loop_id++;
             }
         }
     }
