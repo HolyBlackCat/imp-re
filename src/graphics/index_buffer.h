@@ -149,7 +149,7 @@ namespace Graphics
             else if constexpr (std::is_same_v<T, std::uint32_t>)
                 return GL_UNSIGNED_INT;
             else // This shouldn't happen, since we already have a static assertion that validates the template paramer.
-                static_assert(Meta::value<false, T>, "Invalid index buffer element type.");
+                static_assert(Meta::always_false<T>, "Invalid index buffer element type.");
         }
 
         void DrawFromBoundBuffer(DrawMode m, int offset, int count) const // Binds the buffer.

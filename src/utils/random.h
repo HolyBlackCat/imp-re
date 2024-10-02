@@ -173,7 +173,7 @@ namespace Random
             }
             else
             {
-                static_assert(Meta::value<false, TargetT, SourceT>, "This shouldn't happen.");
+                static_assert(Meta::always_false<TargetT, SourceT>, "This shouldn't happen.");
             }
         }
 

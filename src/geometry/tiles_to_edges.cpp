@@ -40,7 +40,10 @@ namespace Geom::TilesToEdges
             std::vector<EdgeId> edges;
             edges.reserve(loops.size());
             for (const auto &loop : loops)
-                edges.push_back(vert_ids_to_edge_id.at({VertexId(loop.at(0)), VertexId(loop.at(1))}));
+            {
+                if (loop.size() >= 2)
+                    edges.push_back(vert_ids_to_edge_id.at({VertexId(loop.at(0)), VertexId(loop.at(1))}));
+            }
 
             tile_starting_edges.push_back(std::move(edges));
         }
@@ -54,44 +57,55 @@ namespace Geom::TilesToEdges
             edge_type.vert_a = vert_ids.first;
             edge_type.vert_b = vert_ids.second;
 
-            ivec2 vert_a = vertices[std::to_underlying(edge_type.vert_a)];
-            ivec2 vert_b = vertices[std::to_underlying(edge_type.vert_b)];
-
-            // Try finding the opposite edge.
-
-            // Only try half of the direction (up and left), to avoid registering each edge pair twice.
-            ivec2 opposite_dir;
-            if (vert_a.x == 0 && vert_b.x == 0)
-                opposite_dir = ivec2(-1, 0);
-            else if (vert_a.y == 0 && vert_b.y == 0)
-                opposite_dir = ivec2(0, -1);
-
-            if (opposite_dir)
+            // Try finding the opposite edge (if not already set, that happens when that edge is processed first).
+            if (edge_type.opposite_edge == EdgeId::invalid)
             {
-                ivec2 other_vert_a = vert_b - opposite_dir * tile_size; // Note the order reversal.
-                ivec2 other_vert_b = vert_a - opposite_dir * tile_size;
+                ivec2 vert_a = vertices[std::to_underlying(edge_type.vert_a)];
+                ivec2 vert_b = vertices[std::to_underlying(edge_type.vert_b)];
 
-                if (auto vert_iter_a = pos_to_vert_id.find(other_vert_a); vert_iter_a != pos_to_vert_id.end())
-                if (auto vert_iter_b = pos_to_vert_id.find(other_vert_b); vert_iter_b != pos_to_vert_id.end())
-                if (auto edge_iter = vert_ids_to_edge_id.find({vert_iter_a->second, vert_iter_b->second}); edge_iter != vert_ids_to_edge_id.end())
+                // Only try half of the direction (up and left). We don't need to care about the other two, because the opposite edge will find them.
+                ivec2 opposite_dir;
+                if (vert_a.x == 0 && vert_b.x == 0)
+                    opposite_dir = ivec2(-1, 0);
+                else if (vert_a.y == 0 && vert_b.y == 0)
+                    opposite_dir = ivec2(0, -1);
+
+                if (opposite_dir)
                 {
-                    edge_type.opposite_edge_dir = opposite_dir;
-                    edge_type.opposite_edge = edge_iter->second;
+                    ivec2 other_vert_a = vert_b - opposite_dir * tile_size; // Note the order reversal.
+                    ivec2 other_vert_b = vert_a - opposite_dir * tile_size;
 
-                    // And the opposite edge:
-                    EdgeType &opposite_edge_type = edge_types[std::to_underlying(edge_iter->second)];
-                    opposite_edge_type.opposite_edge_dir = -opposite_dir;
-                    opposite_edge_type.opposite_edge = edge_id;
+                    if (auto vert_iter_a = pos_to_vert_id.find(other_vert_a); vert_iter_a != pos_to_vert_id.end())
+                    if (auto vert_iter_b = pos_to_vert_id.find(other_vert_b); vert_iter_b != pos_to_vert_id.end())
+                    if (auto edge_iter = vert_ids_to_edge_id.find({vert_iter_a->second, vert_iter_b->second}); edge_iter != vert_ids_to_edge_id.end())
+                    {
+                        edge_type.opposite_edge_dir = opposite_dir;
+                        edge_type.opposite_edge = edge_iter->second;
+
+                        // And the opposite edge:
+                        EdgeType &opposite_edge_type = edge_types[std::to_underlying(edge_iter->second)];
+                        opposite_edge_type.opposite_edge_dir = -opposite_dir;
+                        opposite_edge_type.opposite_edge = edge_id;
+                    }
+                }
+                else
+                {
+                    // Find an edge in the SAME tile that cancels out this one. This usually doesn't matter, but why not.
+                    if (auto it = vert_ids_to_edge_id.find({edge_type.vert_b, edge_type.vert_a}); it != vert_ids_to_edge_id.end())
+                    {
+                        edge_type.opposite_edge = it->second;
+                        edge_types[std::to_underlying(it->second)].opposite_edge = edge_id;
+                    }
                 }
             }
         }
 
         // Compute edge connectivity for every tile type:
 
-        edge_connectivity.resize(xvec2(vert_ids_to_edge_id.size(), input.tiles.size()));
+        per_tile_edge_info.resize(xvec2(vert_ids_to_edge_id.size(), input.tiles.size()));
         for (std::size_t i = 0; i < input.tiles.size(); i++)
         {
-            for (const auto &loop : input.tiles[i])
+            for (int loop_index = 0; const auto &loop : input.tiles[i])
             {
                 for (std::size_t j = 0; j < loop.size(); j++)
                 {
@@ -102,9 +116,16 @@ namespace Geom::TilesToEdges
                     EdgeId e1 = vert_ids_to_edge_id.at({v1, v2});
                     EdgeId e2 = vert_ids_to_edge_id.at({v2, v3});
 
-                    edge_connectivity.at(xvec2(std::to_underlying(e1), i)).next = e2;
-                    edge_connectivity.at(xvec2(std::to_underlying(e2), i)).prev = e1;
+                    auto &this_info = per_tile_edge_info.at(xvec2(std::to_underlying(e1), i));
+                    auto &next_info = per_tile_edge_info.at(xvec2(std::to_underlying(e2), i));
+
+                    this_info.next = e2;
+                    next_info.prev = e1;
+
+                    this_info.loop_index = loop_index;
                 }
+
+                loop_index++;
             }
         }
     }

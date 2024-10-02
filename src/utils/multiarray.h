@@ -78,7 +78,7 @@ class MultiArray
     }
 
     // Assert on failure.
-    [[nodiscard]] auto at(this auto &&self, index_vec_t pos) -> Meta::copy_cvref_qualifiers<decltype(self), type>
+    [[nodiscard]] auto at(this auto &&self, index_vec_t pos) -> Meta::copy_cvref<decltype(self), type>
     {
         ASSERT(self.pos_in_range(pos), FMT("Multiarray indices out of range. Indices are {} but the array size is {}.", pos, self.size_vec));
 
@@ -91,21 +91,21 @@ class MultiArray
             factor *= self.size_vec[i];
         }
 
-        return static_cast<Meta::copy_cvref_qualifiers<decltype(self), type>>(self.storage[index]);
+        return static_cast<Meta::copy_cvref<decltype(self), type>>(self.storage[index]);
     }
-    [[nodiscard]] auto at_or_throw(this auto &&self, index_vec_t pos) -> Meta::copy_cvref_qualifiers<decltype(self), type>
+    [[nodiscard]] auto at_or_throw(this auto &&self, index_vec_t pos) -> Meta::copy_cvref<decltype(self), type>
     {
         if (!self.pos_in_range(pos))
             throw std::runtime_error(FMT("Multiarray index {} is out of range. The array size is {}.", pos, self.size_vec));
         return decltype(self)(self).at(pos);
     }
-    [[nodiscard]] auto at_or_hard_error(this auto &&self, index_vec_t pos) -> Meta::copy_cvref_qualifiers<decltype(self), type>
+    [[nodiscard]] auto at_or_hard_error(this auto &&self, index_vec_t pos) -> Meta::copy_cvref<decltype(self), type>
     {
         if (!self.pos_in_range(pos))
             Program::HardError(FMT("Multiarray index {} is out of range. The array size is {}.", pos, self.size_vec));
         return decltype(self)(self).at(pos);
     }
-    [[nodiscard]] auto at_clamped(this auto &&self, index_vec_t pos) -> Meta::copy_cvref_qualifiers<decltype(self), type>
+    [[nodiscard]] auto at_clamped(this auto &&self, index_vec_t pos) -> Meta::copy_cvref<decltype(self), type>
     {
         clamp_var(pos, 0, self.size_vec-1);
         return decltype(self)(self).at(pos);

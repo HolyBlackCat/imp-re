@@ -8,15 +8,16 @@
 
 namespace Meta
 {
+    // An empty struct.
+// If you want to presere your empty-base-optimization, consider using  `macros/unique_empty_type.h` instead.
+
+    struct Empty {};
+
+
     // Tag dispatch helpers.
 
     template <typename T> struct tag {using type = T;};
     template <auto V> struct value_tag {static constexpr auto value = V;};
-
-
-    // Some helper aliases.
-
-    template <typename T> using identity_t = T;
 
 
     // Some concepts.
@@ -28,7 +29,7 @@ namespace Meta
     // Conditional constness.
     // `maybe_const<true, T>` is `const T`, and `maybe_const<false, T>` is just `T`.
 
-    namespace impl
+    namespace detail
     {
         template <bool Const, typename T>
         struct maybe_const {using type = T;};
@@ -38,12 +39,12 @@ namespace Meta
     }
 
     template <bool Const, typename T>
-    using maybe_const = typename impl::maybe_const<Const, T>::type;
+    using maybe_const = typename detail::maybe_const<Const, T>::type;
 
 
     // Dependent values and types, good for `static_assert`s and SFINAE.
 
-    namespace impl
+    namespace detail
     {
         template <typename T, typename ...P> struct dependent_type
         {
@@ -51,9 +52,9 @@ namespace Meta
         };
     }
 
-    template <auto V, typename, typename...> inline constexpr auto value = V;
+    template <typename, typename...> inline constexpr auto always_false = false;
 
-    template <typename T, typename A, typename ...B> using type = typename impl::dependent_type<T, A, B...>::type;
+    template <typename T, typename A, typename ...B> using type = typename detail::dependent_type<T, A, B...>::type;
     template <typename A, typename ...B> using void_type = type<void, A, B...>;
 
 
@@ -61,7 +62,7 @@ namespace Meta
     // Usage:` template <typename A, Meta::deduce..., typename B>` ...
     // All template parameters placed after `Meta::deduce...` can't be specified manually and would have to be deduced.
 
-    namespace impl
+    namespace detail
     {
         class deduce_helper
         {
@@ -70,7 +71,7 @@ namespace Meta
         };
     }
 
-    using deduce = impl::deduce_helper &;
+    using deduce = detail::deduce_helper &;
 
 
     // Lambda overloader.
@@ -82,7 +83,7 @@ namespace Meta
     // Checks if a type is a specialization of a template.
     // `specialization_of<A, B>` is true if `A` is `B<P...>`, where `P...` are some types.
 
-    namespace impl
+    namespace detail
     {
         template <typename A, template <typename...> typename B>
         struct specialization_of : std::false_type {};
@@ -92,12 +93,12 @@ namespace Meta
     }
 
     template <typename A, template <typename...> typename B>
-    concept specialization_of = impl::specialization_of<A, B>::value;
+    concept specialization_of = detail::specialization_of<A, B>::value;
 
 
     // Type traits for member pointers.
 
-    namespace impl
+    namespace detail
     {
         template <typename T>
         struct MemPtrTraits {using type = T; using owner = void;};
@@ -110,17 +111,17 @@ namespace Meta
 
     // Given `A B::*` (possible cv-qualified), returns A. Otherwise returns the type unchanged.
     template <typename T>
-    using remove_member_pointer_t = typename impl::MemPtrTraits<T>::type;
+    using remove_member_pointer_t = typename detail::MemPtrTraits<T>::type;
 
     // Given `A B::*` (possible cv-qualified), returns B. Otherwise returns `void`.
     template <typename T>
-    using member_pointer_owner_t = typename impl::MemPtrTraits<T>::owner;
+    using member_pointer_owner_t = typename detail::MemPtrTraits<T>::owner;
 
 
     // Returns the first type that's not `void` (`fallback_from_void<P...>`)
     // or in general that's not a specific type (`fallback_from<BadType, P...>`).
 
-    namespace impl
+    namespace detail
     {
         template <typename Bad, typename ...P> struct fallback_from {using type = Bad;};
         template <typename Bad, typename T, typename ...P> struct fallback_from<Bad, T, P...> {using type = T;};
@@ -129,7 +130,7 @@ namespace Meta
 
     // Returns the first type in `P...` that is not `Bad`, or if none returns `Bad`.
     template <typename Bad, typename ...P>
-    using fallback_from = typename impl::fallback_from<Bad, P...>::type;
+    using fallback_from = typename detail::fallback_from<Bad, P...>::type;
     // Returns the first type in `P...` that is not `void`, or if none returns `void`.
     template <typename ...P>
     using fallback_from_void = fallback_from<void, P...>;
@@ -188,35 +189,41 @@ namespace Meta
     };
 
 
-    // Copy qualifiers from one type to another. Original qualifiers are stripped.
-    // Can copy either cv-qualifiers or cvref-qualifiers. In the former case, ref-qualifiers are not stripped from the destination.
+    // Copy qualifiers from one type to another.
+    // Given `cvA refA A` and `cvB refB B`:
+    // * `copy_cv`    returns `cvA refB B`
+    // * `copy_cvref` returns `cvA refA B`
 
-    namespace impl
+    namespace detail
     {
-        template <typename A, typename B> struct copy_cv_qualifiers                      {using type =                std::remove_cv_t<B>;};
-        template <typename A, typename B> struct copy_cv_qualifiers<const          A, B> {using type = const          std::remove_cv_t<B>;};
-        template <typename A, typename B> struct copy_cv_qualifiers<      volatile A, B> {using type =       volatile std::remove_cv_t<B>;};
-        template <typename A, typename B> struct copy_cv_qualifiers<const volatile A, B> {using type = const volatile std::remove_cv_t<B>;};
+        template <typename A, typename B> struct copy_cv_low                      {using type =                B;};
+        template <typename A, typename B> struct copy_cv_low<const          A, B> {using type = const          B;};
+        template <typename A, typename B> struct copy_cv_low<      volatile A, B> {using type =       volatile B;};
+        template <typename A, typename B> struct copy_cv_low<const volatile A, B> {using type = const volatile B;};
 
-        template <typename A, typename B> struct copy_cvref_qualifiers          {using type = typename copy_cv_qualifiers<A, std::remove_reference_t<B>>::type;};
-        template <typename A, typename B> struct copy_cvref_qualifiers<A & , B> {using type = typename copy_cv_qualifiers<A, std::remove_reference_t<B>>::type &;};
-        template <typename A, typename B> struct copy_cvref_qualifiers<A &&, B> {using type = typename copy_cv_qualifiers<A, std::remove_reference_t<B>>::type &&;};
+        template <typename A, typename B> struct copy_cv          {using type = typename copy_cv_low<A, std::remove_cvref_t<B>>::type;};
+        template <typename A, typename B> struct copy_cv<A, B & > {using type = typename copy_cv_low<A, std::remove_cvref_t<B>>::type &;};
+        template <typename A, typename B> struct copy_cv<A, B &&> {using type = typename copy_cv_low<A, std::remove_cvref_t<B>>::type &&;};
+
+        template <typename A, typename B> struct copy_cvref          {using type = typename copy_cv_low<A, std::remove_cvref_t<B>>::type;};
+        template <typename A, typename B> struct copy_cvref<A & , B> {using type = typename copy_cv_low<A, std::remove_cvref_t<B>>::type &;};
+        template <typename A, typename B> struct copy_cvref<A &&, B> {using type = typename copy_cv_low<A, std::remove_cvref_t<B>>::type &&;};
     }
 
-    template <typename A, typename B> using copy_cv_qualifiers = typename impl::copy_cv_qualifiers<A, B>::type;
-    template <typename A, typename B> using copy_cvref_qualifiers = typename impl::copy_cvref_qualifiers<A, B>::type;
+    template <typename A, typename B> using copy_cv = typename detail::copy_cv<std::remove_reference_t<A>, B>::type;
+    template <typename A, typename B> using copy_cvref = typename detail::copy_cvref<A, B>::type;
 
 
     // A replacement for `std::experimental::is_detected`.
     // `is_detected<A, B...>` returns true if `A<B...>` is a valid type. Usually `A` would be a templated `using`.
 
-    namespace impl
+    namespace detail
     {
         template <typename DummyVoid, template <typename...> typename A, typename ...B> struct is_detected : std::false_type {};
         template <template <typename...> typename A, typename ...B> struct is_detected<void_type<A<B...>>, A, B...> : std::true_type {};
     }
 
-    template <template <typename...> typename A, typename ...B> inline constexpr bool is_detected = impl::is_detected<void, A, B...>::value;
+    template <template <typename...> typename A, typename ...B> inline constexpr bool is_detected = detail::is_detected<void, A, B...>::value;
 
 
     // An object wrapper that moves the underlying object even when copied.
@@ -352,7 +359,7 @@ namespace Meta
     // Example usage:
     //     T result = Meta::with_const_flags(0,1,1) >> [](auto a, auto b, auto c) {return a.value + b.value + c.value};
 
-    namespace impl
+    namespace detail
     {
         using const_flag_bits_t = unsigned int;
 
@@ -386,15 +393,15 @@ namespace Meta
     template <typename ...P> requires (std::is_convertible_v<const P &, bool> && ...)
     [[nodiscard]] constexpr auto with_const_flags(const P &... params)
     {
-        impl::const_flag_bits_t flags = 0, mask = 1;
+        detail::const_flag_bits_t flags = 0, mask = 1;
         ((flags |= mask * bool(params), mask <<= 1) , ...);
 
         auto lambda = [flags](auto &&func) -> decltype(auto)
         {
-            return impl::with_const_flags(flags, decltype(func)(func), std::make_integer_sequence<int, sizeof...(P)>{});
+            return detail::with_const_flags(flags, decltype(func)(func), std::make_integer_sequence<int, sizeof...(P)>{});
         };
 
-        return impl::const_flags_expr(lambda);
+        return detail::const_flags_expr(lambda);
     }
 
 

@@ -111,7 +111,7 @@ namespace Audio
             // Get an untyped pointer to the sound data.
             [[nodiscard]] QUAL std::uint8_t *RawUntypedData() QUAL {return data.data();}
 
-            // Get a pointer to the sound data, casted to a specific type.
+            // Get a pointer to the sound data, converted to a specific pointer type.
             // Triggers an assertion if the type doesn't match the `Resolution()`.
             template <typename T> requires std::is_same_v<T, std::uint8_t> || std::is_same_v<T, std::int16_t>
             [[nodiscard]] QUAL T *Data() QUAL

@@ -50,11 +50,11 @@ namespace TileGrids
 
         // The current min and max coordinates in the array. The difference between those is the size.
         // They can be positive or negative, possibly greater than the capacity (as long as the difference is less or equal than the capacity).
-        [[nodiscard]] index_vec_t::rect_type bounds() {return bounds_rect;}
+        [[nodiscard]] index_vec_t::rect_type bounds() const {return bounds_rect;}
 
         [[nodiscard]] index_vec_t size() const {return bounds().size();}
 
-        [[nodiscard]] auto at(this auto &&self, index_vec_t pos) -> Meta::copy_cvref_qualifiers<decltype(self), type>
+        [[nodiscard]] auto at(this auto &&self, index_vec_t pos) -> Meta::copy_cvref<decltype(self), type>
         {
             ASSERT(self.bounds().contains(pos), FMT("RingMultiarray index {} is out of bounds, {}.", fmt::streamed(pos), fmt::streamed(self.bounds())));
             return decltype(self)(self).underlying.at(mod_ex(pos, self.underlying.size()));

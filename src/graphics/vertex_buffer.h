@@ -121,7 +121,7 @@ namespace Graphics
                     else if constexpr (std::is_same_v<base_type, float>)
                         type_enum = GL_FLOAT;
                     else
-                        static_assert(Meta::value<false, T, decltype(index)>, "Attributes of this type are not supported.");
+                        static_assert(Meta::always_false<T, decltype(index)>, "Attributes of this type are not supported.");
 
                     uintptr_t offset = reinterpret_cast<const char *>(&Refl::Class::Member<i>(attributes)) - reinterpret_cast<const char *>(&attributes);
                     glVertexAttribPointer(attrib_index++, Math::vec_size_v<field_type>, type_enum, Refl::Class::member_has_attrib<T, i, Normalized>, sizeof(T), (void *)offset);

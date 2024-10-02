@@ -19,4 +19,8 @@
     [[maybe_unused]] IMP_ALWAYS_INLINE prefix_ name_ &operator|=(name_ &a, name_ b) {return a = a | b;} \
     [[nodiscard, maybe_unused]] IMP_ALWAYS_INLINE prefix_ name_ operator*(name_ a, bool b) {return b ? a : name_{};} \
     [[nodiscard, maybe_unused]] IMP_ALWAYS_INLINE prefix_ name_ operator*(bool a, name_ b) {return a ? b : name_{};} \
-    [[maybe_unused]] IMP_ALWAYS_INLINE prefix_ name_ &operator*=(name_ &a, bool b) {return a = a * b;}
+    [[maybe_unused]] IMP_ALWAYS_INLINE prefix_ name_ &operator*=(name_ &a, bool b) {return a = a * b;} \
+    [[nodiscard, maybe_unused]] IMP_ALWAYS_INLINE prefix_ name_ operator<<(name_ a, int b) {return name_(::std::underlying_type_t<name_>(a) << b);} \
+    [[nodiscard, maybe_unused]] IMP_ALWAYS_INLINE prefix_ name_ operator>>(name_ a, int b) {return name_(::std::underlying_type_t<name_>(a) >> b);} \
+    [[maybe_unused]] IMP_ALWAYS_INLINE prefix_ name_ &operator<<=(name_ &a, int b) {return a = a << b;} \
+    [[maybe_unused]] IMP_ALWAYS_INLINE prefix_ name_ &operator>>=(name_ &a, int b) {return a = a >> b;} \

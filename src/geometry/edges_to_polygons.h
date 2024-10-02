@@ -2,6 +2,7 @@
 
 #include "geometry/common.h"
 #include "geometry/simplify_straight_edges.h"
+#include "program/errors.h"
 #include "utils/sparse_set.h"
 
 #include <CDT/CDT.h> // For the constructor of Topology that fills it from a triangulation.
@@ -34,7 +35,7 @@ Geom::EdgesToPolygons::ConvertToPolygons<float>(tri_input, b2_maxPolygonVertices
     }
     else
     {
-        assert(hull.count < b2_maxPolygonVertices);
+        ASSERT(hull.count < b2_maxPolygonVertices);
         hull.points[hull.count++] = b2Vec2(fvec2(pos));
     }
 });
@@ -65,37 +66,102 @@ namespace Geom::EdgesToPolygons
         // Same size as `point`, true if that point is convex.
         std::vector<char/*bool*/> point_convexity;
 
+        // Maps point coordinates to their indices, to deduplicate them.
+        // CDT will assert if `points` contains ANY duplicates, even in different loops.
+        // This is optional, see `InsertionCallback` below.
+        phmap::flat_hash_map<vec2<T>, VertexId> point_map;
+
+        void Reserve(std::size_t num_points, std::size_t num_edges)
+        {
+            points.reserve(num_points);
+            point_convexity.reserve(num_points);
+            point_map.reserve(num_points);
+
+            edges.reserve(num_edges);
+        }
+        // This passes the same number of points and edges. Most of the time this should be good enough.
+        void Reserve(std::size_t n)
+        {
+            Reserve(n, n);
+        }
+
+        // Use this instead of `Reserve()` if you're going to pass `deduplicate_points == false` to `InsertionCallback`.
+        void ReserveNoDuplicates(std::size_t num_points)
+        {
+            points.reserve(num_points);
+            point_convexity.reserve(num_points);
+            edges.reserve(num_points);
+            // Skipping `point_map`.
+        }
+
+        void Reset()
+        {
+            points.clear();
+            point_convexity.clear();
+            point_map.clear();
+
+            edges.clear();
+        }
+
         // Returns a callback to insert new elements, compatible with `TilesToEdges`.
         // Automatically removes redundant points.
         // The returned callback is `(vec2<T> pos, PointInfo info) -> void`. Loops must be closed by repeating the first vertex with `info.last == true`.
-        [[nodiscard]] auto InsertionCallback()
+        // NOTE: The callback is stateful, keep it alive for all insertion operations (or if `deduplicate_points == false`, for at least one whole loop).
+        // While `deduplicate_points == true` removes zero-length edges, it's not its primary purpose.
+        // You must enable it if you have points with same coordinates anywhere, even not immediately after each other.
+        // CDT (the triangulation library) will assert on duplicate points if you set this to `false` and pass them.
+        [[nodiscard]] auto InsertionCallback(bool deduplicate_points = true)
         {
             return SimplifyStraightEdges<T>([
                 this,
-                i = VertIndex{},
-                prev_dir = vec2<T>{},
-                first_vertex = VertIndex{}
+                prev_vertex = VertexId::invalid,
+                first_vertex = VertexId::invalid,
+                deduplicate_points
             ](vec2<T> pos, PointInfo info, bool convex) mutable
             {
-                assert(info.closed == 1 && "The input contours must be closed.");
-                assert((info.type == PointType::normal || info.type == PointType::last) && "Weird point type.");
+                ASSERT(info.closed, "The input contours must be closed.");
+                ASSERT((info.type == PointType::normal || info.type == PointType::last), "Weird point type.");
 
-                if (i == 0)
-                    first_vertex = VertIndex(points.size());
-                else
-                    edges.push_back({VertIndex(points.size() - 1), info.type == PointType::last ? first_vertex : VertIndex(points.size())});
+                bool is_first = first_vertex == VertexId::invalid;
+                bool is_last = info.type == PointType::last;
+                ASSERT(is_first + is_last <= 1, "A degenerate edge loop?");
 
-                if (info.type == PointType::last)
+                VertexId this_vertex;
+                if (is_last)
                 {
-                    i = 0;
-                    point_convexity[first_vertex] = convex;
+                    this_vertex = first_vertex;
                 }
                 else
                 {
-                    i++;
-                    points.push_back(pos);
-                    point_convexity.push_back(i == 0 ? 0 : convex); // We fix up the first point later.
+                    this_vertex = VertexId(points.size());
+                    bool point_is_new = true;
+                    if (deduplicate_points)
+                    {
+                        if (auto result = point_map.try_emplace(pos, VertexId(this_vertex)); !result.second)
+                        {
+                            this_vertex = result.first->second;
+                            point_is_new = false;
+                        }
+                    }
+                    if (point_is_new)
+                    {
+                        points.push_back(pos);
+                        point_convexity.push_back(convex);
+                    }
+                    if (is_first)
+                        first_vertex = this_vertex;
                 }
+
+                if (!is_first)
+                {
+                    if (!deduplicate_points || prev_vertex != this_vertex)
+                        edges.push_back({VertIndex(prev_vertex), VertIndex(this_vertex)});
+                }
+
+                if (is_last)
+                    first_vertex = VertexId::invalid;
+                else
+                    prev_vertex = this_vertex;
             });
         }
     };
@@ -177,7 +243,7 @@ namespace Geom::EdgesToPolygons
         template <typename T>
         Topology(const CDT::Triangulation<T> &input)
         {
-            assert(input.triangles.size() > 0); // Not strictly necessary?
+            ASSERT(input.triangles.size() > 0); // Not strictly necessary?
             if (input.triangles.empty())
                 return;
 
@@ -230,7 +296,7 @@ namespace Geom::EdgesToPolygons
 
                             k++;
                         }
-                        assert(k != 3 && "Neighbor roundtrip failed.");
+                        ASSERT(k != 3, "Neighbor roundtrip failed.");
                     }
                 }
             }
@@ -315,7 +381,7 @@ namespace Geom::EdgesToPolygons
                     if (ca == 0)
                     {
                         Edge &e = GetMutEdge(neighbor_edge.next);
-                        assert(!e.origin_vert_is_flat);
+                        ASSERT(!e.origin_vert_is_flat);
                         if (!e.origin_vert_is_flat)
                         {
                             e.origin_vert_is_flat = true;
@@ -325,7 +391,7 @@ namespace Geom::EdgesToPolygons
                     if (cb == 0)
                     {
                         Edge &e = GetMutEdge(edge.next);
-                        assert(!e.origin_vert_is_flat);
+                        ASSERT(!e.origin_vert_is_flat);
                         if (!e.origin_vert_is_flat)
                         {
                             e.origin_vert_is_flat = true;
@@ -383,14 +449,14 @@ namespace Geom::EdgesToPolygons
 
         [[nodiscard]] Edge &GetMutEdge(EdgeId id)
         {
-            assert(id != EdgeId::invalid);
-            assert(std::to_underlying(id) < edges.size());
+            ASSERT(id != EdgeId::invalid);
+            ASSERT(std::to_underlying(id) < edges.size());
             return edges[std::to_underlying(id)];
         }
         [[nodiscard]] Face &GetMutFace(FaceId id)
         {
-            assert(id != FaceId::invalid);
-            assert(std::to_underlying(id) < faces.size());
+            ASSERT(id != FaceId::invalid);
+            ASSERT(std::to_underlying(id) < faces.size());
             return faces[std::to_underlying(id)];
         }
 
@@ -400,10 +466,10 @@ namespace Geom::EdgesToPolygons
         void CollapseEdge(EdgeId edge_id)
         {
             Edge &edge = GetMutEdge(edge_id);
-            assert(edge.face != FaceId::invalid);
+            ASSERT(edge.face != FaceId::invalid);
             EdgeId neighbor_edge_id = edge.neighbor;
             Edge &neighbor_edge = GetMutEdge(neighbor_edge_id);
-            assert(neighbor_edge.face != FaceId::invalid);
+            ASSERT(neighbor_edge.face != FaceId::invalid);
 
             FaceId kept_face_id = edge.face;
             FaceId destroyed_face_id = neighbor_edge.face;
@@ -415,7 +481,7 @@ namespace Geom::EdgesToPolygons
                 Edge *cur = &neighbor_edge;
                 do
                 {
-                    assert(cur->face == destroyed_face_id);
+                    ASSERT(cur->face == destroyed_face_id);
                     cur->face = kept_face_id;
                     cur = &GetMutEdge(cur->next);
                 }
@@ -468,13 +534,13 @@ namespace Geom::EdgesToPolygons
 
             Topology topo(tr);
 
-            assert(topo.face_set.Capacity() == 2);
-            assert(topo.face_set.ElemCount() == 2);
-            assert((topo.faces == std::vector{
+            ASSERT(topo.face_set.Capacity() == 2);
+            ASSERT(topo.face_set.ElemCount() == 2);
+            ASSERT((topo.faces == std::vector{
                 Face{ .any_edge = EdgeId(2) },
                 Face{ .any_edge = EdgeId(5) },
             }));
-            assert((topo.edges == std::vector{
+            ASSERT((topo.edges == std::vector{
                 /*0*/ Edge{ .origin_vert = VertexId(3), .neighbor = EdgeId(3),       .prev = EdgeId(2), .next = EdgeId(1), .face = FaceId(0) },
                 /*1*/ Edge{ .origin_vert = VertexId(1), .neighbor = EdgeId::invalid, .prev = EdgeId(0), .next = EdgeId(2), .face = FaceId(0) },
                 /*2*/ Edge{ .origin_vert = VertexId(2), .neighbor = EdgeId::invalid, .prev = EdgeId(1), .next = EdgeId(0), .face = FaceId(0) },

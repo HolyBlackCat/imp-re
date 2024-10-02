@@ -52,7 +52,7 @@ namespace Meta
         };
         template <std::size_t I> struct list_at<type_list<>, I>
         {
-            static_assert(value<false, value_tag<I>>, "List index is out of range.");
+            static_assert(always_false<value_tag<I>>, "List index is out of range.");
         };
 
         template <auto V, auto ...P, std::size_t I> struct list_at<value_list<V, P...>, I>
@@ -65,7 +65,7 @@ namespace Meta
         };
         template <std::size_t I> struct list_at<value_list<>, I>
         {
-            static_assert(value<false, value_tag<I>>, "List index is out of range.");
+            static_assert(always_false<value_tag<I>>, "List index is out of range.");
         };
 
         // Check if a list contains a value.

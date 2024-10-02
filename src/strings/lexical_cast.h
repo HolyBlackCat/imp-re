@@ -224,7 +224,7 @@ namespace Strings
         }
         else
         {
-            static_assert(Meta::value<false, T>, "This type is not supported.");
+            static_assert(Meta::always_false<T>, "This type is not supported.");
         }
 
         return true;

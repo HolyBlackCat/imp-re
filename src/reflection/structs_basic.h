@@ -1073,7 +1073,7 @@ That's all.
 
 // Internal. Helper for `REFL_MEMBERS_impl_decl_body`. Declares the variables described by a `REFL_DECL`.
 #define REFL_MEMBERS_impl_decl_body_low_members(params, ...) \
-    ::Meta::identity_t<MA_PARAMS_FIRST(params)> /* type */\
+    ::std::type_identity_t<MA_PARAMS_FIRST(params)> /* type */\
     MA_NULL MA_VA_FOR_EACH( /* variables */\
         (MA_PARAMS_GET_ONE(, ReflMemberDecl, ReflInit, params, MA_PARAMS_IDENTITY)), /* initializer */\
         REFL_MEMBERS_impl_decl_member, \

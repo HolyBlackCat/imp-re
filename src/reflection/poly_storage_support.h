@@ -49,7 +49,7 @@ namespace Refl
                 // Instantiating this type triggers an assertion if `touch_to_register` wasn't instantiated first with the same parameters.
                 template <typename Base, typename Derived, typename = void> struct verify
                 {
-                    static_assert(Meta::value<false, Base, Derived>, "This derived class is not registered as polymorphic for some reason, possibly because it's a template or a member of one. Those are never registered.");
+                    static_assert(Meta::always_false<Base, Derived>, "This derived class is not registered as polymorphic for some reason, possibly because it's a template or a member of one. Those are never registered.");
                 };
                 template <typename Base, typename Derived> struct verify<Base, Derived, std::enable_if_t<zrefl_adl_CheckRegistration(tag<Base, Derived>{})>>
                 {};

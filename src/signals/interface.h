@@ -17,7 +17,7 @@ namespace Sig
             ~InterfaceHelper() = default;
 
             template <typename T> requires std::is_same_v<typename std::remove_reference_t<T>::interface_helper, InterfaceHelper>
-            using InterfaceType = Meta::copy_cvref_qualifiers<T, typename std::remove_reference_t<T>::interface_type>;
+            using InterfaceType = Meta::copy_cvref<T, typename std::remove_reference_t<T>::interface_type>;
 
             template <typename T>
             [[nodiscard]] InterfaceType<T &&> operator()(T &&object) const

@@ -51,7 +51,7 @@ namespace Graphics
         explicit operator bool() const {return data.size() > 0;}
 
         const u8vec4 *Pixels() const {return data.data();}
-        const uint8_t *Data() const {return (const uint8_t *)Pixels();}
+        const uint8_t *Data() const {return reinterpret_cast<const uint8_t *>(Pixels());}
         ivec2 Size() const {return size;}
         irect2 Bounds() const {return ivec2().rect_size(Size());}
 
@@ -104,13 +104,31 @@ namespace Graphics
                 UnsafeAt(pos) = color;
         }
 
-        void UnsafeDrawImage(const Image &other, ivec2 pos) // Copies other image into this image, at specified location.
+        // Copies other image into this image, at specified location.
+        void UnsafeDrawImage(const Image &other, ivec2 pos)
         {
             for (int y = 0; y < other.Size().y; y++)
             {
                 auto source_address = &other.UnsafeAt(ivec2(0,y));
                 std::copy(source_address, source_address + other.Size().x, &UnsafeAt(ivec2(pos.x, y + pos.y)));
             }
+        }
+
+        // Copies other image into this image, at specified location.
+        // Prefers the pixels with higher alpha, with the other image getting preference.
+        void UnsafeDrawImagePickMaxAlpha(const Image &other, ivec2 pos, irect2 source_rect)
+        {
+            for (ivec2 source_pos : vector_range(source_rect))
+            {
+                u8vec4 source_pixel = other.UnsafeAt(source_pos);
+                u8vec4 &target_pixel = UnsafeAt(pos + source_pos);
+                if (source_pixel.a() >= target_pixel.a())
+                    target_pixel = source_pixel;
+            }
+        }
+        void UnsafeDrawImagePickMaxAlpha(const Image &other, ivec2 pos)
+        {
+            UnsafeDrawImagePickMaxAlpha(other, pos, other.Bounds());
         }
     };
 }

@@ -74,7 +74,7 @@ namespace Macro::DetectBases
         /* Note `decltype`, unsure why it's necessary. */\
         typename = decltype(::Meta::Stateful::List::PushBack<::Macro::DetectBases::impl::BasesTag<_adl_imp_Derived, _adl_imp_Pred>, self_type_name_>{}), \
         /* Finally, disable this overload. */\
-        ::std::enable_if_t<::Meta::value<false, _adl_imp_Derived>, ::std::nullptr_t> = nullptr \
+        ::std::enable_if_t<::Meta::always_false<_adl_imp_Derived>, ::std::nullptr_t> = nullptr \
     > \
     friend constexpr void _adl_imp_DetectBase(void *) {}
 

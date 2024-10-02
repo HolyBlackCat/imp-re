@@ -17,7 +17,7 @@ namespace Graph::Pathfinding
     // `CostType` is the true cost type, it's normally `int` or `float`, but can also be anything.
     // `EstimatedCostType` is the true plus estimated cost type. It's usually `std::pair<int, int>` (with the second value used as a tiebreaker, see more below).
     // `CostType` must overload `+` and be default-constructible (probably to a zero value, but it's not really necessary).
-    // `EstimatedCostType` must overload `<`.
+    // `EstimatedCostType` must overload `<` (unless you customize `on_revisit`).
     //
     // How to use:
     // * Set the starting point, either using the constructor or `SetNewTask()`.
@@ -122,6 +122,20 @@ namespace Graph::Pathfinding
             return remaining_nodes_heap.at(0).coord;
         }
 
+        struct DefaultStepSettings
+        {
+            // Lets you choose what happens when a node is revisited.
+            // We're revisiting `neighbor`, this time from `self`, and the new cost to it is `neighbor_cost`.
+            // Returning true will replace the old path with the new path.
+            // `neighbor.second.cost` is not updated yet when this is called, but if you return true, we assign `neighbor_cost` to it.
+            // Always returning false here might lead to suboptimal paths (see the discussion of different heuristic types in the comments above `Step()`).
+            bool ShouldUseNewPath(const NodeInfoMap::value_type &self, const NodeInfoMap::value_type &neighbor, const CostType &new_neighbor_cost)
+            {
+                (void)self;
+                return new_neighbor_cost < neighbor.second.cost;
+            }
+        };
+
         // Runs a single pathfinding step.
         // `neighbors` iterates over each viable neighbor of a point, it's `(CoordType pos, auto func) -> void`,
         //   where `func` must be called for every neighbor, it's `(CoordType neighbor_coord, CostType step_cost) -> void`.
@@ -139,9 +153,9 @@ namespace Graph::Pathfinding
         //     unless you scale all of it by a constant factor?)
         //     Admissable heuristics guarantee optimal path at the end (but the number of iterations can vary, of course).
         // * A heuristic is "consistent" (aka monotone) if it's admissable AND it's value can't be reduced by adding an intermediate point.
-        //     This doesn't seem to affect much. In theory this guarantees that you don't visit the same node twice (so you could remove
-        //       the `neighbor_cost < iter->second.cost` check from this function), but to safely remove the check you also need to
-        //       prune duplicates from the node queue, which sounds like too much effort.
+        //     This doesn't seem to affect much. In theory this guarantees that you don't visit the same node twice (so you could always
+        //       return false from `ShouldUseNewPath()`), but to safely do that you also have to prune duplicates from the node queue,
+        //       which sounds like too much effort.
         //
         // Some other possible heuristics:
         // 1. Return `cost` as is. Then this becomes the Dijkstra's algorithm, blindly searching in a circle from the starting point.
@@ -149,7 +163,8 @@ namespace Graph::Pathfinding
         //      This adjusts the greediness, with 0 = maximum greed. The resulting path is no longer optimal (this is a non-admissible heuristic),
         //      but this can potentially boost performance in some cases.
         // There's no feedback loop in the heuristic, so you can get away with it being jank.
-        void Step(auto &&neighbors, auto &&heuristic)
+        template <typename Settings = DefaultStepSettings>
+        void Step(auto &&neighbors, auto &&heuristic, Settings &&settings = {})
         {
             if (!HasUnvisitedNodes())
                 return;
@@ -160,7 +175,10 @@ namespace Graph::Pathfinding
             std::ranges::pop_heap(remaining_nodes_heap, std::greater{}, &Node::estimated_total_cost);
             remaining_nodes_heap.pop_back();
 
-            NodeInfo &this_node_info = node_info.at(this_node);
+            auto this_node_info_iter = node_info.find(this_node);
+            if (this_node_info_iter == node_info.end())
+                throw std::logic_error("Pathfinding internal error: the node should be in the info map, but it's not.");
+            NodeInfo &this_node_info = this_node_info_iter->second;
 
             // Avoid processing the same node twice.
             // This is an optimization, see the comment on `.finished` for details.
@@ -180,7 +198,7 @@ namespace Graph::Pathfinding
                 // Wikipedia says `<` will be always false if the heuristic is "consistent" (see above),
                 // but trying to classify heuristics is tricky, and skipping it when the heuristic is not actuall consistent
                 // would result in a non-optimal path. So it's easier to just always check.
-                if (is_new || neighbor_cost < iter->second.cost)
+                if (is_new || settings.ShouldUseNewPath(std::as_const(*this_node_info_iter, std::as_const(*iter), std::as_const(neighbor_cost))))
                 {
                     iter->second.cost = std::move(neighbor_cost);
                     iter->second.prev_node = this_node;

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "geometry/common.h"
+#include "program/errors.h"
 #include "utils/mat.h"
 #include "utils/multiarray.h"
 
@@ -69,19 +70,22 @@ namespace Geom::TilesToEdges
         // Edge types, indexed by edge IDs.
         std::vector<EdgeType> edge_types;
 
-        struct EdgeConnectivity
+        struct PerTileEdgeInfo
         {
             // Prev and next edges in the same tile.
             EdgeId prev = EdgeId::invalid;
             EdgeId next = EdgeId::invalid;
 
+            // Which edge loop this edge belongs to. Each tile has its own loop indices.
+            int loop_index = -1;
+
             [[nodiscard]] EdgeId PrevOrNext(bool is_next) const {return is_next ? next : prev;}
         };
 
         // Maps an edge ID and a tile ID to the next/prev edges in the same tile.
-        Array2D<EdgeConnectivity> edge_connectivity;
+        Array2D<PerTileEdgeInfo> per_tile_edge_info;
 
-        // For each tile, a list of edges, one artbirary edge per edge loop.
+        // For each tile, a list of edges, one artbirary edge per edge loop (but skipping empty loops).
         std::vector<std::vector<EdgeId>> tile_starting_edges;
 
         BakedTileset() {}
@@ -96,7 +100,7 @@ namespace Geom::TilesToEdges
         // Number of registered edge types.
         [[nodiscard]] std::underlying_type_t<EdgeId> NumEdgeTypes() const
         {
-            return edge_connectivity.size().x;
+            return per_tile_edge_info.size().x;
         }
         // Number of registered edge types.
         [[nodiscard]] std::underlying_type_t<VertexId> NumVertexTypes() const
@@ -107,36 +111,36 @@ namespace Geom::TilesToEdges
         // Returns a vertex by its ID.
         [[nodiscard]] ivec2 GetVertexPos(VertexId vert_id) const
         {
-            assert(vert_id >= VertexId{} && vert_id < VertexId(NumVertexTypes()));
+            ASSERT(vert_id >= VertexId{} && vert_id < VertexId(NumVertexTypes()));
             return vertices[std::to_underlying(vert_id)];
         }
 
         // Given a tile type, for each edge loop in it, returns one arbitrary edge.
         [[nodiscard]] const std::vector<EdgeId> &GetTileStartingEdges(TileId tile) const
         {
-            assert(tile >= TileId{} && tile < TileId(NumTileTypes()));
+            ASSERT(tile >= TileId{} && tile < TileId(NumTileTypes()));
             return tile_starting_edges[std::to_underlying(tile)];
         }
 
         // Returns an information about an edge type.
         [[nodiscard]] const EdgeType &GetEdgeInfo(EdgeId edge) const
         {
-            assert(edge >= EdgeId{} && edge < EdgeId(NumEdgeTypes()));
+            ASSERT(edge >= EdgeId{} && edge < EdgeId(NumEdgeTypes()));
             return edge_types[std::to_underlying(edge)];
         }
 
-        // Given a tile type and an edge, tell which edges it connects to in this tile.
-        [[nodiscard]] const EdgeConnectivity &GetEdgeConnectivity(TileId tile, EdgeId edge) const
+        // Gives information about an edge in a specific tile: which edges it connects to in this tile, and what edge loop it belongs in.
+        [[nodiscard]] const PerTileEdgeInfo &GetPerTileEdgeInfo(TileId tile, EdgeId edge) const
         {
-            assert(tile >= TileId{} && tile < TileId(NumTileTypes()));
-            assert(edge >= EdgeId{} && edge < EdgeId(NumEdgeTypes()));
-            return edge_connectivity.at(xvec2(std::to_underlying(edge), std::to_underlying(tile)));
+            ASSERT(tile >= TileId{} && tile < TileId(NumTileTypes()));
+            ASSERT(edge >= EdgeId{} && edge < EdgeId(NumEdgeTypes()));
+            return per_tile_edge_info.at(xvec2(std::to_underlying(edge), std::to_underlying(tile)));
         }
 
         // Whether a specific tile type has a specific edge.
         [[nodiscard]] bool TileHasEdge(TileId tile, EdgeId edge) const
         {
-            return GetEdgeConnectivity(tile, edge).next != EdgeId::invalid;
+            return GetPerTileEdgeInfo(tile, edge).next != EdgeId::invalid;
         }
 
         // Follow an edge loop in a tile.
@@ -149,8 +153,8 @@ namespace Geom::TilesToEdges
             {
                 if (func(std::as_const(cur_edge)))
                     return true;
-                const EdgeConnectivity &info = GetEdgeConnectivity(tile, cur_edge);
-                assert(info.next != EdgeId::invalid);
+                const PerTileEdgeInfo &info = GetPerTileEdgeInfo(tile, cur_edge);
+                ASSERT(info.next != EdgeId::invalid);
                 cur_edge = info.next;
             }
             while (cur_edge != edge);
@@ -172,12 +176,31 @@ namespace Geom::TilesToEdges
 
     // Coverts tiles to edges.
     // See the commends in `enum class Mode` above for the explanation of modes.
-    // `region_size` is the tile rectangle size we're processing.
-    // `input` is `(ivec2 pos) -> SomeIntegralType`, it reads the tile as the specified coordinates. The result will be casted to `BakedTileset::TileId`.
-    // NOTE: When `mode == open`, `pos` can be one tile outside of the specified bounds.
-    // `output` receives the resulting vertices. It's `(ivec2 pos, PointInfo info) -> void`, and it's meaning depends on the `mode` (see above).
-    template <typename F, typename G>
-    void ConvertTilesToEdges(const BakedTileset &tileset, Mode mode, ivec2 region_size, F &&input, G &&output)
+    template <typename IsConnectedFunc = std::nullptr_t, typename NewContourStartsFunc = std::nullptr_t>
+    void ConvertTilesToEdges(
+        const BakedTileset &tileset,
+        Mode mode,
+        // Tile rectangle size we're processing.
+        ivec2 region_size,
+        // `(ivec2 pos) -> SomeIntegralType`, it reads the tile as the specified coordinates. The result will be cast to `BakedTileset::TileId`.
+        // NOTE: When `mode == open`, `pos` can be one tile outside of the specified bounds.
+        auto &&input,
+        // Receives the resulting vertices. It's `(ivec2 pos, PointInfo info) -> void`, and its meaning depends on the `mode` (see above).
+        auto &&output,
+        // `(ivec2 pos, int loop_index, ivec2 offset, int other_loop_index) -> bool`.
+        // If specified, this lets you separate adjacent tiles. Return false if you don't want to have the connection.
+        // If not specified, assumed to always return true.
+        // `pos` is the tile position. `offset` is the offset to the adjacent tile (either one of the 4 directions or zero, because the tile can block itself).
+        // `loop_index` and `other_loop_index` are the edge loop indices in the current tile and in the other tile respectively.
+        // NOTE: This is only called if that tile exists and blocks your edge.
+        // NOTE: This can give you some degenerate edge loops.
+        IsConnectedFunc &&is_connected = nullptr,
+        // If specified, it's called before starting each contour. It's `(ivec2 pos, int loop_index) -> void`.
+        // NOTE: Various contour modifiers can introduce vertex delays, so it's probably a good idea to ASSERT that you're not getting
+        //   too many `new_contour_starts()` calls (next call before the current loop finishes), and if that happens, add a little ring buffer (on the calling side).
+        // `loop_index` is the edge loop index in the current tile.
+        NewContourStartsFunc &&new_contour_starts = nullptr
+    )
     {
         // Check if `tile_pos` is in bounds.
         auto TileIsInBounds = [&](ivec2 tile_pos) -> bool
@@ -190,7 +213,7 @@ namespace Geom::TilesToEdges
         {
             // Check the bounds, just in case.
             // In `mode == open`, we can look one tile outside of the `region_size`.
-            assert(mode == Mode::closed ? TileIsInBounds(tile_pos) : tile_pos(any) >= -1 && tile_pos(any) <= region_size);
+            ASSERT(mode == Mode::closed ? TileIsInBounds(tile_pos) : tile_pos(any) >= -1 && tile_pos(any) <= region_size);
 
             return BakedTileset::TileId(input(std::as_const(tile_pos)));
         };
@@ -207,7 +230,7 @@ namespace Geom::TilesToEdges
         {
             while (true)
             {
-                cur.edge = tileset.GetEdgeConnectivity(cur.tile, cur.edge).PrevOrNext(forward);
+                cur.edge = tileset.GetPerTileEdgeInfo(cur.tile, cur.edge).PrevOrNext(forward);
 
                 const BakedTileset::EdgeType &edge_info = tileset.GetEdgeInfo(cur.edge);
                 if (edge_info.opposite_edge == BakedTileset::EdgeId::invalid)
@@ -219,6 +242,12 @@ namespace Geom::TilesToEdges
                 if (!tileset.TileHasEdge(next_tile, edge_info.opposite_edge))
                     return true; // The adjacent tile doesn't have our opposite edge.
 
+                if constexpr (!std::is_null_pointer_v<IsConnectedFunc>)
+                {
+                    if (!bool(is_connected(std::as_const(cur.tile_pos), tileset.GetPerTileEdgeInfo(cur.tile, cur.edge).loop_index, std::as_const(edge_info.opposite_edge_dir), tileset.GetPerTileEdgeInfo(next_tile, edge_info.opposite_edge).loop_index)))
+                        return true; // The user callback says we shouldn't respect this connection.
+                }
+
                 // At this point the adjacent tile DOES have our opposite edge.
                 cur.tile_pos = next_tile_pos;
                 cur.tile = next_tile;
@@ -227,7 +256,7 @@ namespace Geom::TilesToEdges
         };
 
         using EdgeBitMaskType = std::uint64_t;
-        assert(tileset.NumEdgeTypes() <= sizeof(EdgeBitMaskType) * 8);
+        ASSERT(tileset.NumEdgeTypes() <= sizeof(EdgeBitMaskType) * 8);
 
         Array2D<EdgeBitMaskType> visited_edges(region_size);
 
@@ -247,15 +276,31 @@ namespace Geom::TilesToEdges
                     // Make sure this edge is not covered by an opposite edge on an adjacent tile.
                     if (starting_edge_info.opposite_edge != BakedTileset::EdgeId::invalid)
                     {
-                        ivec2 other_tile_pos = starting_tile_pos + starting_edge_info.opposite_edge_dir;
+                        const ivec2 other_tile_pos = starting_tile_pos + starting_edge_info.opposite_edge_dir;
 
                         // Make sure we don't go outside of the boundary when `mode == closed`.
                         if (mode == Mode::open || TileIsInBounds(other_tile_pos))
                         {
-                            if (tileset.TileHasEdge(GetTileAt(other_tile_pos), starting_edge_info.opposite_edge))
-                                return false; // The opposite edge covers this one, don't visit it.
+                            // If the opposite edge covers this one, don't visit it.
+                            const BakedTileset::TileId other_tile = GetTileAt(other_tile_pos);
+                            if (tileset.TileHasEdge(other_tile, starting_edge_info.opposite_edge))
+                            {
+                                if constexpr (!std::is_null_pointer_v<IsConnectedFunc>)
+                                {
+                                    if (bool(is_connected(starting_tile_pos, tileset.GetPerTileEdgeInfo(tile, loop_starting_edge).loop_index, starting_edge_info.opposite_edge_dir, tileset.GetPerTileEdgeInfo(other_tile, starting_edge_info.opposite_edge).loop_index)))
+                                        return false;
+                                }
+                                else
+                                {
+                                    return false;
+                                }
+                            }
                         }
                     }
+
+                    // A new contour starts! Run the callback.
+                    if constexpr (!std::is_null_pointer_v<NewContourStartsFunc>)
+                        new_contour_starts(starting_tile_pos, tileset.GetPerTileEdgeInfo(tile, loop_starting_edge).loop_index);
 
                     Cursor cursor{
                         .tile_pos = starting_tile_pos,
