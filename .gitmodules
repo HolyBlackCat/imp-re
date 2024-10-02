@@ -1,3 +1,6 @@
 [submodule "deps/sub/box2cpp"]
 	path = deps/sub/box2cpp
 	url = https://github.com/HolyBlackCat/box2cpp
+[submodule "deps/sub/minimacros"]
+	path = deps/sub/minimacros
+	url = https://github.com/HolyBlackCat/minimacros

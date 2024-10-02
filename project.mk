@@ -43,6 +43,7 @@ PROJ_CXXFLAGS += -ftemplate-backtrace-limit=0 -fmacro-backtrace-limit=0
 PROJ_CXXFLAGS += -includesrc/program/common_macros.h -includesrc/program/parachute.h
 PROJ_CXXFLAGS += -Isrc
 PROJ_CXXFLAGS += -Ideps/sub/box2cpp/include
+PROJ_CXXFLAGS += -Ideps/sub/minimacros/include -DM_SHORT_MACROS
 PROJ_CXXFLAGS += -DIMGUI_USER_CONFIG=\"third_party_connectors/imconfig.h\"# Custom ImGui config.
 
 ifeq ($(TARGET_OS),windows)
