@@ -73,7 +73,7 @@ endif
 
 # --- Codegen ---
 
-_codegen_command = $(CXX) -std=c++23 -Wall -Wextra -pedantic-errors
+_codegen_command = $(CXX) -std=c++26 -Wall -Wextra -pedantic-errors
 override _codegen_dir := gen
 override _codegen_list := math:src/utils/mat.h macros:src/macros/generated.h
 override _codegen_target = $2: $(_codegen_dir)/make_$1.cpp ; \
@@ -118,7 +118,7 @@ $(foreach f,$(_codegen_list),$(eval $(call _codegen_target,$(word 1,$(subst :, ,
 
 # --- Libraries ---
 
-DIST_DEPS_ARCHIVE := https://github.com/HolyBlackCat/imp-re/releases/download/deps-sources/deps_v7.zip
+DIST_DEPS_ARCHIVE := https://github.com/HolyBlackCat/imp-re/releases/download/deps-sources/deps_v8.zip
 
 _win_is_x32 :=
 _win_sdl2_arch := $(if $(_win_is_x32),i686-w64-mingw32,x86_64-w64-mingw32)
@@ -138,11 +138,11 @@ _zlib_env_vars += uname=linux
 endif
 
 # When you update this, check if they added installation rules for headers.
-# To generate the new archive filename when updating (commit hash and date), you can use the comment at the beginning of our `box2c.hpp`.
-$(call Library,box2c,box2c-1d7d1cf-2024-05-30.zip)
+# To generate the new archive filename when updating (commit hash and date), you can use the comment at the beginning of our `box2cpp.h`.
+$(call Library,box2d,box2d-b864f53-2024-09-29.zip)
   $(call LibrarySetting,cmake_flags,-DBOX2D_SAMPLES:BOOL=OFF -DBOX2D_UNIT_TESTS:BOOL=OFF)
-  $(call LibrarySetting,build_system,box2c)
-override buildsystem-box2c =\
+  $(call LibrarySetting,build_system,box2d)
+override buildsystem-box2d =\
 	$(call, ### Forward to CMake.)\
 	$(buildsystem-cmake)\
 	$(call, ### Install headers.)\
@@ -189,17 +189,17 @@ $(call Library,double-conversion,double-conversion-3.3.0.tar.gz)
 $(call Library,enkits,enkiTS-686d0ec-2024-05-29.zip)
   $(call LibrarySetting,cmake_flags,-DENKITS_INSTALL=ON -DENKITS_BUILD_SHARED=ON -DENKITS_BUILD_EXAMPLES=OFF)
 
-$(call Library,fmt,fmt-11.0.1.zip)
+$(call Library,fmt,fmt-11.0.2.zip)
   $(call LibrarySetting,cmake_flags,-DFMT_TEST=OFF)
 
 ifeq ($(TARGET_OS),emscripten)
 $(call LibraryStub,freetype,-sUSE_FREETYPE=1)
 else
-$(call Library,freetype,freetype-2.13.2.tar.gz)
+$(call Library,freetype,freetype-2.13.3.tar.gz)
   $(call LibrarySetting,deps,zlib)
 endif
 
-$(call Library,imgui,imgui-1.90.9.tar.gz)
+$(call Library,imgui,imgui-1.91.2.tar.gz)
   $(call LibrarySetting,build_system,imgui)
   # `stb` is needed because we delete ImGui's own copy of it, and tell it to use an external one.
   # `freetype` is needed because we enable it in `imconfig.h`.
@@ -268,20 +268,20 @@ ifneq ($(filter -D_GLIBCXX_DEBUG,$(GLOBAL_CXXFLAGS)),)
   $(call LibrarySetting,cxxflags,-U_GLIBCXX_DEBUG -D_GLIBCXX_ASSERTIONS)# The debug mode causes weird compilation errors.
 endif
 
-$(call Library,phmap,parallel-hashmap-1.3.12.tar.gz)
+$(call Library,phmap,parallel-hashmap-1.4.0.tar.gz)
   $(call LibrarySetting,cmake_flags,-DPHMAP_BUILD_TESTS=OFF -DPHMAP_BUILD_EXAMPLES=OFF)# Otherwise it downloads GTest, which is nonsense.
 
 ifeq ($(TARGET_OS),emscripten)
 $(call LibraryStub,sdl2,-sUSE_SDL=2)
 else ifeq ($(TARGET_OS),windows)
-$(call Library,sdl2,SDL2-devel-2.30.5-mingw.tar.gz)
+$(call Library,sdl2,SDL2-devel-2.30.8-mingw.tar.gz)
   $(call LibrarySetting,build_system,copy_files)
   $(call LibrarySetting,copy_files,$(_win_sdl2_arch)/*->.)
 $(call Library,sdl2_net,SDL2_net-devel-2.2.0-mingw.tar.gz)
   $(call LibrarySetting,build_system,copy_files)
   $(call LibrarySetting,copy_files,$(_win_sdl2_arch)/*->.)
 else
-$(call Library,sdl2,SDL2-2.30.5.tar.gz)
+$(call Library,sdl2,SDL2-2.30.8.tar.gz)
   # Allow SDL to see system packages. If we were using `configure+make`, we'd need `configure_vars = env -uPKG_CONFIG_PATH -uPKG_CONFIG_LIBDIR` instead.
   $(call LibrarySetting,cmake_flags,-DCMAKE_FIND_USE_CMAKE_SYSTEM_PATH=ON)
   $(call LibrarySetting,common_flags,-fno-sanitize=address -fno-sanitize=undefined)# ASAN/UBSAN cause linker errors in Linux, when making `libSDL2.so`. `-DSDL_ASAN=ON` doesn't help.
@@ -290,7 +290,7 @@ $(call Library,sdl2_net,SDL2_net-2.2.0.tar.gz)
   $(call LibrarySetting,common_flags,-fno-sanitize=address -fno-sanitize=undefined)# See above.
 endif
 
-$(call Library,stb,stb-013ac3b-2024-05-31.zip)
+$(call Library,stb,stb-31707d1-2024-10-03.zip)
   $(call LibrarySetting,build_system,copy_files)
   # Out of those, `rectpack` is used both by us and ImGui.
   # There's also `textedit`, which ImGui uses and we don't but we let ImGui keep its version, since it's slightly patched.
