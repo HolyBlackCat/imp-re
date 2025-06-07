@@ -198,7 +198,7 @@ namespace Graph::Pathfinding
                 // Wikipedia says `<` will be always false if the heuristic is "consistent" (see above),
                 // but trying to classify heuristics is tricky, and skipping it when the heuristic is not actuall consistent
                 // would result in a non-optimal path. So it's easier to just always check.
-                if (is_new || settings.ShouldUseNewPath(std::as_const(*this_node_info_iter, std::as_const(*iter), std::as_const(neighbor_cost))))
+                if (is_new || settings.ShouldUseNewPath(std::as_const(*this_node_info_iter), std::as_const(*iter), std::as_const(neighbor_cost)))
                 {
                     iter->second.cost = std::move(neighbor_cost);
                     iter->second.prev_node = this_node;
@@ -264,7 +264,7 @@ namespace Graph::Pathfinding
                 [&](CostType cost, CoordType pos) -> std::pair<CostType, CostType>
                 {
                     CoordType delta = goal - pos;
-                    return {cost + delta.abs().sum(), delta.len_sq()};
+                    return {cost / 2 + delta.abs().sum(), delta.len_sq()};
                 }
             );
         }
