@@ -39,6 +39,7 @@ endif
 # --- Project config ---
 
 PROJ_CXXFLAGS += -std=c++2b -pedantic-errors -Wall -Wextra -Wdeprecated -Wextra-semi -Wimplicit-fallthrough
+PROJ_CXXFLAGS += -Wno-c2y-extensions
 PROJ_CXXFLAGS += -ftemplate-backtrace-limit=0 -fmacro-backtrace-limit=0
 PROJ_CXXFLAGS += -includesrc/program/common_macros.h -includesrc/program/parachute.h
 PROJ_CXXFLAGS += -Isrc
@@ -260,9 +261,10 @@ $(call Library,ogg,libogg-1.3.5.tar.gz) # Only serves as a dependency for `libvo
   $(call LibrarySetting,build_system,configure_make)
 endif
 
-$(call Library,openal-soft,openal-soft-1.23.1.tar.gz)
+$(call Library,openal-soft,openal-soft-1.25.2.tar.gz)
   $(call LibrarySetting,deps,sdl2 zlib)# We want SDL2 as a backend. It's unclear what Zlib adds, we give it just because.
   $(call LibrarySetting,cmake_flags,$(_openal_flags))
+  $(call LibrarySetting,cxxflags,-w)
 ifneq ($(filter -D_GLIBCXX_DEBUG,$(GLOBAL_CXXFLAGS)),)
   $(call LibrarySetting,cxxflags,-U_GLIBCXX_DEBUG -D_GLIBCXX_ASSERTIONS)# The debug mode causes weird compilation errors.
 endif
